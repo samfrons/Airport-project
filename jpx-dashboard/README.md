@@ -33,7 +33,7 @@ A public operations dashboard for **East Hampton Town Airport** (ICAO: KJPX, for
 | Map | Mapbox GL JS 3, custom bezier arcs, GeoJSON layers | Interactive geographic visualization |
 | Charts | Chart.js + react-chartjs-2 | Hourly curfew distribution |
 | State | Zustand | Cross-component state (filters, selections, data) |
-| API | Next.js Route Handlers, better-sqlite3 (read-only) | REST endpoints for flight data |
+| API | Next.js Route Handlers, sql.js (WASM SQLite) | REST endpoints for flight data |
 | Database | SQLite with WAL mode | Flight operations, daily summaries, ingestion logs |
 | Pipeline | Python 3.11+, FlightAware AeroAPI v4 | Daily batch data ingestion |
 | Classification | Rule-based ICAO type matching | Helicopter / jet / fixed-wing / unknown |
@@ -138,7 +138,7 @@ jpx-dashboard/
 │   ├── daily_pull.py           # Daily batch data ingestion
 │   ├── query_stats.py          # CLI stats queries
 │   └── seed_test_data.js       # Generate test data for development
-├── data/                       # SQLite database (not committed)
+├── data/                       # SQLite database (committed for Vercel)
 ├── docs/
 │   └── ARCHITECTURE.md         # Architecture decisions and project status
 ├── tests/
@@ -180,26 +180,37 @@ curl "http://localhost:3000/api/flights?start=2025-08-01&end=2025-08-31&category
 
 ## Deployment (Vercel)
 
-The project is designed for zero-config Vercel deployment.
+The project is configured for Vercel deployment with `sql.js` (pure JavaScript SQLite) for serverless compatibility.
+
+### Vercel Dashboard Setup
+
+1. Import the `Airport-project` repository from GitHub
+2. **Critical:** Set **Root Directory** to `jpx-dashboard` (the Next.js app is in a subdirectory)
+3. Vercel auto-detects Next.js — framework settings are in `vercel.json`
+4. Add environment variables (optional):
+   - `NEXT_PUBLIC_MAPBOX_TOKEN` — Custom Mapbox token
+
+### Database for Vercel
+
+The SQLite database (`data/jpx_flights.db`) is committed to the repo for Vercel deployment. The `next.config.ts` includes the data directory in build traces:
+
+```typescript
+outputFileTracingIncludes: {
+  '/api/*': ['./data/**/*'],
+}
+```
+
+### CLI Deployment
 
 ```bash
 # Install Vercel CLI
 npm i -g vercel
 
-# Deploy
-vercel
-
-# Production deploy
-vercel --prod
+# From the jpx-dashboard directory:
+cd jpx-dashboard
+vercel          # Preview deploy
+vercel --prod   # Production deploy
 ```
-
-Or connect the GitHub repo in the Vercel dashboard:
-1. Import the repository
-2. Set the **Root Directory** to `jpx-dashboard`
-3. Vercel auto-detects Next.js — no additional configuration needed
-4. Add `NEXT_PUBLIC_MAPBOX_TOKEN` in Vercel environment variables (optional)
-
-**Note:** The SQLite database (`data/jpx_flights.db`) must be included in the deployment for the API routes to work. For production, either commit the database file or generate it during the build step.
 
 ## Database Schema
 
