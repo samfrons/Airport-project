@@ -26,7 +26,7 @@ interface FlightState {
   fetchSummary: () => Promise<void>;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Get today and 7 days ago for default range
 const today = new Date();
