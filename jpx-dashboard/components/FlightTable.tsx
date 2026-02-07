@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import {
   ArrowUpDown,
@@ -6,7 +8,7 @@ import {
   ShieldAlert,
   X,
 } from 'lucide-react';
-import { useFlightStore } from '../store/flightStore';
+import { useFlightStore } from '@/store/flightStore';
 
 type SortField = 'operation_date' | 'ident' | 'aircraft_category' | 'direction';
 type SortDirection = 'asc' | 'desc';

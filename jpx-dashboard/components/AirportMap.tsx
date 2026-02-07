@@ -1,13 +1,15 @@
+'use client';
+
 import { useEffect, useRef, useState, useMemo } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Map, Route, BarChart3, Maximize2, Minimize2, Crosshair, X } from 'lucide-react';
-import { useFlightStore } from '../store/flightStore';
-import type { MapViewMode } from '../types/flight';
+import { useFlightStore } from '@/store/flightStore';
+import type { MapViewMode } from '@/types/flight';
 
 // KJPX Airport coordinates
 const KJPX_COORDS: [number, number] = [-72.2518, 40.9594];
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2FtZnJvbnMiLCJhIjoiY20wcXprNHFmMDM5dDJpb3A3czEyYXU2OCJ9.z7lv5-q6CZW8Xq59kn1bYA';
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2FtZnJvbnMiLCJhIjoiY20wcXprNHFmMDM5dDJpb3A3czEyYXU2OCJ9.z7lv5-q6CZW8Xq59kn1bYA';
 
 mapboxgl.accessToken = MAPBOX_TOKEN;
 

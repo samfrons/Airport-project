@@ -1,5 +1,7 @@
+'use client';
+
 import { PlaneLanding, PlaneTakeoff, Gauge, ShieldAlert } from 'lucide-react';
-import { useFlightStore } from '../store/flightStore';
+import { useFlightStore } from '@/store/flightStore';
 
 export function StatsCards() {
   const { flights } = useFlightStore();
