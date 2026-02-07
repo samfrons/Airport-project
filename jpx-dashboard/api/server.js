@@ -210,8 +210,12 @@ app.get('/api/health', (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`JPX Dashboard API running on http://localhost:${PORT}`);
-  console.log(`Database path: ${DB_PATH}`);
-});
+// Start server in local development (Vercel uses the exported app directly)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`JPX Dashboard API running on http://localhost:${PORT}`);
+    console.log(`Database path: ${DB_PATH}`);
+  });
+}
+
+export default app;
