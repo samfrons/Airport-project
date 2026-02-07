@@ -10,6 +10,7 @@ interface FlightState {
   mapViewMode: MapViewMode;
   dateRange: DateRange;
   selectedCategory: string | null;
+  selectedAirport: string | null;
 
   // Actions
   setFlights: (flights: Flight[]) => void;
@@ -20,6 +21,7 @@ interface FlightState {
   setMapViewMode: (mode: MapViewMode) => void;
   setDateRange: (range: DateRange) => void;
   setSelectedCategory: (category: string | null) => void;
+  setSelectedAirport: (code: string | null) => void;
   fetchFlights: () => Promise<void>;
   fetchSummary: () => Promise<void>;
 }
@@ -45,6 +47,7 @@ export const useFlightStore = create<FlightState>((set, get) => ({
     end: formatDate(today),
   },
   selectedCategory: null,
+  selectedAirport: null,
 
   setFlights: (flights) => set({ flights }),
   setSummary: (summary) => set({ summary }),
@@ -54,6 +57,7 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   setMapViewMode: (mode) => set({ mapViewMode: mode }),
   setDateRange: (range) => set({ dateRange: range }),
   setSelectedCategory: (category) => set({ selectedCategory: category }),
+  setSelectedAirport: (code) => set({ selectedAirport: code }),
 
   fetchFlights: async () => {
     const { dateRange, selectedCategory } = get();
