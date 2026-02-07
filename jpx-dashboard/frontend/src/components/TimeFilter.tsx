@@ -1,14 +1,18 @@
-import { Calendar } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { useFlightStore } from '../store/flightStore';
+
+const quickRanges = [
+  { label: 'Today', days: 0 },
+  { label: '7d', days: 7 },
+  { label: '30d', days: 30 },
+  { label: '90d', days: 90 },
+];
 
 export function TimeFilter() {
   const { dateRange, setDateRange, fetchFlights, fetchSummary } = useFlightStore();
 
   const handleDateChange = (field: 'start' | 'end', value: string) => {
-    setDateRange({
-      ...dateRange,
-      [field]: value,
-    });
+    setDateRange({ ...dateRange, [field]: value });
   };
 
   const handleApply = () => {
@@ -26,66 +30,51 @@ export function TimeFilter() {
       end: end.toISOString().split('T')[0],
     });
 
-    // Auto-apply after setting quick range
     setTimeout(() => {
       fetchFlights();
       fetchSummary();
     }, 100);
   };
 
-  const quickRanges = [
-    { label: 'Today', days: 0 },
-    { label: '7 Days', days: 7 },
-    { label: '30 Days', days: 30 },
-    { label: '90 Days', days: 90 },
-  ];
-
   return (
-    <div className="bg-gray-900 border border-gray-700 p-4">
-      <div className="flex flex-wrap items-center gap-4">
-        {/* Quick Range Buttons */}
-        <div className="flex gap-2">
-          {quickRanges.map(range => (
-            <button
-              key={range.label}
-              onClick={() => setQuickRange(range.days)}
-              className="px-3 py-1.5 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-600 hover:bg-gray-700 hover:text-white transition-colors"
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="h-6 w-px bg-gray-700" />
-
-        {/* Date Inputs */}
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-            <input
-              type="date"
-              value={dateRange.start}
-              onChange={e => handleDateChange('start', e.target.value)}
-              className="pl-10 pr-3 py-1.5 bg-gray-800 border border-gray-600 text-gray-300 text-sm focus:outline-none focus:border-sky-500"
-            />
-          </div>
-          <span className="text-gray-500">to</span>
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-            <input
-              type="date"
-              value={dateRange.end}
-              onChange={e => handleDateChange('end', e.target.value)}
-              className="pl-10 pr-3 py-1.5 bg-gray-800 border border-gray-600 text-gray-300 text-sm focus:outline-none focus:border-sky-500"
-            />
-          </div>
+    <div className="flex flex-wrap items-center gap-4">
+      {/* Quick Range Segmented Control */}
+      <div className="flex bg-zinc-900 border border-zinc-800 p-0.5">
+        {quickRanges.map(range => (
           <button
-            onClick={handleApply}
-            className="px-4 py-1.5 bg-sky-600 text-white text-sm font-medium hover:bg-sky-500 transition-colors"
+            key={range.label}
+            onClick={() => setQuickRange(range.days)}
+            className="px-3.5 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
           >
-            Apply
+            {range.label}
           </button>
-        </div>
+        ))}
+      </div>
+
+      <div className="w-px h-5 bg-zinc-800" />
+
+      {/* Date Range */}
+      <div className="flex items-center gap-2">
+        <CalendarDays size={14} className="text-zinc-600" strokeWidth={1.5} />
+        <input
+          type="date"
+          value={dateRange.start}
+          onChange={e => handleDateChange('start', e.target.value)}
+          className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
+        />
+        <span className="text-zinc-600 text-xs">&ndash;</span>
+        <input
+          type="date"
+          value={dateRange.end}
+          onChange={e => handleDateChange('end', e.target.value)}
+          className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
+        />
+        <button
+          onClick={handleApply}
+          className="px-4 py-1.5 bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500 transition-colors"
+        >
+          Apply
+        </button>
       </div>
     </div>
   );
