@@ -21,7 +21,7 @@ body {
   min-height: 100vh;
 }
 
-/* Mapbox overrides for dark theme */
+/* ─── Mapbox dark-theme overrides ─────────────────────────────────── */
 .mapboxgl-popup-content {
   background-color: #1f2937 !important;
   color: #f3f4f6 !important;
@@ -50,7 +50,118 @@ body {
   filter: invert(1);
 }
 
-/* Custom scrollbar */
+/* ─── Airport popup styling ──────────────────────────────────────── */
+.airport-popup .mapboxgl-popup-content {
+  background-color: #111827 !important;
+  border: 1px solid #374151 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+.airport-popup .mapboxgl-popup-tip {
+  border-top-color: #111827 !important;
+}
+
+.airport-popup .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
+  border-top-color: #111827 !important;
+}
+
+.airport-popup .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
+  border-bottom-color: #111827 !important;
+}
+
+.airport-popup .mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+  border-right-color: #111827 !important;
+}
+
+.airport-popup .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+  border-left-color: #111827 !important;
+}
+
+.popup-content {
+  padding: 10px 14px;
+}
+
+.popup-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+}
+
+.popup-subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.popup-detail {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 1px;
+}
+
+.popup-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #60a5fa;
+  margin-top: 6px;
+}
+
+.popup-hint {
+  font-size: 10px;
+  color: #4b5563;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ─── Animated KJPX pulse marker ─────────────────────────────────── */
+.kjpx-pulse-marker {
+  width: 30px;
+  height: 30px;
+  position: relative;
+  cursor: pointer;
+}
+
+.kjpx-pulse-core {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  background: #f97316;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.kjpx-pulse-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(249, 115, 22, 0.6);
+  border-radius: 50%;
+  animation: kjpx-pulse 2s ease-out infinite;
+  z-index: 1;
+}
+
+@keyframes kjpx-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2);
+    opacity: 0;
+  }
+}
+
+/* ─── Custom scrollbar ───────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

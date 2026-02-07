@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpDown, ArrowDown, ArrowUp, AlertTriangle } from 'lucide-react';
+import { ArrowUpDown, ArrowDown, ArrowUp, AlertTriangle, X } from 'lucide-react';
 import { useFlightStore } from '../store/flightStore';
 
 type SortField = 'operation_date' | 'ident' | 'aircraft_category' | 'direction';
@@ -20,7 +20,7 @@ const categoryColors: Record<string, string> = {
 };
 
 export function FlightTable() {
-  const { flights, loading } = useFlightStore();
+  const { flights, loading, selectedAirport, setSelectedAirport } = useFlightStore();
   const [sortField, setSortField] = useState<SortField>('operation_date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -34,9 +34,11 @@ export function FlightTable() {
     }
   };
 
-  const filteredFlights = flights.filter(
-    f => categoryFilter === 'all' || f.aircraft_category === categoryFilter
-  );
+  const filteredFlights = flights.filter(f => {
+    if (categoryFilter !== 'all' && f.aircraft_category !== categoryFilter) return false;
+    if (selectedAirport && f.origin_code !== selectedAirport && f.destination_code !== selectedAirport) return false;
+    return true;
+  });
 
   const sortedFlights = [...filteredFlights].sort((a, b) => {
     const aVal = a[sortField];
@@ -84,7 +86,21 @@ export function FlightTable() {
     <div className="bg-gray-900 border border-gray-700">
       {/* Header with filter */}
       <div className="p-4 border-b border-gray-700 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Flight Operations</h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-lg font-semibold text-white">Flight Operations</h3>
+          {selectedAirport && (
+            <span className="flex items-center gap-1.5 bg-amber-600/20 border border-amber-600/40 text-amber-400 text-xs font-medium px-2 py-1">
+              {selectedAirport}
+              <button
+                onClick={() => setSelectedAirport(null)}
+                className="text-amber-500 hover:text-amber-300 transition-colors"
+                title="Clear airport filter"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          )}
+        </div>
         <select
           value={categoryFilter}
           onChange={e => setCategoryFilter(e.target.value)}

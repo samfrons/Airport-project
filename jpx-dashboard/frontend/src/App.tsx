@@ -64,16 +64,13 @@ function App() {
         {/* Stats Cards */}
         <StatsCards />
 
-        {/* Map and Chart Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Map */}
-          <div className="bg-gray-900 border border-gray-700 h-96 lg:h-[500px]">
-            <AirportMap />
-          </div>
-
-          {/* Curfew Chart */}
-          <CurfewChart />
+        {/* Interactive Map — full width */}
+        <div className="bg-gray-900 border border-gray-700 h-[480px] lg:h-[580px]">
+          <AirportMap />
         </div>
+
+        {/* Curfew Chart */}
+        <CurfewChart />
 
         {/* Flight Table */}
         <FlightTable />
