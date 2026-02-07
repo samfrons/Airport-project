@@ -1,9 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Design Tokens ──────────────────────────────────────────────── */
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --bg-page: #09090b;
+  --bg-surface: #111113;
+  --bg-raised: #18181b;
+  --bg-inset: #0f0f11;
+  --border-subtle: #27272a;
+  --border-strong: #3f3f46;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --text-muted: #52525b;
+  --accent: #2563eb;
+  --accent-hover: #3b82f6;
+  --heli-color: #f87171;
+  --jet-color: #60a5fa;
+  --fw-color: #34d399;
+  --curfew-color: #f59e0b;
+}
+
+/* ─── Base ────────────────────────────────────────────────────────── */
+html {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -13,110 +37,130 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #111827;
-  color: #f3f4f6;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* ─── Mapbox dark-theme overrides ─────────────────────────────────── */
-.mapboxgl-popup-content {
-  background-color: #1f2937 !important;
-  color: #f3f4f6 !important;
-  border: 1px solid #374151 !important;
-  padding: 12px !important;
+/* ─── Typography Utilities ────────────────────────────────────────── */
+.overline {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-.mapboxgl-popup-tip {
-  border-top-color: #1f2937 !important;
+.stat-number {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
+/* ─── Mapbox Controls ─────────────────────────────────────────────── */
 .mapboxgl-ctrl-group {
-  background-color: #1f2937 !important;
-  border: 1px solid #374151 !important;
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-subtle) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
 }
 
 .mapboxgl-ctrl-group button {
-  background-color: #1f2937 !important;
+  background-color: transparent !important;
 }
 
 .mapboxgl-ctrl-group button:hover {
-  background-color: #374151 !important;
+  background-color: var(--bg-raised) !important;
 }
 
 .mapboxgl-ctrl-group button span {
   filter: invert(1);
 }
 
-/* ─── Airport popup styling ──────────────────────────────────────── */
+.mapboxgl-ctrl-scale {
+  background-color: transparent !important;
+  border-color: var(--text-muted) !important;
+  color: var(--text-tertiary) !important;
+  font-size: 10px !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+/* ─── Airport Popup ───────────────────────────────────────────────── */
 .airport-popup .mapboxgl-popup-content {
-  background-color: #111827 !important;
-  border: 1px solid #374151 !important;
+  background-color: var(--bg-surface) !important;
+  border: 1px solid var(--border-subtle) !important;
   padding: 0 !important;
   border-radius: 0 !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+  font-family: 'Inter', system-ui, sans-serif !important;
 }
 
 .airport-popup .mapboxgl-popup-tip {
-  border-top-color: #111827 !important;
+  border-top-color: var(--bg-surface) !important;
 }
 
 .airport-popup .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
-  border-top-color: #111827 !important;
+  border-top-color: var(--bg-surface) !important;
 }
 
 .airport-popup .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
-  border-bottom-color: #111827 !important;
+  border-bottom-color: var(--bg-surface) !important;
 }
 
 .airport-popup .mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-  border-right-color: #111827 !important;
+  border-right-color: var(--bg-surface) !important;
 }
 
 .airport-popup .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-  border-left-color: #111827 !important;
+  border-left-color: var(--bg-surface) !important;
 }
 
 .popup-content {
-  padding: 10px 14px;
+  padding: 12px 16px;
 }
 
 .popup-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
 }
 
 .popup-subtitle {
   font-size: 12px;
-  color: #9ca3af;
+  font-weight: 400;
+  color: var(--text-secondary);
   margin-top: 2px;
 }
 
 .popup-detail {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--text-tertiary);
   margin-top: 1px;
 }
 
 .popup-count {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: #60a5fa;
-  margin-top: 6px;
+  color: var(--accent-hover);
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
 }
 
 .popup-hint {
   font-size: 10px;
-  color: #4b5563;
+  color: var(--text-muted);
   margin-top: 4px;
-  font-style: italic;
+  letter-spacing: 0.02em;
 }
 
-/* ─── Animated KJPX pulse marker ─────────────────────────────────── */
+/* ─── Animated KJPX Pulse Marker ──────────────────────────────────── */
 .kjpx-pulse-marker {
   width: 30px;
   height: 30px;
@@ -128,11 +172,11 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   transform: translate(-50%, -50%);
-  background: #f97316;
-  border: 2px solid #ffffff;
+  background: var(--curfew-color);
+  border: 2px solid var(--text-primary);
   border-radius: 50%;
   z-index: 2;
 }
@@ -141,12 +185,12 @@ body {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   transform: translate(-50%, -50%);
-  border: 2px solid rgba(249, 115, 22, 0.6);
+  border: 2px solid rgba(245, 158, 11, 0.5);
   border-radius: 50%;
-  animation: kjpx-pulse 2s ease-out infinite;
+  animation: kjpx-pulse 2.5s ease-out infinite;
   z-index: 1;
 }
 
@@ -161,20 +205,35 @@ body {
   }
 }
 
-/* ─── Custom scrollbar ───────────────────────────────────────────── */
+/* ─── Scrollbar ───────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1f2937;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4b5563;
+  background: var(--border-subtle);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
+  background: var(--border-strong);
+}
+
+/* ─── Form Inputs ─────────────────────────────────────────────────── */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
+  cursor: pointer;
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2371717a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 8px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  padding-right: 32px !important;
 }

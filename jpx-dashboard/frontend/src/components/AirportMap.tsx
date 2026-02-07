@@ -12,10 +12,10 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1Ijoic2FtZnJvbn
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
 const categoryColors: Record<string, string> = {
-  helicopter: '#ef4444',
-  jet: '#3b82f6',
-  fixed_wing: '#22c55e',
-  unknown: '#9ca3af',
+  helicopter: '#f87171',
+  jet: '#60a5fa',
+  fixed_wing: '#34d399',
+  unknown: '#a1a1aa',
 };
 
 const categoryLabels: Record<string, string> = {
@@ -27,7 +27,6 @@ const categoryLabels: Record<string, string> = {
 
 /**
  * Generate a curved arc between two geographic points using a quadratic bezier.
- * Creates the characteristic curved flight-path look.
  */
 function generateArc(
   start: [number, number],
@@ -42,19 +41,15 @@ function generateArc(
 
   const midLng = (start[0] + end[0]) / 2;
   const midLat = (start[1] + end[1]) / 2;
-
-  // Perpendicular offset for the curve — 15% of the line distance
   const offset = dist * 0.15;
   const nx = -dy / dist;
   const ny = dx / dist;
-
   const controlLng = midLng + nx * offset;
   const controlLat = midLat + ny * offset;
 
   const points: [number, number][] = [];
   for (let i = 0; i <= numPoints; i++) {
     const t = i / numPoints;
-    // Quadratic bezier interpolation
     const lng =
       (1 - t) * (1 - t) * start[0] +
       2 * (1 - t) * t * controlLng +
@@ -68,7 +63,6 @@ function generateArc(
   return points;
 }
 
-// Layer and source IDs managed by the component
 const MANAGED_LAYERS = [
   'flight-routes',
   'destination-airports',
@@ -85,8 +79,6 @@ export function AirportMap() {
   const kjpxMarker = useRef<mapboxgl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Ref for selectedAirport so event handlers always read current value
   const selectedAirportRef = useRef<string | null>(null);
 
   const {
@@ -98,12 +90,10 @@ export function AirportMap() {
     setSelectedAirport,
   } = useFlightStore();
 
-  // Keep ref in sync
   useEffect(() => {
     selectedAirportRef.current = selectedAirport;
   }, [selectedAirport]);
 
-  // Category counts for the legend
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     flights.forEach((f) => {
@@ -129,7 +119,6 @@ export function AirportMap() {
       'bottom-right'
     );
 
-    // Reusable hover popup
     popup.current = new mapboxgl.Popup({
       closeButton: false,
       closeOnClick: false,
@@ -137,7 +126,7 @@ export function AirportMap() {
       className: 'airport-popup',
     });
 
-    // Animated KJPX marker with CSS pulse
+    // Animated KJPX marker
     const el = document.createElement('div');
     el.className = 'kjpx-pulse-marker';
     el.innerHTML = `
@@ -158,11 +147,10 @@ export function AirportMap() {
       )
       .addTo(map.current);
 
-    // Register layer-targeted event handlers once (they auto-target layers by name)
+    // Hover handlers
     map.current.on('mouseenter', 'destination-airports', (e) => {
       if (!map.current || !e.features?.[0]) return;
       map.current.getCanvas().style.cursor = 'pointer';
-
       const props = e.features[0].properties;
       const coords = (e.features[0].geometry as GeoJSON.Point).coordinates.slice() as [number, number];
 
@@ -196,7 +184,6 @@ export function AirportMap() {
       }
     });
 
-    // Route hover
     map.current.on('mouseenter', 'flight-routes', () => {
       if (map.current) map.current.getCanvas().style.cursor = 'pointer';
     });
@@ -204,9 +191,7 @@ export function AirportMap() {
       if (map.current) map.current.getCanvas().style.cursor = '';
     });
 
-    map.current.on('load', () => {
-      setMapLoaded(true);
-    });
+    map.current.on('load', () => setMapLoaded(true));
 
     return () => {
       popup.current?.remove();
@@ -216,30 +201,26 @@ export function AirportMap() {
     };
   }, [setSelectedAirport]);
 
-  // ─── ESC key for fullscreen ────────────────────────────────────────
+  // ESC key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        setIsFullscreen(false);
-      }
+      if (e.key === 'Escape' && isFullscreen) setIsFullscreen(false);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFullscreen]);
 
-  // ─── Resize map when fullscreen toggles ────────────────────────────
+  // Resize on fullscreen toggle
   useEffect(() => {
     if (map.current) {
-      // Small delay to let the DOM update before resize
       const id = setTimeout(() => map.current?.resize(), 50);
       return () => clearTimeout(id);
     }
   }, [isFullscreen]);
 
-  // ─── Update layers when data / view / selection changes ────────────
+  // ─── Update layers ─────────────────────────────────────────────────
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
-
     clearManagedLayers();
 
     if (mapViewMode === 'routes' && flights.length > 0) {
@@ -247,10 +228,8 @@ export function AirportMap() {
     } else if (mapViewMode === 'heatmap' && flights.length > 0) {
       renderHeatmapView();
     }
-    // 'stats' mode: only the KJPX pulse marker is visible
   }, [mapViewMode, flights, airports, mapLoaded, selectedAirport]);
 
-  // ─── Layer management ──────────────────────────────────────────────
   function clearManagedLayers() {
     if (!map.current) return;
     MANAGED_LAYERS.forEach((id) => {
@@ -265,7 +244,6 @@ export function AirportMap() {
   function renderRouteView() {
     if (!map.current) return;
 
-    // Build arc features for each flight
     const routeFeatures = flights
       .map((f) => {
         const code = f.direction === 'arrival' ? f.origin_code : f.destination_code;
@@ -312,18 +290,17 @@ export function AirportMap() {
             'fixed_wing', categoryColors.fixed_wing,
             categoryColors.unknown,
           ],
-          'line-width': ['case', ['get', 'is_selected'], 3, 1.5],
+          'line-width': ['case', ['get', 'is_selected'], 2.5, 1.2],
           'line-opacity': [
             'case',
             ['get', 'is_selected'],
-            0.9,
-            selectedAirport ? 0.12 : 0.45,
+            0.85,
+            selectedAirport ? 0.08 : 0.35,
           ],
         },
       });
     }
 
-    // Destination airport markers
     const airportFeatures = airports
       .filter((a) => a.lat && a.lng && a.code !== 'KJPX' && a.code !== 'KHTO')
       .map((a) => ({
@@ -344,49 +321,45 @@ export function AirportMap() {
         data: { type: 'FeatureCollection', features: airportFeatures },
       });
 
-      // Sized circles
       map.current.addLayer({
         id: 'destination-airports',
         type: 'circle',
         source: 'destination-airports',
         paint: {
           'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['get', 'count'],
-            1, 6,
-            5, 9,
-            10, 13,
-            30, 17,
-            50, 22,
+            'interpolate', ['linear'], ['get', 'count'],
+            1, 5,
+            5, 8,
+            10, 12,
+            30, 16,
+            50, 20,
           ],
           'circle-color': ['case', ['get', 'is_selected'], '#f59e0b', '#60a5fa'],
-          'circle-stroke-width': ['case', ['get', 'is_selected'], 3, 1.5],
+          'circle-stroke-width': ['case', ['get', 'is_selected'], 2.5, 1],
           'circle-stroke-color': [
             'case',
             ['get', 'is_selected'],
             '#fbbf24',
-            'rgba(255,255,255,0.5)',
+            'rgba(255,255,255,0.3)',
           ],
           'circle-opacity': [
             'case',
             ['get', 'is_selected'],
             1,
-            selectedAirport ? 0.35 : 0.85,
+            selectedAirport ? 0.25 : 0.8,
           ],
         },
       });
 
-      // Airport code labels
       map.current.addLayer({
         id: 'destination-labels',
         type: 'symbol',
         source: 'destination-airports',
         layout: {
           'text-field': ['get', 'code'],
-          'text-font': ['DIN Pro Bold', 'Arial Unicode MS Bold'],
-          'text-size': ['case', ['get', 'is_selected'], 13, 11],
-          'text-offset': [0, 1.8],
+          'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
+          'text-size': ['case', ['get', 'is_selected'], 12, 10],
+          'text-offset': [0, 1.6],
           'text-allow-overlap': false,
         },
         paint: {
@@ -397,7 +370,7 @@ export function AirportMap() {
             'case',
             ['get', 'is_selected'],
             1,
-            selectedAirport ? 0.35 : 0.8,
+            selectedAirport ? 0.25 : 0.7,
           ],
         },
       });
@@ -408,7 +381,6 @@ export function AirportMap() {
   function renderHeatmapView() {
     if (!map.current) return;
 
-    // Heatmap points at both KJPX and the connected airport
     const features = flights.flatMap((f) => {
       const code = f.direction === 'arrival' ? f.origin_code : f.destination_code;
       const airport = airports.find((a) => a.code === code);
@@ -450,23 +422,22 @@ export function AirportMap() {
           4, 20,
           9, 40,
         ],
-        'heatmap-opacity': 0.8,
+        'heatmap-opacity': 0.75,
         'heatmap-color': [
           'interpolate',
           ['linear'],
           ['heatmap-density'],
           0, 'rgba(0,0,0,0)',
-          0.1, 'rgba(14,165,233,0.3)',
-          0.3, 'rgba(59,130,246,0.5)',
-          0.5, 'rgba(34,197,94,0.6)',
-          0.7, 'rgba(234,179,8,0.7)',
-          0.85, 'rgba(249,115,22,0.8)',
-          1, 'rgba(239,68,68,0.9)',
+          0.15, 'rgba(37,99,235,0.3)',
+          0.35, 'rgba(59,130,246,0.45)',
+          0.5, 'rgba(52,211,153,0.5)',
+          0.7, 'rgba(245,158,11,0.65)',
+          0.85, 'rgba(248,113,113,0.75)',
+          1, 'rgba(239,68,68,0.85)',
         ],
       },
     });
 
-    // Individual points visible at high zoom
     map.current.addLayer({
       id: 'heatmap-points',
       type: 'circle',
@@ -475,47 +446,42 @@ export function AirportMap() {
       paint: {
         'circle-radius': 4,
         'circle-color': '#60a5fa',
-        'circle-opacity': 0.6,
+        'circle-opacity': 0.5,
         'circle-stroke-width': 1,
-        'circle-stroke-color': '#ffffff',
+        'circle-stroke-color': 'rgba(255,255,255,0.3)',
       },
     });
   }
 
-  // ─── Map actions ───────────────────────────────────────────────────
+  // ─── Actions ───────────────────────────────────────────────────────
   const handleFitBounds = () => {
     if (!map.current || airports.length === 0) return;
-
     const bounds = new mapboxgl.LngLatBounds();
     bounds.extend(KJPX_COORDS);
     airports.forEach((a) => {
       if (a.lat && a.lng) bounds.extend([a.lng, a.lat]);
     });
-
     map.current.fitBounds(bounds, { padding: 60, duration: 1000 });
   };
 
-  const handleToggleFullscreen = () => setIsFullscreen((v) => !v);
-
-  // ─── View mode config ─────────────────────────────────────────────
   const viewModes: { mode: MapViewMode; icon: React.ReactNode; label: string }[] = [
-    { mode: 'routes', icon: <Route size={16} />, label: 'Routes' },
-    { mode: 'stats', icon: <Map size={16} />, label: 'Airport' },
-    { mode: 'heatmap', icon: <BarChart3 size={16} />, label: 'Heatmap' },
+    { mode: 'routes', icon: <Route size={14} strokeWidth={1.8} />, label: 'Routes' },
+    { mode: 'stats', icon: <Map size={14} strokeWidth={1.8} />, label: 'Airport' },
+    { mode: 'heatmap', icon: <BarChart3 size={14} strokeWidth={1.8} />, label: 'Heatmap' },
   ];
 
   // ─── Render ────────────────────────────────────────────────────────
   return (
     <div
       className={`relative ${
-        isFullscreen ? 'fixed inset-0 z-50 bg-gray-950' : 'h-full w-full'
+        isFullscreen ? 'fixed inset-0 z-50 bg-zinc-950' : 'h-full w-full'
       }`}
     >
       <div ref={mapContainer} className="h-full w-full" />
 
       {/* View Mode Toggle */}
-      <div className="absolute top-4 left-4 flex flex-col gap-2">
-        <div className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 p-1 flex gap-1">
+      <div className="absolute top-4 left-4">
+        <div className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-0.5 flex gap-px">
           {viewModes.map(({ mode, icon, label }) => (
             <button
               key={mode}
@@ -523,10 +489,10 @@ export function AirportMap() {
                 setMapViewMode(mode);
                 if (mode !== 'routes') setSelectedAirport(null);
               }}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all ${
                 mapViewMode === mode
-                  ? 'bg-sky-600 text-white'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
               }`}
               title={label}
             >
@@ -537,43 +503,46 @@ export function AirportMap() {
         </div>
       </div>
 
-      {/* Map Control Buttons (above the Mapbox nav control) */}
-      <div className="absolute top-4 right-14 flex flex-col gap-1">
+      {/* Map Controls */}
+      <div className="absolute top-4 right-14 flex flex-col gap-px">
         <button
           onClick={handleFitBounds}
-          className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 p-2 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-all"
           title="Fit to all routes"
         >
-          <Crosshair size={16} />
+          <Crosshair size={14} strokeWidth={1.5} />
         </button>
         <button
-          onClick={handleToggleFullscreen}
-          className="bg-gray-900/95 backdrop-blur-sm border border-gray-700 p-2 text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          onClick={() => setIsFullscreen((v) => !v)}
+          className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-all"
           title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
         >
-          {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          {isFullscreen ? (
+            <Minimize2 size={14} strokeWidth={1.5} />
+          ) : (
+            <Maximize2 size={14} strokeWidth={1.5} />
+          )}
         </button>
       </div>
 
-      {/* Active Airport Filter Pill */}
+      {/* Selected Airport Pill */}
       {selectedAirport && (
-        <div className="absolute top-16 left-4 bg-amber-600/90 backdrop-blur-sm border border-amber-500 px-3 py-1.5 flex items-center gap-2">
-          <span className="text-sm font-medium text-white">
-            Filtering: {selectedAirport}
+        <div className="absolute top-14 left-4 bg-amber-500/15 backdrop-blur-sm border border-amber-500/30 px-3 py-1.5 flex items-center gap-2">
+          <span className="text-[11px] font-semibold text-amber-300 tracking-wide">
+            {selectedAirport}
           </span>
           <button
             onClick={() => setSelectedAirport(null)}
-            className="text-amber-200 hover:text-white transition-colors"
-            title="Clear filter"
+            className="text-amber-400/50 hover:text-amber-200 transition-colors"
           >
-            <X size={14} />
+            <X size={12} />
           </button>
         </div>
       )}
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-gray-900/95 backdrop-blur-sm border border-gray-700 p-3 min-w-[140px]">
-        <div className="text-[10px] font-semibold text-gray-500 mb-2 uppercase tracking-wider">
+      <div className="absolute bottom-4 left-4 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-3 min-w-[130px]">
+        <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.12em] mb-2">
           Aircraft Type
         </div>
         <div className="flex flex-col gap-1.5">
@@ -581,15 +550,15 @@ export function AirportMap() {
             <div key={category} className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div
-                  className="w-3 h-[3px]"
+                  className="w-2.5 h-[2px]"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-xs text-gray-300">
+                <span className="text-[11px] text-zinc-400">
                   {categoryLabels[category]}
                 </span>
               </div>
               {categoryCounts[category] != null && (
-                <span className="text-xs text-gray-500 tabular-nums">
+                <span className="text-[11px] text-zinc-600 tabular-nums">
                   {categoryCounts[category]}
                 </span>
               )}
@@ -597,16 +566,16 @@ export function AirportMap() {
           ))}
         </div>
         {flights.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-gray-700 text-xs text-gray-500">
-            {flights.length} total operations
+          <div className="mt-2 pt-2 border-t border-zinc-800 text-[10px] text-zinc-600 tabular-nums">
+            {flights.length} ops
           </div>
         )}
       </div>
 
       {/* Fullscreen hint */}
       {isFullscreen && (
-        <div className="absolute bottom-4 right-4 text-xs text-gray-600">
-          Press ESC to exit fullscreen
+        <div className="absolute bottom-4 right-4 text-[10px] text-zinc-700 tracking-wide">
+          ESC to exit
         </div>
       )}
     </div>

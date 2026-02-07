@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Plane, RefreshCw } from 'lucide-react';
+import { TowerControl, RefreshCw, Radio } from 'lucide-react';
 import { AirportMap } from './components/AirportMap';
 import { StatsCards } from './components/StatsCards';
 import { FlightTable } from './components/FlightTable';
@@ -12,7 +12,6 @@ function App() {
   const { loading, error, fetchFlights, fetchSummary } = useFlightStore();
 
   useEffect(() => {
-    // Initial data fetch
     fetchFlights();
     fetchSummary();
   }, []);
@@ -23,65 +22,102 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950">
-      {/* Header */}
-      <header className="bg-gray-900 border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-zinc-950">
+      {/* ─── Header ────────────────────────────────────────────────── */}
+      <header className="border-b border-zinc-800/60">
+        <div className="max-w-7xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-sky-600 p-2">
-                <Plane className="text-white" size={24} />
+            <div className="flex items-center gap-4">
+              <div className="bg-blue-600 p-2.5">
+                <TowerControl className="text-white" size={20} strokeWidth={1.8} />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">JPX Airport Dashboard</h1>
-                <p className="text-sm text-gray-400">East Hampton Town Airport (KJPX)</p>
+                <div className="flex items-baseline gap-3">
+                  <h1 className="text-lg font-semibold text-zinc-50 tracking-tight">
+                    JPX Dashboard
+                  </h1>
+                  <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">
+                    East Hampton
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  Airport operations monitoring for KJPX
+                </p>
               </div>
             </div>
-            <button
-              onClick={handleRefresh}
-              disabled={loading}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors disabled:opacity-50"
-            >
-              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-              Refresh
-            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-zinc-600">
+                <Radio size={12} />
+                <span className="text-[10px] uppercase tracking-widest font-medium">
+                  Live Data
+                </span>
+              </div>
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 text-sm font-medium hover:border-zinc-700 hover:text-zinc-200 transition-all disabled:opacity-40"
+              >
+                <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      {/* ─── Main Content ──────────────────────────────────────────── */}
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* Error Banner */}
         {error && (
-          <div className="bg-red-900/50 border border-red-700 p-4 text-red-200">
-            <strong>Error:</strong> {error}
+          <div className="bg-red-950/40 border border-red-900/60 px-5 py-4">
+            <p className="text-sm text-red-300">
+              <span className="font-semibold">Connection error</span>
+              <span className="mx-2 text-red-800">|</span>
+              {error}
+            </p>
           </div>
         )}
 
-        {/* Time Filter */}
+        {/* Time Range */}
         <TimeFilter />
 
-        {/* Stats Cards */}
+        {/* Stats */}
         <StatsCards />
 
-        {/* Interactive Map — full width */}
-        <div className="bg-gray-900 border border-gray-700 h-[480px] lg:h-[580px]">
-          <AirportMap />
-        </div>
+        {/* Interactive Map */}
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Flight Routes</h2>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 h-[480px] lg:h-[580px]">
+            <AirportMap />
+          </div>
+        </section>
 
         {/* Curfew Chart */}
-        <CurfewChart />
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Hourly Distribution</h2>
+          </div>
+          <CurfewChart />
+        </section>
 
         {/* Flight Table */}
-        <FlightTable />
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Flight Log</h2>
+          </div>
+          <FlightTable />
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 border-t border-gray-800 mt-8">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between text-sm text-gray-500">
-            <p>Data source: FlightAware AeroAPI</p>
-            <p>Wainscott Citizens Advisory Committee (WCAC)</p>
+      {/* ─── Footer ────────────────────────────────────────────────── */}
+      <footer className="border-t border-zinc-800/60 mt-12">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between text-[11px] text-zinc-600 uppercase tracking-wider">
+            <p>Data via FlightAware AeroAPI</p>
+            <p>Wainscott Citizens Advisory Committee</p>
           </div>
         </div>
       </footer>

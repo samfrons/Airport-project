@@ -1,100 +1,94 @@
-import type { ReactNode } from 'react';
-import { Plane, AlertTriangle, ArrowDown, ArrowUp } from 'lucide-react';
+import { PlaneLanding, PlaneTakeoff, Gauge, ShieldAlert } from 'lucide-react';
 import { useFlightStore } from '../store/flightStore';
-
-interface SubStat {
-  label: string;
-  value: number;
-  icon?: ReactNode;
-  color?: string;
-}
-
-interface StatCard {
-  label: string;
-  value: number;
-  icon: ReactNode;
-  subStats?: SubStat[];
-  description?: string;
-  highlight?: boolean;
-}
 
 export function StatsCards() {
   const { flights } = useFlightStore();
 
-  // Calculate stats from flights
   const totalFlights = flights.length;
   const arrivals = flights.filter(f => f.direction === 'arrival').length;
   const departures = flights.filter(f => f.direction === 'departure').length;
   const helicopters = flights.filter(f => f.aircraft_category === 'helicopter').length;
   const jets = flights.filter(f => f.aircraft_category === 'jet').length;
   const fixedWing = flights.filter(f => f.aircraft_category === 'fixed_wing').length;
-  const curfewViolations = flights.filter(f => f.is_curfew_period).length;
+  const curfewOps = flights.filter(f => f.is_curfew_period).length;
   const uniqueAircraft = new Set(flights.map(f => f.registration)).size;
 
-  const stats: StatCard[] = [
-    {
-      label: 'Total Operations',
-      value: totalFlights,
-      icon: <Plane className="text-sky-400" size={24} />,
-      subStats: [
-        { label: 'Arrivals', value: arrivals, icon: <ArrowDown size={14} /> },
-        { label: 'Departures', value: departures, icon: <ArrowUp size={14} /> },
-      ],
-    },
-    {
-      label: 'Aircraft Types',
-      value: uniqueAircraft,
-      icon: <Plane className="text-green-400" size={24} />,
-      subStats: [
-        { label: 'Helicopters', value: helicopters, color: 'text-red-400' },
-        { label: 'Jets', value: jets, color: 'text-blue-400' },
-        { label: 'Fixed Wing', value: fixedWing, color: 'text-green-400' },
-      ],
-    },
-    {
-      label: 'Curfew Period Ops',
-      value: curfewViolations,
-      icon: <AlertTriangle className="text-orange-400" size={24} />,
-      description: '8 PM - 8 AM ET',
-      highlight: curfewViolations > 0,
-    },
-  ];
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {stats.map((stat, index) => (
-        <div
-          key={index}
-          className={`bg-gray-900 border p-4 ${
-            stat.highlight ? 'border-orange-500' : 'border-gray-700'
-          }`}
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-sm text-gray-400">{stat.label}</p>
-              <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
-              {stat.description && (
-                <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
-              )}
-            </div>
-            {stat.icon}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-800">
+      {/* Total Operations */}
+      <div className="bg-zinc-900 p-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="overline">Total Operations</p>
+            <p className="stat-number mt-2">{totalFlights}</p>
           </div>
-
-          {stat.subStats && (
-            <div className="mt-3 pt-3 border-t border-gray-800 flex gap-4">
-              {stat.subStats.map((sub, i) => (
-                <div key={i} className="flex items-center gap-1">
-                  {sub.icon && <span className="text-gray-500">{sub.icon}</span>}
-                  <span className={`text-sm font-medium ${sub.color || 'text-gray-300'}`}>
-                    {sub.value}
-                  </span>
-                  <span className="text-xs text-gray-500">{sub.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <Gauge className="text-zinc-700" size={20} strokeWidth={1.5} />
         </div>
-      ))}
+        <div className="mt-5 pt-4 border-t border-zinc-800 flex gap-6">
+          <div className="flex items-center gap-2">
+            <PlaneLanding size={13} className="text-emerald-400" strokeWidth={1.8} />
+            <span className="text-sm font-semibold text-zinc-200 tabular-nums">{arrivals}</span>
+            <span className="text-xs text-zinc-600">arr</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <PlaneTakeoff size={13} className="text-blue-400" strokeWidth={1.8} />
+            <span className="text-sm font-semibold text-zinc-200 tabular-nums">{departures}</span>
+            <span className="text-xs text-zinc-600">dep</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Aircraft Breakdown */}
+      <div className="bg-zinc-900 p-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="overline">Unique Aircraft</p>
+            <p className="stat-number mt-2">{uniqueAircraft}</p>
+          </div>
+        </div>
+        <div className="mt-5 pt-4 border-t border-zinc-800 flex gap-5">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-red-400" />
+            <span className="text-sm font-semibold text-zinc-200 tabular-nums">{helicopters}</span>
+            <span className="text-xs text-zinc-600">heli</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-blue-400" />
+            <span className="text-sm font-semibold text-zinc-200 tabular-nums">{jets}</span>
+            <span className="text-xs text-zinc-600">jet</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="text-sm font-semibold text-zinc-200 tabular-nums">{fixedWing}</span>
+            <span className="text-xs text-zinc-600">prop</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Curfew Operations */}
+      <div className={`bg-zinc-900 p-6 ${curfewOps > 0 ? 'border-l-2 border-l-amber-500' : ''}`}>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="overline">Curfew Period</p>
+            <p className="stat-number mt-2">{curfewOps}</p>
+          </div>
+          <ShieldAlert
+            className={curfewOps > 0 ? 'text-amber-500' : 'text-zinc-700'}
+            size={20}
+            strokeWidth={1.5}
+          />
+        </div>
+        <div className="mt-5 pt-4 border-t border-zinc-800">
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs text-zinc-600">8 PM - 8 AM ET</span>
+            <span className={`text-sm font-semibold tabular-nums ${
+              curfewOps > 0 ? 'text-amber-400' : 'text-emerald-400'
+            }`}>
+              {totalFlights > 0 ? ((curfewOps / totalFlights) * 100).toFixed(1) : '0'}%
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
