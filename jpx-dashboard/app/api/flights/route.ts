@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, AIRPORT_COORDS } from '@/lib/db';
 
-export async function GET(request: NextRequest) {
-  let db;
-  try {
-    db = getDb();
-  } catch {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
+export const dynamic = 'force-dynamic';
 
+export async function GET(request: NextRequest) {
   try {
+    const db = await getDb();
     const { searchParams } = request.nextUrl;
     const start = searchParams.get('start');
     const end = searchParams.get('end');
@@ -17,29 +13,43 @@ export async function GET(request: NextRequest) {
     const direction = searchParams.get('direction');
 
     let query = 'SELECT * FROM flights WHERE 1=1';
-    const params: string[] = [];
+    const conditions: string[] = [];
 
     if (start) {
-      query += ' AND operation_date >= ?';
-      params.push(start);
+      conditions.push(`operation_date >= '${start}'`);
     }
     if (end) {
-      query += ' AND operation_date <= ?';
-      params.push(end);
+      conditions.push(`operation_date <= '${end}'`);
     }
     if (category && category !== 'all') {
-      query += ' AND aircraft_category = ?';
-      params.push(category);
+      conditions.push(`aircraft_category = '${category}'`);
     }
     if (direction && direction !== 'all') {
-      query += ' AND direction = ?';
-      params.push(direction);
+      conditions.push(`direction = '${direction}'`);
+    }
+
+    if (conditions.length > 0) {
+      query += ' AND ' + conditions.join(' AND ');
     }
 
     query += ' ORDER BY operation_date DESC, actual_on DESC, actual_off DESC';
 
-    const flights = db.prepare(query).all(...params) as Record<string, unknown>[];
+    const result = db.exec(query);
 
+    // Convert sql.js result to array of objects
+    const flights: Record<string, unknown>[] = [];
+    if (result.length > 0) {
+      const { columns, values } = result[0];
+      for (const row of values) {
+        const flight: Record<string, unknown> = {};
+        columns.forEach((col: string, i: number) => {
+          flight[col] = row[i];
+        });
+        flights.push(flight);
+      }
+    }
+
+    // Count flights by airport for mapping
     const airportCounts: Record<string, number> = {};
     flights.forEach((f) => {
       const code = (f.direction === 'arrival' ? f.origin_code : f.destination_code) as string;
@@ -62,11 +72,9 @@ export async function GET(request: NextRequest) {
       })
       .filter((a) => a.lat && a.lng);
 
-    db.close();
-
     return NextResponse.json({ flights, airports, total: flights.length });
   } catch (err) {
-    db.close();
+    console.error('Flights API error:', err);
     return NextResponse.json(
       { error: 'Query failed', message: err instanceof Error ? err.message : 'Unknown error' },
       { status: 500 }

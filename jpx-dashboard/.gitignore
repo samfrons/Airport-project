@@ -10,7 +10,7 @@ __pycache__/
 .env.local
 
 # Data files (large, regenerable)
-data/*.db
+# Note: jpx_flights.db is committed for Vercel deployment
 data/*.csv
 data/*.json
 

@@ -1,39 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 
-export async function GET(request: NextRequest) {
-  let db;
-  try {
-    db = getDb();
-  } catch {
-    return NextResponse.json({ error: 'Database not available' }, { status: 500 });
-  }
+export const dynamic = 'force-dynamic';
 
+export async function GET(request: NextRequest) {
   try {
+    const db = await getDb();
     const { searchParams } = request.nextUrl;
     const start = searchParams.get('start');
     const end = searchParams.get('end');
 
     let query = 'SELECT * FROM daily_summary WHERE 1=1';
-    const params: string[] = [];
+    const conditions: string[] = [];
 
     if (start) {
-      query += ' AND operation_date >= ?';
-      params.push(start);
+      conditions.push(`operation_date >= '${start}'`);
     }
     if (end) {
-      query += ' AND operation_date <= ?';
-      params.push(end);
+      conditions.push(`operation_date <= '${end}'`);
+    }
+
+    if (conditions.length > 0) {
+      query += ' AND ' + conditions.join(' AND ');
     }
 
     query += ' ORDER BY operation_date DESC';
 
-    const summary = db.prepare(query).all(...params);
-    db.close();
+    const result = db.exec(query);
+
+    // Convert sql.js result to array of objects
+    const summary: Record<string, unknown>[] = [];
+    if (result.length > 0) {
+      const { columns, values } = result[0];
+      for (const row of values) {
+        const item: Record<string, unknown> = {};
+        columns.forEach((col: string, i: number) => {
+          item[col] = row[i];
+        });
+        summary.push(item);
+      }
+    }
 
     return NextResponse.json(summary);
   } catch (err) {
-    db.close();
+    console.error('Summary API error:', err);
     return NextResponse.json(
       { error: 'Query failed', message: err instanceof Error ? err.message : 'Unknown error' },
       { status: 500 }
