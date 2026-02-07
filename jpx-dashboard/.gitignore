@@ -4,16 +4,20 @@ __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
-dist/
-build/
 
 # Environment / secrets
 .env
+.env.local
 
 # Data files (large, regenerable)
 data/*.db
 data/*.csv
 data/*.json
+
+# Next.js
+.next/
+out/
+node_modules/
 
 # IDE
 .vscode/
