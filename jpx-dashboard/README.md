@@ -42,6 +42,17 @@ python scripts/daily_pull.py --date 2025-08-15
 python scripts/query_stats.py --month 2025-08
 ```
 
+## Quick Start (Dashboard)
+
+```bash
+# Start both API and frontend servers
+./start.sh
+
+# Or start individually:
+cd api && npm run dev       # API on http://localhost:3001
+cd frontend && npm run dev  # Frontend on http://localhost:5173
+```
+
 ## Project Structure
 
 ```
@@ -51,10 +62,11 @@ jpx-dashboard/
 ├── requirements.txt
 ├── .env.example           # Template for API credentials
 ├── .gitignore
+├── start.sh               # Convenience script to start both servers
 ├── data/                  # SQLite database (not committed)
 ├── docs/
 │   └── ARCHITECTURE.md    # Shared architecture doc (keep updated!)
-├── src/
+├── src/                   # Python backend for data ingestion
 │   ├── api/
 │   │   ├── __init__.py
 │   │   └── aeroapi.py     # FlightAware AeroAPI v4 client
@@ -65,6 +77,16 @@ jpx-dashboard/
 │   └── analysis/
 │       ├── __init__.py
 │       └── classify.py    # Aircraft type classification
+├── api/                   # Express API server (serves SQLite data)
+│   ├── server.js          # API endpoints (/api/flights, /api/summary)
+│   └── package.json
+├── frontend/              # React + Mapbox dashboard
+│   ├── src/
+│   │   ├── components/    # AirportMap, StatsCards, FlightTable, etc.
+│   │   ├── store/         # Zustand state management
+│   │   └── types/         # TypeScript interfaces
+│   ├── package.json
+│   └── tailwind.config.js
 ├── scripts/
 │   ├── setup.sh           # One-time project setup
 │   ├── daily_pull.py      # Daily batch data pull
