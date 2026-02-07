@@ -1,5 +1,7 @@
+'use client';
+
 import { CalendarDays } from 'lucide-react';
-import { useFlightStore } from '../store/flightStore';
+import { useFlightStore } from '@/store/flightStore';
 
 const quickRanges = [
   { label: 'Today', days: 0 },

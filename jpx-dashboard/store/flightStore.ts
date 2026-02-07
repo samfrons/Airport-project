@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Flight, DailySummary, Airport, MapViewMode, DateRange } from '../types/flight';
+import type { Flight, DailySummary, Airport, MapViewMode, DateRange } from '@/types/flight';
 
 interface FlightState {
   flights: Flight[];
@@ -26,7 +26,7 @@ interface FlightState {
   fetchSummary: () => Promise<void>;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = '/api';
 
 // Get today and 7 days ago for default range
 const today = new Date();

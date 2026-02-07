@@ -1,7 +1,7 @@
 # JPX Dashboard — Architecture & Status
 
 **Last updated:** 2026-02-07
-**Status:** Frontend dashboard built, interactive map operational, API serving data
+**Status:** Next.js 15 migration complete, all API routes and frontend operational
 
 > This document is the single source of truth for project state. Update it
 > whenever you make a significant decision or complete a milestone. Both Marc
@@ -15,17 +15,13 @@
 │  AeroAPI v4     │     │  (Python cron)  │     │  jpx_flights.db  │
 │  Standard $100  │     └────────────────┘     └────────┬─────────┘
 └─────────────────┘                                     │
-                                                ┌───────▼─────────┐
-                                                │  Express API     │
-                                                │  (port 3001)     │
-                                                │  better-sqlite3  │
-                                                └───────┬─────────┘
-                                                        │
-                                                ┌───────▼─────────┐
-                                                │  React 19 SPA    │
-                                                │  Vite 7 dev/prod │
-                                                │  (port 5173)     │
-                                                └──────────────────┘
+                                               ┌────────▼────────┐
+                                               │  Next.js 15      │
+                                               │  App Router      │
+                                               │  API Routes +    │
+                                               │  React 19 SPA    │
+                                               │  (port 3000)     │
+                                               └─────────────────┘
 ```
 
 ## Tech Stack
@@ -35,19 +31,54 @@
 | Data source | FlightAware AeroAPI v4 | History to 2011, proper licensing, good GA coverage |
 | Pipeline | Python 3.11+, Click CLI | Team familiarity, rich data libraries |
 | Database | SQLite (WAL mode) | Zero config, portable, sufficient for ~100 ops/day |
-| API server | Express.js + better-sqlite3 | Read-only REST API, fast SQLite bindings |
+| Framework | Next.js 15 (App Router) | Unified frontend + API, zero-config Vercel deployment |
+| API | Next.js Route Handlers + better-sqlite3 | Read-only REST, co-located with frontend |
 | Frontend | React 19 + TypeScript 5.9 | Type safety, component architecture |
-| Build | Vite 7 | Fast HMR, optimized production builds |
 | Styling | Tailwind CSS v4 | Utility-first, design token support |
 | Map | Mapbox GL JS 3 (raw, not react-map-gl) | Direct layer/source control, bezier arcs |
 | Charts | Chart.js + react-chartjs-2 | Lightweight, customizable bar charts |
 | State | Zustand | Minimal boilerplate, cross-component sharing |
 | Icons | Lucide React | Consistent stroke-width, tree-shakeable |
+| Deployment | Vercel | Zero-config for Next.js, serverless API routes |
+
+## Project Structure
+
+```
+jpx-dashboard/
+├── app/                        # Next.js App Router
+│   ├── layout.tsx              # Root layout (metadata, global CSS)
+│   ├── page.tsx                # Main dashboard page ('use client')
+│   ├── globals.css             # Design tokens, Mapbox overrides, animations
+│   └── api/                    # API Route Handlers
+│       ├── flights/route.ts    # GET /api/flights
+│       ├── summary/route.ts    # GET /api/summary
+│       ├── stats/route.ts      # GET /api/stats
+│       └── health/route.ts     # GET /api/health
+├── components/                 # React components ('use client')
+│   ├── AirportMap.tsx          # Mapbox GL map with routes/stats/heatmap
+│   ├── StatsCards.tsx          # Operations metrics grid
+│   ├── FlightTable.tsx         # Sortable flight log with filters
+│   ├── CurfewChart.tsx         # Hourly distribution bar chart
+│   └── TimeFilter.tsx          # Date range selector
+├── store/
+│   └── flightStore.ts          # Zustand store (flights, filters, map state)
+├── types/
+│   └── flight.ts               # TypeScript interfaces
+├── lib/
+│   └── db.ts                   # Database helper + airport coordinates
+├── src/                        # Python data pipeline
+│   ├── api/aeroapi.py
+│   ├── db/database.py, schema.sql
+│   └── analysis/classify.py
+├── scripts/                    # CLI tools and setup
+├── data/                       # SQLite database (not committed)
+└── docs/                       # This file
+```
 
 ## Frontend Component Architecture
 
 ```
-App.tsx
+app/page.tsx ('use client')
 ├── TimeFilter         Segmented control: Today / 7d / 30d / 90d + custom dates
 ├── StatsCards          3-column grid: operations, aircraft types, curfew count
 ├── AirportMap          Mapbox GL with 3 view modes:
@@ -105,6 +136,8 @@ Full schema: `src/db/schema.sql`
 
 ## API Endpoints
 
+All API routes are Next.js Route Handlers served from the same origin as the frontend.
+
 | Endpoint | Query Params | Returns |
 |----------|-------------|---------|
 | `GET /api/flights` | `start`, `end`, `category`, `direction` | `{ flights, airports, total }` |
@@ -113,35 +146,43 @@ Full schema: `src/db/schema.sql`
 | `GET /api/health` | — | `{ status, database, flight_count }` |
 
 The `/api/flights` endpoint also returns an `airports` array with coordinates,
-built from hardcoded `AIRPORT_COORDS` in `server.js` covering 20+ airports
+built from hardcoded `AIRPORT_COORDS` in `lib/db.ts` covering 20+ airports
 commonly seen in JPX traffic.
 
 ## Key Design Decisions
 
-1. **Daily batch, not real-time.** We pull yesterday's data each morning.
+1. **Next.js over Vite + Express.** Unified frontend and API in one project.
+   API Route Handlers replace the separate Express server, and Vercel
+   deployment is zero-config. No CORS, no proxy, no separate ports.
+
+2. **Daily batch, not real-time.** We pull yesterday's data each morning.
    This keeps API costs at ~$2-5/mo vs. hundreds for real-time polling.
 
-2. **KJPX for 2022+, KHTO for pre-2022.** The airport ICAO code changed
+3. **KJPX for 2022+, KHTO for pre-2022.** The airport ICAO code changed
    in May 2022. The daily_pull script handles this automatically.
 
-3. **Aircraft classification is rule-based.** We maintain sets of known
+4. **Aircraft classification is rule-based.** We maintain sets of known
    ICAO type codes for helicopters, jets, and fixed-wing. Unknown types
    get classified as "unknown" and should be periodically reviewed and
    added to the appropriate set.
 
-4. **Curfew = 8 PM to 8 AM Eastern.** All times stored as UTC in the
+5. **Curfew = 8 PM to 8 AM Eastern.** All times stored as UTC in the
    database. Eastern Time derivation happens at ingestion time.
 
-5. **SQLite for now.** Trivially upgradeable to PostgreSQL if we need
-   concurrent access for a web frontend. The schema is compatible.
+6. **SQLite for now.** Trivially upgradeable to PostgreSQL/Turso if we need
+   concurrent access or edge deployment. The schema is compatible.
 
-6. **Raw Mapbox GL, not react-map-gl.** Direct mapboxgl.Map gives full
+7. **Raw Mapbox GL, not react-map-gl.** Direct mapboxgl.Map gives full
    control over GeoJSON sources, dynamic layers, and event handlers.
    Event handlers survive layer remove/re-add because they target layers
    by name string on the map instance.
 
-7. **Zustand over Context.** Minimal boilerplate, no provider wrapping,
+8. **Zustand over Context.** Minimal boilerplate, no provider wrapping,
    supports cross-component state sharing (map ↔ table filtering).
+
+9. **better-sqlite3 as serverExternalPackage.** Native Node addon must be
+   excluded from Next.js bundling via `serverExternalPackages` in
+   `next.config.ts` to work correctly in both dev and Vercel serverless.
 
 ## API Cost Model
 
@@ -169,8 +210,10 @@ deployment, user-facing documentation.
 - [x] Project scaffold & Claude Code setup
 - [x] Dashboard frontend: React SPA with interactive Mapbox map
 - [x] Swiss modern design system applied across all components
-- [x] Express API server serving flight data from SQLite
+- [x] API serving flight data from SQLite
 - [x] Test data seed script for development
+- [x] Next.js 15 migration (unified frontend + API)
+- [x] Vercel-ready deployment configuration
 - [ ] First successful live data pull (validation with real API key)
 - [ ] Backfill summer 2025 data
 - [ ] Classification accuracy review
@@ -180,7 +223,6 @@ deployment, user-facing documentation.
 
 ## Open Questions
 
-- Hosting: GitHub Pages (free, static) vs. small VPS (dynamic)?
 - Should we track flight tracks (positions) or just operations? (cost implications)
 - Integration with Town's AirNav Radar data — still pending Town response
 - Mobile responsiveness — dashboard works on desktop, tablet breakpoints TBD

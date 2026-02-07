@@ -1,3 +1,5 @@
+'use client';
+
 import { useMemo } from 'react';
 import {
   Chart as ChartJS,
@@ -9,7 +11,7 @@ import {
   Legend,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { useFlightStore } from '../store/flightStore';
+import { useFlightStore } from '@/store/flightStore';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 

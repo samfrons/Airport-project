@@ -1,14 +1,15 @@
+'use client';
+
 import { useEffect } from 'react';
 import { TowerControl, RefreshCw, Radio } from 'lucide-react';
-import { AirportMap } from './components/AirportMap';
-import { StatsCards } from './components/StatsCards';
-import { FlightTable } from './components/FlightTable';
-import { CurfewChart } from './components/CurfewChart';
-import { TimeFilter } from './components/TimeFilter';
-import { useFlightStore } from './store/flightStore';
-import './index.css';
+import { AirportMap } from '@/components/AirportMap';
+import { StatsCards } from '@/components/StatsCards';
+import { FlightTable } from '@/components/FlightTable';
+import { CurfewChart } from '@/components/CurfewChart';
+import { TimeFilter } from '@/components/TimeFilter';
+import { useFlightStore } from '@/store/flightStore';
 
-function App() {
+export default function DashboardPage() {
   const { loading, error, fetchFlights, fetchSummary } = useFlightStore();
 
   useEffect(() => {
@@ -124,5 +125,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
