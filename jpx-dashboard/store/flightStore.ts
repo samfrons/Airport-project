@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { Flight, DailySummary, Airport, MapViewMode, DateRange } from '@/types/flight';
 import type { NoiseLayerSettings, NoiseSensor, NoiseComplaint } from '@/types/noise';
+import type { BiodiversityLayerSettings } from '@/types/biodiversity';
 
 // Default noise layer settings
 const defaultNoiseSettings: NoiseLayerSettings = {
@@ -15,6 +16,16 @@ const defaultNoiseSettings: NoiseLayerSettings = {
     complaints: 0.7,
   },
   complaintsMode: 'markers',
+};
+
+// Default biodiversity layer settings
+const defaultBiodiversitySettings: BiodiversityLayerSettings = {
+  visible: false,
+  opacity: 0.7,
+  showImpactZones: true,
+  showSpeciesMarkers: false,
+  showHabitatAreas: true,
+  selectedSpeciesGroup: 'all',
 };
 
 interface FlightState {
@@ -33,6 +44,9 @@ interface FlightState {
   noiseSettings: NoiseLayerSettings;
   noiseSensors: NoiseSensor[];
   noiseComplaints: NoiseComplaint[];
+
+  // Biodiversity layer state
+  biodiversitySettings: BiodiversityLayerSettings;
 
   // Actions
   setFlights: (flights: Flight[]) => void;
@@ -55,6 +69,11 @@ interface FlightState {
   setNoiseSensors: (sensors: NoiseSensor[]) => void;
   setNoiseComplaints: (complaints: NoiseComplaint[]) => void;
   loadNoiseData: () => Promise<void>;
+
+  // Biodiversity actions
+  setBiodiversitySettings: (settings: BiodiversityLayerSettings) => void;
+  toggleBiodiversityLayer: () => void;
+  setBiodiversityOpacity: (value: number) => void;
 }
 
 const API_BASE = '/api';
@@ -85,6 +104,9 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   noiseSettings: defaultNoiseSettings,
   noiseSensors: [],
   noiseComplaints: [],
+
+  // Biodiversity layer state
+  biodiversitySettings: defaultBiodiversitySettings,
 
   setFlights: (flights) => set({ flights }),
   setSummary: (summary) => set({ summary }),
@@ -171,6 +193,25 @@ export const useFlightStore = create<FlightState>((set, get) => ({
 
   setNoiseSensors: (sensors) => set({ noiseSensors: sensors }),
   setNoiseComplaints: (complaints) => set({ noiseComplaints: complaints }),
+
+  // Biodiversity actions
+  setBiodiversitySettings: (settings) => set({ biodiversitySettings: settings }),
+
+  toggleBiodiversityLayer: () =>
+    set((state) => ({
+      biodiversitySettings: {
+        ...state.biodiversitySettings,
+        visible: !state.biodiversitySettings.visible,
+      },
+    })),
+
+  setBiodiversityOpacity: (value) =>
+    set((state) => ({
+      biodiversitySettings: {
+        ...state.biodiversitySettings,
+        opacity: value,
+      },
+    })),
 
   loadNoiseData: async () => {
     // Dynamically import mock data to avoid SSR issues
