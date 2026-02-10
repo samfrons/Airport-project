@@ -27,6 +27,7 @@ interface FlightState {
   dateRange: DateRange;
   selectedCategory: string | null;
   selectedAirport: string | null;
+  selectedFlight: Flight | null;
 
   // Noise layer state
   noiseSettings: NoiseLayerSettings;
@@ -43,6 +44,7 @@ interface FlightState {
   setDateRange: (range: DateRange) => void;
   setSelectedCategory: (category: string | null) => void;
   setSelectedAirport: (code: string | null) => void;
+  setSelectedFlight: (flight: Flight | null) => void;
   fetchFlights: () => Promise<void>;
   fetchSummary: () => Promise<void>;
 
@@ -77,6 +79,7 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   },
   selectedCategory: null,
   selectedAirport: null,
+  selectedFlight: null,
 
   // Noise layer state
   noiseSettings: defaultNoiseSettings,
@@ -92,6 +95,7 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   setDateRange: (range) => set({ dateRange: range }),
   setSelectedCategory: (category) => set({ selectedCategory: category }),
   setSelectedAirport: (code) => set({ selectedAirport: code }),
+  setSelectedFlight: (flight) => set({ selectedFlight: flight }),
 
   fetchFlights: async () => {
     const { dateRange, selectedCategory } = get();
