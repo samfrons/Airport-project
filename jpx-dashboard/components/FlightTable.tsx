@@ -44,9 +44,11 @@ export function FlightTable() {
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
+  const thresholds = useFlightStore((s) => s.thresholds);
+
   // Build a lookup map of flight ID -> violation for badge display
   const violationMap = useMemo(() => {
-    const violations = evaluateAllFlights(flights);
+    const violations = evaluateAllFlights(flights, thresholds);
     const map = new Map<string, { severity: string; count: number; hasProtected: boolean }>();
     for (const v of violations) {
       map.set(v.flightId, {
@@ -56,7 +58,7 @@ export function FlightTable() {
       });
     }
     return map;
-  }, [flights]);
+  }, [flights, thresholds]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {

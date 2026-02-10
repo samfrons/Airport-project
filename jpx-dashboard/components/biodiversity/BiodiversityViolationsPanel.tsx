@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 import { evaluateAllFlights, generateViolationSummary } from '@/lib/biodiversityViolationEngine';
-import { biodiversityThresholds } from '@/data/biodiversity/thresholds';
 import type { BiodiversityViolation, ViolationSummary } from '@/types/biodiversityThresholds';
 import type { ImpactSeverity } from '@/types/biodiversity';
 import { getImpactSeverityColor } from '@/types/biodiversity';
@@ -239,10 +238,12 @@ function SummaryBar({ summary }: { summary: ViolationSummary }) {
 
 export function BiodiversityViolationsPanel() {
   const { flights, setSelectedFlight } = useFlightStore();
+  const thresholds = useFlightStore((s) => s.thresholds);
+  const toggleThreshold = useFlightStore((s) => s.toggleThreshold);
   const [severityFilter, setSeverityFilter] = useState<ImpactSeverity | 'all'>('all');
   const [activeTab, setActiveTab] = useState<'violations' | 'thresholds' | 'offenders'>('violations');
 
-  const violations = useMemo(() => evaluateAllFlights(flights), [flights]);
+  const violations = useMemo(() => evaluateAllFlights(flights, thresholds), [flights, thresholds]);
   const summary = useMemo(() => generateViolationSummary(violations), [violations]);
 
   const filteredViolations = useMemo(() => {
@@ -421,7 +422,7 @@ export function BiodiversityViolationsPanel() {
               under which aircraft operations are flagged as violations.
             </p>
             <div className="space-y-2">
-              {biodiversityThresholds.map((threshold) => {
+              {thresholds.map((threshold) => {
                 const count = summary.byThreshold[threshold.label] || 0;
                 const badge = severityBadge[threshold.violationSeverity];
                 const typeIcons: Record<string, React.ReactNode> = {
@@ -431,17 +432,41 @@ export function BiodiversityViolationsPanel() {
                   habitat_proximity: <TreePine size={10} className="text-zinc-500" />,
                 };
 
+                const categoryLabelsMap: Record<string, string> = {
+                  helicopter: 'Heli',
+                  jet: 'Jet',
+                  fixed_wing: 'Prop',
+                  unknown: 'Unknown',
+                };
+
                 return (
                   <div
                     key={threshold.id}
-                    className="border border-zinc-800/60 bg-zinc-900/40 px-3 py-2.5"
+                    className={`border bg-zinc-900/40 px-3 py-2.5 ${threshold.enabled ? 'border-zinc-800/60' : 'border-zinc-800/30 opacity-50'}`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleThreshold(threshold.id)}
+                          className={`w-7 h-4 rounded-full transition-colors relative flex-shrink-0 ${
+                            threshold.enabled ? 'bg-emerald-600' : 'bg-zinc-700'
+                          }`}
+                        >
+                          <div
+                            className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${
+                              threshold.enabled ? 'left-3.5' : 'left-0.5'
+                            }`}
+                          />
+                        </button>
                         {typeIcons[threshold.type]}
                         <span className="text-[11px] font-medium text-zinc-300">
                           {threshold.label}
                         </span>
+                        {threshold.isCustom && (
+                          <span className="text-[8px] px-1 py-0.5 bg-blue-950/50 text-blue-400 uppercase tracking-wider">
+                            Custom
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span
@@ -480,6 +505,16 @@ export function BiodiversityViolationsPanel() {
                       {threshold.protectedGroups && (
                         <span className="text-[9px] text-emerald-600 bg-emerald-950/30 px-1.5 py-0.5">
                           Protects: {threshold.protectedGroups.join(', ')}
+                        </span>
+                      )}
+                      {threshold.applicableAircraftCategories && threshold.applicableAircraftCategories.length > 0 && (
+                        <span className="text-[9px] text-blue-500 bg-blue-950/30 px-1.5 py-0.5">
+                          Aircraft: {threshold.applicableAircraftCategories.map(c => categoryLabelsMap[c] || c).join(', ')}
+                        </span>
+                      )}
+                      {threshold.applicableDirections && threshold.applicableDirections.length > 0 && (
+                        <span className="text-[9px] text-purple-500 bg-purple-950/30 px-1.5 py-0.5">
+                          {threshold.applicableDirections.map(d => d === 'arrival' ? 'Arrivals' : 'Departures').join(', ')}
                         </span>
                       )}
                     </div>

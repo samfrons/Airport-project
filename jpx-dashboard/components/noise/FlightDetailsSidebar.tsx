@@ -25,7 +25,8 @@ export function FlightDetailsSidebar({ flight, onClose }: FlightDetailsSidebarPr
   const profile = getAircraftNoiseProfile(flight.aircraft_type);
   const baseDb = flight.direction === 'arrival' ? profile.approachDb : profile.takeoffDb;
   const altitudeProfile = generateAltitudeProfile(baseDb);
-  const bioViolation = useMemo(() => evaluateFlight(flight), [flight]);
+  const thresholds = useFlightStore((s) => s.thresholds);
+  const bioViolation = useMemo(() => evaluateFlight(flight, thresholds), [flight, thresholds]);
 
   const maxDb = 100;
   const minDb = 65;

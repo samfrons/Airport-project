@@ -7,6 +7,7 @@
 
 import type { Flight } from '@/types/flight';
 import type {
+  BiodiversityThreshold,
   BiodiversityViolation,
   ViolatedThreshold,
   AffectedSpecies,
@@ -16,23 +17,49 @@ import type {
 } from '@/types/biodiversityThresholds';
 import type { ImpactSeverity } from '@/types/biodiversity';
 import { getHighestSeverity } from '@/types/biodiversityThresholds';
-import { biodiversityThresholds } from '@/data/biodiversity/thresholds';
+import { biodiversityThresholds as defaultThresholds } from '@/data/biodiversity/thresholds';
 import { speciesImpacts, habitatAreas } from '@/data/biodiversity/speciesImpacts';
 import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
+import type { AircraftCategory, FlightDirection } from '@/types/biodiversityThresholds';
 
 /**
- * Evaluate a single flight against all active biodiversity thresholds
+ * Evaluate a single flight against all active biodiversity thresholds.
+ * Accepts an optional thresholds array — if not provided, uses the default set.
  */
-export function evaluateFlight(flight: Flight): BiodiversityViolation | null {
+export function evaluateFlight(
+  flight: Flight,
+  thresholds?: BiodiversityThreshold[],
+): BiodiversityViolation | null {
+  const activeThresholds = thresholds ?? defaultThresholds;
   const profile = getAircraftNoiseProfile(flight.aircraft_type);
   const estimatedDb = flight.direction === 'arrival' ? profile.approachDb : profile.takeoffDb;
   const operationMonth = new Date(flight.operation_date + 'T00:00:00').getMonth() + 1; // 1-12
   const operationHour = flight.operation_hour_et;
+  const aircraftCategory = flight.aircraft_category as AircraftCategory;
+  const flightDirection = flight.direction as FlightDirection;
 
   const violatedThresholds: ViolatedThreshold[] = [];
 
-  for (const threshold of biodiversityThresholds) {
+  for (const threshold of activeThresholds) {
     if (!threshold.enabled) continue;
+
+    // Per-aircraft-category filtering
+    if (
+      threshold.applicableAircraftCategories &&
+      threshold.applicableAircraftCategories.length > 0 &&
+      !threshold.applicableAircraftCategories.includes(aircraftCategory)
+    ) {
+      continue;
+    }
+
+    // Per-direction filtering
+    if (
+      threshold.applicableDirections &&
+      threshold.applicableDirections.length > 0 &&
+      !threshold.applicableDirections.includes(flightDirection)
+    ) {
+      continue;
+    }
 
     let violated = false;
     let exceedanceDb: number | undefined;
@@ -148,11 +175,15 @@ export function evaluateFlight(flight: Flight): BiodiversityViolation | null {
 }
 
 /**
- * Evaluate all flights and return violations
+ * Evaluate all flights and return violations.
+ * Accepts an optional thresholds array — if not provided, uses the default set.
  */
-export function evaluateAllFlights(flights: Flight[]): BiodiversityViolation[] {
+export function evaluateAllFlights(
+  flights: Flight[],
+  thresholds?: BiodiversityThreshold[],
+): BiodiversityViolation[] {
   return flights
-    .map(evaluateFlight)
+    .map((f) => evaluateFlight(f, thresholds))
     .filter((v): v is BiodiversityViolation => v !== null);
 }
 
