@@ -8,7 +8,7 @@ import { FlightTable } from '@/components/FlightTable';
 import { CurfewChart } from '@/components/CurfewChart';
 import { TimeFilter } from '@/components/TimeFilter';
 import { AircraftBreakdownPanel, FlightDetailsSidebar } from '@/components/noise';
-import { BiodiversityPanel } from '@/components/biodiversity';
+import { BiodiversityPanel, BiodiversityViolationsPanel } from '@/components/biodiversity';
 import { useFlightStore } from '@/store/flightStore';
 
 export default function DashboardPage() {
@@ -105,6 +105,14 @@ export default function DashboardPage() {
             <h2 className="overline">Aircraft Type Breakdown</h2>
           </div>
           <AircraftBreakdownPanel />
+        </section>
+
+        {/* Biodiversity Threshold Violations */}
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Biodiversity Threshold Violations</h2>
+          </div>
+          <BiodiversityViolationsPanel />
         </section>
 
         {/* Biodiversity & Wildlife Impact */}
