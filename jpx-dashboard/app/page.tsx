@@ -9,6 +9,7 @@ import { CurfewChart } from '@/components/CurfewChart';
 import { TimeFilter } from '@/components/TimeFilter';
 import { AircraftBreakdownPanel, FlightDetailsSidebar } from '@/components/noise';
 import { BiodiversityPanel, BiodiversityViolationsPanel, ThresholdManager } from '@/components/biodiversity';
+import { NoiseEnvironmentTimeline } from '@/components/NoiseEnvironmentTimeline';
 import { useFlightStore } from '@/store/flightStore';
 
 export default function DashboardPage() {
@@ -97,6 +98,14 @@ export default function DashboardPage() {
           <div className="bg-zinc-900 border border-zinc-800 h-[480px] lg:h-[580px]">
             <AirportMap />
           </div>
+        </section>
+
+        {/* Noise & Environment Impact Timeline */}
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Noise & Environment Impact Timeline</h2>
+          </div>
+          <NoiseEnvironmentTimeline />
         </section>
 
         {/* Aircraft Noise Breakdown */}
