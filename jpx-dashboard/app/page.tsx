@@ -12,6 +12,10 @@ import { BiodiversityPanel, BiodiversityViolationsPanel, ThresholdManager } from
 import { NoiseEnvironmentTimeline } from '@/components/NoiseEnvironmentTimeline';
 import { OperatorScorecard } from '@/components/OperatorScorecard';
 import { ComplaintForm } from '@/components/ComplaintForm';
+import { WeatherCorrelation } from '@/components/WeatherCorrelation';
+import { FlightPathReplay } from '@/components/FlightPathReplay';
+import { AlertNotificationSystem } from '@/components/AlertNotificationSystem';
+import { ComplianceDashboard } from '@/components/ComplianceDashboard';
 import {
   ErrorBoundary,
   StatsCardsSkeleton,
@@ -20,6 +24,7 @@ import {
   PanelSkeleton,
   TableSkeleton,
 } from '@/components/LoadingSkeleton';
+import { MobileNav } from '@/components/MobileNav';
 import { useFlightStore } from '@/store/flightStore';
 
 export default function DashboardPage() {
@@ -40,29 +45,29 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-zinc-950">
       {/* ─── Header ────────────────────────────────────────────────── */}
       <header className="border-b border-zinc-800/60">
-        <div className="max-w-7xl mx-auto px-6 py-5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="bg-blue-600 p-2.5">
-                <TowerControl className="text-white" size={20} strokeWidth={1.8} />
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="bg-blue-600 p-2 sm:p-2.5">
+                <TowerControl className="text-white" size={18} strokeWidth={1.8} />
               </div>
               <div>
-                <div className="flex items-baseline gap-3">
-                  <h1 className="text-lg font-semibold text-zinc-50 tracking-tight">
+                <div className="flex items-baseline gap-2 sm:gap-3">
+                  <h1 className="text-base sm:text-lg font-semibold text-zinc-50 tracking-tight">
                     JPX Dashboard
                   </h1>
-                  <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">
+                  <span className="hidden sm:inline text-[10px] font-medium text-zinc-500 uppercase tracking-widest">
                     East Hampton
                   </span>
                 </div>
-                <p className="text-xs text-zinc-500 mt-0.5">
+                <p className="text-[11px] sm:text-xs text-zinc-500 mt-0.5">
                   Airport operations monitoring for KJPX
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 text-zinc-600">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="hidden sm:flex items-center gap-1.5 text-zinc-600">
                 <Radio size={12} />
                 <span className="text-[10px] uppercase tracking-widest font-medium">
                   Live Data
@@ -71,10 +76,10 @@ export default function DashboardPage() {
               <button
                 onClick={handleRefresh}
                 disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 text-sm font-medium hover:border-zinc-700 hover:text-zinc-200 transition-all disabled:opacity-40"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs sm:text-sm font-medium hover:border-zinc-700 hover:text-zinc-200 transition-all disabled:opacity-40"
               >
                 <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-                Refresh
+                <span className="hidden sm:inline">Refresh</span>
               </button>
             </div>
           </div>
@@ -82,7 +87,7 @@ export default function DashboardPage() {
       </header>
 
       {/* ─── Main Content ──────────────────────────────────────────── */}
-      <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Error Banner */}
         {error && (
           <div className="bg-red-950/40 border border-red-900/60 px-5 py-4">
@@ -98,12 +103,14 @@ export default function DashboardPage() {
         <TimeFilter />
 
         {/* Stats */}
+        <div id="stats">
         <ErrorBoundary sectionName="Statistics" fallback={<StatsCardsSkeleton />}>
           <StatsCards />
         </ErrorBoundary>
+        </div>
 
         {/* Interactive Map */}
-        <section>
+        <section id="map">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Flight Routes</h2>
           </div>
@@ -115,7 +122,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Noise & Environment Impact Timeline */}
-        <section>
+        <section id="timeline">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Noise & Environment Impact Timeline</h2>
           </div>
@@ -125,7 +132,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Aircraft Noise Breakdown */}
-        <section>
+        <section id="breakdown">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Aircraft Type Breakdown</h2>
           </div>
@@ -135,7 +142,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Operator Scorecards */}
-        <section>
+        <section id="scorecards">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Operator Scorecards</h2>
           </div>
@@ -144,8 +151,48 @@ export default function DashboardPage() {
           </ErrorBoundary>
         </section>
 
+        {/* Weather Correlation */}
+        <section id="weather">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Weather Correlation</h2>
+          </div>
+          <ErrorBoundary sectionName="Weather" fallback={<ChartSkeleton />}>
+            <WeatherCorrelation />
+          </ErrorBoundary>
+        </section>
+
+        {/* Flight Path Replay */}
+        <section id="replay">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Flight Activity Replay</h2>
+          </div>
+          <ErrorBoundary sectionName="Flight Replay" fallback={<PanelSkeleton />}>
+            <FlightPathReplay />
+          </ErrorBoundary>
+        </section>
+
+        {/* Alerts & Notifications */}
+        <section id="alerts">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Alerts & Notifications</h2>
+          </div>
+          <ErrorBoundary sectionName="Alerts" fallback={<PanelSkeleton />}>
+            <AlertNotificationSystem />
+          </ErrorBoundary>
+        </section>
+
+        {/* Compliance Dashboard */}
+        <section id="compliance">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Compliance Dashboard</h2>
+          </div>
+          <ErrorBoundary sectionName="Compliance" fallback={<ChartSkeleton />}>
+            <ComplianceDashboard />
+          </ErrorBoundary>
+        </section>
+
         {/* Threshold Administration */}
-        <section>
+        <section id="thresholds">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Threshold Administration</h2>
           </div>
@@ -155,7 +202,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Biodiversity Threshold Violations */}
-        <section>
+        <section id="violations">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Biodiversity Threshold Violations</h2>
           </div>
@@ -165,7 +212,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Biodiversity & Wildlife Impact */}
-        <section>
+        <section id="biodiversity">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Biodiversity & Wildlife Impact</h2>
           </div>
@@ -175,7 +222,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Community Noise Reports */}
-        <section>
+        <section id="complaints">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Community Noise Reports</h2>
           </div>
@@ -185,7 +232,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Curfew Chart */}
-        <section>
+        <section id="curfew">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Hourly Distribution</h2>
           </div>
@@ -195,7 +242,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Flight Table */}
-        <section>
+        <section id="flights">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Flight Log</h2>
           </div>
@@ -207,13 +254,16 @@ export default function DashboardPage() {
 
       {/* ─── Footer ────────────────────────────────────────────────── */}
       <footer className="border-t border-zinc-800/60 mt-12">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between text-[11px] text-zinc-600 uppercase tracking-wider">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-zinc-600 uppercase tracking-wider">
             <p>Data via FlightAware AeroAPI</p>
             <p>Wainscott Citizens Advisory Committee</p>
           </div>
         </div>
       </footer>
+
+      {/* Mobile Navigation */}
+      <MobileNav />
 
       {/* Flight Details Sidebar */}
       <FlightDetailsSidebar
