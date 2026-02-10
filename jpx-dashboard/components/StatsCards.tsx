@@ -1,7 +1,10 @@
 'use client';
 
-import { PlaneLanding, PlaneTakeoff, Gauge, ShieldAlert } from 'lucide-react';
+import { useMemo } from 'react';
+import { PlaneLanding, PlaneTakeoff, Gauge, ShieldAlert, TreePine } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
+import { evaluateAllFlights } from '@/lib/biodiversityViolationEngine';
+import { getImpactSeverityColor } from '@/types/biodiversity';
 
 export function StatsCards() {
   const { flights } = useFlightStore();
@@ -15,8 +18,15 @@ export function StatsCards() {
   const curfewOps = flights.filter(f => f.is_curfew_period).length;
   const uniqueAircraft = new Set(flights.map(f => f.registration)).size;
 
+  const bioViolations = useMemo(() => evaluateAllFlights(flights), [flights]);
+  const bioViolationCount = bioViolations.length;
+  const criticalCount = bioViolations.filter(v => v.overallSeverity === 'critical').length;
+  const protectedSpeciesCount = bioViolations.filter(v =>
+    v.speciesAffected.some(s => s.conservationStatus)
+  ).length;
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-800">
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-zinc-800">
       {/* Total Operations */}
       <div className="bg-zinc-900 p-6">
         <div className="flex items-start justify-between">
@@ -87,6 +97,41 @@ export function StatsCards() {
               curfewOps > 0 ? 'text-amber-400' : 'text-emerald-400'
             }`}>
               {totalFlights > 0 ? ((curfewOps / totalFlights) * 100).toFixed(1) : '0'}%
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Biodiversity Violations */}
+      <div className={`bg-zinc-900 p-6 ${criticalCount > 0 ? 'border-l-2' : ''}`} style={criticalCount > 0 ? { borderLeftColor: getImpactSeverityColor('critical') } : {}}>
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="overline">Wildlife Violations</p>
+            <p className="stat-number mt-2">{bioViolationCount}</p>
+          </div>
+          <TreePine
+            className={bioViolationCount > 0 ? 'text-red-400' : 'text-zinc-700'}
+            size={20}
+            strokeWidth={1.5}
+          />
+        </div>
+        <div className="mt-5 pt-4 border-t border-zinc-800">
+          <div className="flex items-baseline justify-between">
+            <div className="flex items-center gap-2">
+              {criticalCount > 0 && (
+                <span className="text-[10px] text-red-400 tabular-nums font-medium">{criticalCount} critical</span>
+              )}
+              {protectedSpeciesCount > 0 && (
+                <span className="text-[10px] text-amber-400 tabular-nums font-medium">{protectedSpeciesCount} protected</span>
+              )}
+              {bioViolationCount === 0 && (
+                <span className="text-xs text-zinc-600">No violations</span>
+              )}
+            </div>
+            <span className={`text-sm font-semibold tabular-nums ${
+              bioViolationCount > 0 ? 'text-red-400' : 'text-emerald-400'
+            }`}>
+              {totalFlights > 0 ? ((bioViolationCount / totalFlights) * 100).toFixed(0) : '0'}%
             </span>
           </div>
         </div>

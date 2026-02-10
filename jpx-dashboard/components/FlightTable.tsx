@@ -1,14 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   ArrowUpDown,
   PlaneLanding,
   PlaneTakeoff,
   ShieldAlert,
+  TreePine,
   X,
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
+import { evaluateAllFlights } from '@/lib/biodiversityViolationEngine';
+import { getImpactSeverityColor } from '@/types/biodiversity';
 
 type SortField = 'operation_date' | 'ident' | 'aircraft_category' | 'direction';
 type SortDirection = 'asc' | 'desc';
@@ -27,11 +30,33 @@ const categoryDotColors: Record<string, string> = {
   unknown: 'bg-zinc-500',
 };
 
+const severityLabels: Record<string, string> = {
+  critical: 'CRIT',
+  high: 'HIGH',
+  moderate: 'MOD',
+  low: 'LOW',
+  minimal: 'MIN',
+};
+
 export function FlightTable() {
   const { flights, loading, selectedAirport, setSelectedAirport } = useFlightStore();
   const [sortField, setSortField] = useState<SortField>('operation_date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+
+  // Build a lookup map of flight ID -> violation for badge display
+  const violationMap = useMemo(() => {
+    const violations = evaluateAllFlights(flights);
+    const map = new Map<string, { severity: string; count: number; hasProtected: boolean }>();
+    for (const v of violations) {
+      map.set(v.flightId, {
+        severity: v.overallSeverity,
+        count: v.violatedThresholds.length,
+        hasProtected: v.speciesAffected.some((s) => s.conservationStatus),
+      });
+    }
+    return map;
+  }, [flights]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -159,76 +184,96 @@ export function FlightTable() {
             </tr>
           </thead>
           <tbody>
-            {sortedFlights.slice(0, 50).map(flight => (
-              <tr
-                key={flight.fa_flight_id}
-                className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors"
-              >
-                {/* Date/Time */}
-                <td className="px-5 py-3 whitespace-nowrap">
-                  <div className="text-[13px] text-zinc-200 font-medium tabular-nums">
-                    {formatDate(flight.operation_date)}
-                  </div>
-                  <div className="text-[11px] text-zinc-600 tabular-nums mt-0.5">
-                    {formatTime(flight.actual_on || flight.actual_off || flight.scheduled_on || flight.scheduled_off)}
-                  </div>
-                </td>
+            {sortedFlights.slice(0, 50).map(flight => {
+              const bioViolation = violationMap.get(flight.fa_flight_id);
 
-                {/* Ident */}
-                <td className="px-5 py-3 whitespace-nowrap">
-                  <div className="text-[13px] font-semibold text-zinc-200 tracking-wide">
-                    {flight.ident || '—'}
-                  </div>
-                  <div className="text-[11px] text-zinc-600 mt-0.5">
-                    {flight.registration || '—'}
-                  </div>
-                </td>
+              return (
+                <tr
+                  key={flight.fa_flight_id}
+                  className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors"
+                >
+                  {/* Date/Time */}
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <div className="text-[13px] text-zinc-200 font-medium tabular-nums">
+                      {formatDate(flight.operation_date)}
+                    </div>
+                    <div className="text-[11px] text-zinc-600 tabular-nums mt-0.5">
+                      {formatTime(flight.actual_on || flight.actual_off || flight.scheduled_on || flight.scheduled_off)}
+                    </div>
+                  </td>
 
-                {/* Type */}
-                <td className="px-5 py-3 whitespace-nowrap">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${categoryDotColors[flight.aircraft_category]}`} />
-                    <span className="text-[13px] text-zinc-300">
-                      {categoryLabels[flight.aircraft_category]}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-zinc-600 mt-0.5 pl-4">
-                    {flight.aircraft_type || '—'}
-                  </div>
-                </td>
+                  {/* Ident */}
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <div className="text-[13px] font-semibold text-zinc-200 tracking-wide">
+                      {flight.ident || '—'}
+                    </div>
+                    <div className="text-[11px] text-zinc-600 mt-0.5">
+                      {flight.registration || '—'}
+                    </div>
+                  </td>
 
-                {/* Direction */}
-                <td className="px-5 py-3 whitespace-nowrap">
-                  {flight.direction === 'arrival' ? (
-                    <PlaneLanding size={14} className="text-emerald-400" strokeWidth={1.8} />
-                  ) : (
-                    <PlaneTakeoff size={14} className="text-blue-400" strokeWidth={1.8} />
-                  )}
-                </td>
+                  {/* Type */}
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${categoryDotColors[flight.aircraft_category]}`} />
+                      <span className="text-[13px] text-zinc-300">
+                        {categoryLabels[flight.aircraft_category]}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-zinc-600 mt-0.5 pl-4">
+                      {flight.aircraft_type || '—'}
+                    </div>
+                  </td>
 
-                {/* Route */}
-                <td className="px-5 py-3 whitespace-nowrap">
-                  <div className="text-[13px] text-zinc-300 font-medium tracking-wide tabular-nums">
-                    {flight.direction === 'arrival'
-                      ? `${flight.origin_code || '?'} \u2192 KJPX`
-                      : `KJPX \u2192 ${flight.destination_code || '?'}`}
-                  </div>
-                  <div className="text-[11px] text-zinc-600 mt-0.5">
-                    {flight.direction === 'arrival' ? flight.origin_city : flight.destination_city}
-                  </div>
-                </td>
+                  {/* Direction */}
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    {flight.direction === 'arrival' ? (
+                      <PlaneLanding size={14} className="text-emerald-400" strokeWidth={1.8} />
+                    ) : (
+                      <PlaneTakeoff size={14} className="text-blue-400" strokeWidth={1.8} />
+                    )}
+                  </td>
 
-                {/* Status */}
-                <td className="px-5 py-3 whitespace-nowrap text-right">
-                  {flight.is_curfew_period && (
-                    <span className="inline-flex items-center gap-1 text-amber-400">
-                      <ShieldAlert size={12} strokeWidth={1.8} />
-                      <span className="text-[10px] font-medium uppercase tracking-wider">Curfew</span>
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  {/* Route */}
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <div className="text-[13px] text-zinc-300 font-medium tracking-wide tabular-nums">
+                      {flight.direction === 'arrival'
+                        ? `${flight.origin_code || '?'} \u2192 KJPX`
+                        : `KJPX \u2192 ${flight.destination_code || '?'}`}
+                    </div>
+                    <div className="text-[11px] text-zinc-600 mt-0.5">
+                      {flight.direction === 'arrival' ? flight.origin_city : flight.destination_city}
+                    </div>
+                  </td>
+
+                  {/* Status */}
+                  <td className="px-5 py-3 whitespace-nowrap text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {bioViolation && (
+                        <span
+                          className="inline-flex items-center gap-1"
+                          style={{ color: getImpactSeverityColor(bioViolation.severity as any) }}
+                        >
+                          <TreePine size={11} strokeWidth={1.8} />
+                          <span className="text-[9px] font-medium uppercase tracking-wider">
+                            {severityLabels[bioViolation.severity] || bioViolation.severity}
+                          </span>
+                          {bioViolation.hasProtected && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400 ml-0.5" title="Affects protected species" />
+                          )}
+                        </span>
+                      )}
+                      {flight.is_curfew_period && (
+                        <span className="inline-flex items-center gap-1 text-amber-400">
+                          <ShieldAlert size={12} strokeWidth={1.8} />
+                          <span className="text-[10px] font-medium uppercase tracking-wider">Curfew</span>
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
