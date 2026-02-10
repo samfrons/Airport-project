@@ -1,0 +1,1 @@
+export { BiodiversityPanel } from './BiodiversityPanel';
