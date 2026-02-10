@@ -18,7 +18,8 @@ export function StatsCards() {
   const curfewOps = flights.filter(f => f.is_curfew_period).length;
   const uniqueAircraft = new Set(flights.map(f => f.registration)).size;
 
-  const bioViolations = useMemo(() => evaluateAllFlights(flights), [flights]);
+  const thresholds = useFlightStore((s) => s.thresholds);
+  const bioViolations = useMemo(() => evaluateAllFlights(flights, thresholds), [flights, thresholds]);
   const bioViolationCount = bioViolations.length;
   const criticalCount = bioViolations.filter(v => v.overallSeverity === 'critical').length;
   const protectedSpeciesCount = bioViolations.filter(v =>

@@ -2,6 +2,11 @@
 
 import type { ImpactSeverity, TaxonomicGroup, HabitatType } from './biodiversity';
 
+// ─── Aircraft Category Type ─────────────────────────────────────────────────
+
+export type AircraftCategory = 'helicopter' | 'jet' | 'fixed_wing' | 'unknown';
+export type FlightDirection = 'arrival' | 'departure';
+
 // ─── Threshold Configuration ────────────────────────────────────────────────
 
 export interface BiodiversityThreshold {
@@ -24,6 +29,14 @@ export interface BiodiversityThreshold {
   protectedGroups?: TaxonomicGroup[];
   /** Severity when threshold is violated */
   violationSeverity: ImpactSeverity;
+  /** Aircraft categories this threshold applies to (empty/undefined = all) */
+  applicableAircraftCategories?: AircraftCategory[];
+  /** Flight directions this threshold applies to (empty/undefined = all) */
+  applicableDirections?: FlightDirection[];
+  /** Whether this threshold was created by an admin (vs. built-in) */
+  isCustom?: boolean;
+  /** When this threshold was created (ISO string) */
+  createdAt?: string;
 }
 
 // ─── Violation Types ────────────────────────────────────────────────────────
