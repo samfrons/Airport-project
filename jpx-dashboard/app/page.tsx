@@ -10,6 +10,16 @@ import { TimeFilter } from '@/components/TimeFilter';
 import { AircraftBreakdownPanel, FlightDetailsSidebar } from '@/components/noise';
 import { BiodiversityPanel, BiodiversityViolationsPanel, ThresholdManager } from '@/components/biodiversity';
 import { NoiseEnvironmentTimeline } from '@/components/NoiseEnvironmentTimeline';
+import { OperatorScorecard } from '@/components/OperatorScorecard';
+import { ComplaintForm } from '@/components/ComplaintForm';
+import {
+  ErrorBoundary,
+  StatsCardsSkeleton,
+  MapSkeleton,
+  ChartSkeleton,
+  PanelSkeleton,
+  TableSkeleton,
+} from '@/components/LoadingSkeleton';
 import { useFlightStore } from '@/store/flightStore';
 
 export default function DashboardPage() {
@@ -88,16 +98,20 @@ export default function DashboardPage() {
         <TimeFilter />
 
         {/* Stats */}
-        <StatsCards />
+        <ErrorBoundary sectionName="Statistics" fallback={<StatsCardsSkeleton />}>
+          <StatsCards />
+        </ErrorBoundary>
 
         {/* Interactive Map */}
         <section>
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Flight Routes</h2>
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 h-[480px] lg:h-[580px]">
-            <AirportMap />
-          </div>
+          <ErrorBoundary sectionName="Flight Map" fallback={<MapSkeleton />}>
+            <div className="bg-zinc-900 border border-zinc-800 h-[480px] lg:h-[580px]">
+              <AirportMap />
+            </div>
+          </ErrorBoundary>
         </section>
 
         {/* Noise & Environment Impact Timeline */}
@@ -105,7 +119,9 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Noise & Environment Impact Timeline</h2>
           </div>
-          <NoiseEnvironmentTimeline />
+          <ErrorBoundary sectionName="Timeline" fallback={<ChartSkeleton />}>
+            <NoiseEnvironmentTimeline />
+          </ErrorBoundary>
         </section>
 
         {/* Aircraft Noise Breakdown */}
@@ -113,7 +129,19 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Aircraft Type Breakdown</h2>
           </div>
-          <AircraftBreakdownPanel />
+          <ErrorBoundary sectionName="Aircraft Breakdown" fallback={<PanelSkeleton />}>
+            <AircraftBreakdownPanel />
+          </ErrorBoundary>
+        </section>
+
+        {/* Operator Scorecards */}
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Operator Scorecards</h2>
+          </div>
+          <ErrorBoundary sectionName="Operator Scorecards" fallback={<PanelSkeleton />}>
+            <OperatorScorecard />
+          </ErrorBoundary>
         </section>
 
         {/* Threshold Administration */}
@@ -121,7 +149,9 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Threshold Administration</h2>
           </div>
-          <ThresholdManager />
+          <ErrorBoundary sectionName="Threshold Manager" fallback={<PanelSkeleton />}>
+            <ThresholdManager />
+          </ErrorBoundary>
         </section>
 
         {/* Biodiversity Threshold Violations */}
@@ -129,7 +159,9 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Biodiversity Threshold Violations</h2>
           </div>
-          <BiodiversityViolationsPanel />
+          <ErrorBoundary sectionName="Violations" fallback={<PanelSkeleton />}>
+            <BiodiversityViolationsPanel />
+          </ErrorBoundary>
         </section>
 
         {/* Biodiversity & Wildlife Impact */}
@@ -137,7 +169,19 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Biodiversity & Wildlife Impact</h2>
           </div>
-          <BiodiversityPanel />
+          <ErrorBoundary sectionName="Biodiversity" fallback={<PanelSkeleton />}>
+            <BiodiversityPanel />
+          </ErrorBoundary>
+        </section>
+
+        {/* Community Noise Reports */}
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Community Noise Reports</h2>
+          </div>
+          <ErrorBoundary sectionName="Noise Reports" fallback={<PanelSkeleton />}>
+            <ComplaintForm />
+          </ErrorBoundary>
         </section>
 
         {/* Curfew Chart */}
@@ -145,7 +189,9 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Hourly Distribution</h2>
           </div>
-          <CurfewChart />
+          <ErrorBoundary sectionName="Curfew Chart" fallback={<ChartSkeleton />}>
+            <CurfewChart />
+          </ErrorBoundary>
         </section>
 
         {/* Flight Table */}
@@ -153,7 +199,9 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Flight Log</h2>
           </div>
-          <FlightTable />
+          <ErrorBoundary sectionName="Flight Table" fallback={<TableSkeleton />}>
+            <FlightTable />
+          </ErrorBoundary>
         </section>
       </main>
 
