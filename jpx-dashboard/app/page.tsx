@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { TowerControl, RefreshCw, Radio } from 'lucide-react';
+import { TowerControl, RefreshCw, Radio, LogOut, User } from 'lucide-react';
 import { AirportMap } from '@/components/AirportMap';
 import { StatsCards } from '@/components/StatsCards';
 import { FlightTable } from '@/components/FlightTable';
@@ -25,9 +25,11 @@ import {
   TableSkeleton,
 } from '@/components/LoadingSkeleton';
 import { MobileNav } from '@/components/MobileNav';
+import { useAuth } from '@/components/AuthProvider';
 import { useFlightStore } from '@/store/flightStore';
 
 export default function DashboardPage() {
+  const { user, signOut } = useAuth();
   const { loading, error, fetchFlights, fetchSummary, loadNoiseData, selectedFlight, setSelectedFlight } = useFlightStore();
 
   useEffect(() => {
@@ -81,6 +83,20 @@ export default function DashboardPage() {
                 <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                 <span className="hidden sm:inline">Refresh</span>
               </button>
+              {user && (
+                <div className="flex items-center gap-2">
+                  <span className="hidden lg:inline text-[10px] text-zinc-600 truncate max-w-[140px]" title={user.email}>
+                    {user.email}
+                  </span>
+                  <button
+                    onClick={signOut}
+                    className="flex items-center gap-1.5 px-2.5 py-2 bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 transition-all"
+                    title="Sign out"
+                  >
+                    <LogOut size={14} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
