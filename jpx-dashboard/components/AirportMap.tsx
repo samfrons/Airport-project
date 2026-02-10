@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Map, Route, BarChart3, Maximize2, Minimize2, Crosshair, X } from 'lucide-react';
+import { Map, Route, BarChart3, Maximize2, Minimize2, Crosshair, X, Satellite, MapPin } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 import { NoiseLayerControls } from './NoiseLayerControls';
 import { NoiseLegend } from './NoiseLegend';
@@ -129,6 +129,7 @@ export function AirportMap() {
   const kjpxMarker = useRef<mapboxgl.Marker | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSatellite, setIsSatellite] = useState(false);
   const selectedAirportRef = useRef<string | null>(null);
 
   const {
@@ -273,6 +274,28 @@ export function AirportMap() {
       return () => clearTimeout(id);
     }
   }, [isFullscreen]);
+
+  // Satellite / dark style toggle
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    const style = isSatellite
+      ? 'mapbox://styles/mapbox/satellite-streets-v12'
+      : 'mapbox://styles/mapbox/dark-v11';
+
+    map.current.setStyle(style);
+
+    // After style loads, mark as loaded so data layer effects re-fire
+    const onStyleLoad = () => {
+      setMapLoaded(false);
+      // Small delay to let style fully settle, then re-enable
+      setTimeout(() => setMapLoaded(true), 100);
+    };
+    map.current.once('style.load', onStyleLoad);
+
+    return () => {
+      map.current?.off('style.load', onStyleLoad);
+    };
+  }, [isSatellite]);
 
   // ─── Update layers ─────────────────────────────────────────────────
   useEffect(() => {
@@ -1423,6 +1446,19 @@ export function AirportMap() {
 
       {/* Map Controls */}
       <div className="absolute top-4 right-14 flex flex-col gap-px">
+        <button
+          onClick={() => setIsSatellite((v) => !v)}
+          className={`bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-2 transition-all ${
+            isSatellite ? 'text-blue-400 hover:text-blue-300' : 'text-zinc-500 hover:text-zinc-200'
+          } hover:bg-zinc-800`}
+          title={isSatellite ? 'Switch to dark map' : 'Switch to satellite'}
+        >
+          {isSatellite ? (
+            <MapPin size={14} strokeWidth={1.5} />
+          ) : (
+            <Satellite size={14} strokeWidth={1.5} />
+          )}
+        </button>
         <button
           onClick={handleFitBounds}
           className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-all"
