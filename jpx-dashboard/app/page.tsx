@@ -7,10 +7,11 @@ import { StatsCards } from '@/components/StatsCards';
 import { FlightTable } from '@/components/FlightTable';
 import { CurfewChart } from '@/components/CurfewChart';
 import { TimeFilter } from '@/components/TimeFilter';
+import { AircraftBreakdownPanel, FlightDetailsSidebar } from '@/components/noise';
 import { useFlightStore } from '@/store/flightStore';
 
 export default function DashboardPage() {
-  const { loading, error, fetchFlights, fetchSummary, loadNoiseData } = useFlightStore();
+  const { loading, error, fetchFlights, fetchSummary, loadNoiseData, selectedFlight, setSelectedFlight } = useFlightStore();
 
   useEffect(() => {
     fetchFlights();
@@ -97,6 +98,14 @@ export default function DashboardPage() {
           </div>
         </section>
 
+        {/* Aircraft Noise Breakdown */}
+        <section>
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Aircraft Type Breakdown</h2>
+          </div>
+          <AircraftBreakdownPanel />
+        </section>
+
         {/* Curfew Chart */}
         <section>
           <div className="flex items-baseline justify-between mb-3">
@@ -123,6 +132,12 @@ export default function DashboardPage() {
           </div>
         </div>
       </footer>
+
+      {/* Flight Details Sidebar */}
+      <FlightDetailsSidebar
+        flight={selectedFlight}
+        onClose={() => setSelectedFlight(null)}
+      />
     </div>
   );
 }

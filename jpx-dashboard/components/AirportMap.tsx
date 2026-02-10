@@ -9,7 +9,13 @@ import { NoiseLayerControls } from './NoiseLayerControls';
 import { NoiseLegend } from './NoiseLegend';
 import { getAircraftNoiseProfile, getNoiseProfileColor } from '@/data/noise/aircraftNoiseProfiles';
 import { getDbColor } from '@/types/noise';
-import type { MapViewMode } from '@/types/flight';
+import {
+  calculateDbAtAltitude,
+  getAltitudeAtPosition,
+  formatAltitude,
+  getDbLevelColor,
+} from './noise/NoiseCalculator';
+import type { MapViewMode, Flight } from '@/types/flight';
 
 // KJPX Airport coordinates
 const KJPX_COORDS: [number, number] = [-72.2518, 40.9594];
@@ -113,6 +119,8 @@ export function AirportMap() {
     noiseSettings,
     noiseSensors,
     noiseComplaints,
+    selectedFlight,
+    setSelectedFlight,
   } = useFlightStore();
 
   useEffect(() => {
@@ -455,35 +463,41 @@ export function AirportMap() {
         },
       });
 
-      // Generate dB reading points along the path (every ~10% of the path, near KJPX)
-      // Show higher dB near airport, decreasing with distance
-      const numPoints = 5;
+      // Generate dB reading points along the path with altitude-based calculations
+      // Use altitude patterns that simulate realistic climb/descent profiles
+      const numPoints = 6;
       for (let i = 0; i < numPoints; i++) {
-        // For arrivals: start from airport end (higher dB near KJPX)
-        // For departures: start from KJPX (higher dB near KJPX)
+        // For arrivals: show points from 60% to 100% (near KJPX, descending)
+        // For departures: show points from 0% to 40% (near KJPX, climbing)
         const t = f.direction === 'arrival'
-          ? 0.6 + (i * 0.1) // 60% to 100% of path (near KJPX)
-          : i * 0.1; // 0% to 40% of path (near KJPX)
+          ? 0.6 + (i * 0.08) // 60% to ~100% of path
+          : i * 0.08; // 0% to ~40% of path
 
         const pointIndex = Math.floor(t * (pathPoints.length - 1));
         const point = pathPoints[pointIndex];
 
-        // dB decreases with distance from airport (inverse square law approximation)
-        const distanceFactor = f.direction === 'arrival'
-          ? 1 - (i * 0.08) // Louder as approaching
-          : 1 - (i * 0.1); // Louder on takeoff, decreasing
+        // Get altitude and phase at this position using realistic patterns
+        const { altitude, phase } = getAltitudeAtPosition(t, f.direction);
 
-        const adjustedDb = Math.round(baseDb * distanceFactor);
+        // Calculate dB at this altitude using inverse square law
+        const adjustedDb = Math.round(calculateDbAtAltitude(baseDb, altitude));
 
         dbPointFeatures.push({
           type: 'Feature' as const,
           geometry: { type: 'Point' as const, coordinates: point },
           properties: {
             dB: adjustedDb,
+            altitude: altitude,
+            phase: phase,
             ident: f.ident,
+            registration: f.registration || f.ident,
+            operator: f.operator || 'Private',
+            operatorIata: f.operator_iata || '',
             aircraftType: f.aircraft_type,
+            aircraftCategory: f.aircraft_category,
             noiseCategory: profile.noiseCategory,
             direction: f.direction,
+            flightId: f.fa_flight_id,
           },
         });
       }
@@ -561,17 +575,24 @@ export function AirportMap() {
       },
     });
 
-    // dB labels along flight paths
+    // dB + altitude labels along flight paths
     map.current.addLayer({
       id: 'aircraft-noise-db-labels',
       type: 'symbol',
       source: 'aircraft-db-points-data',
       layout: {
-        'text-field': ['concat', ['to-string', ['get', 'dB']], ' dB'],
+        'text-field': [
+          'concat',
+          ['to-string', ['get', 'dB']],
+          ' dB\n',
+          ['to-string', ['/', ['get', 'altitude'], 1000]],
+          "k'",
+        ],
         'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
         'text-size': 9,
-        'text-offset': [0, 1.2],
+        'text-offset': [0, 1.5],
         'text-allow-overlap': false,
+        'text-line-height': 1.1,
       },
       paint: {
         'text-color': '#fafafa',
@@ -581,7 +602,7 @@ export function AirportMap() {
       },
     });
 
-    // Hover handler for dB points
+    // Hover handler for dB points - enhanced with registration and altitude
     map.current.on('mouseenter', 'aircraft-noise-points', (e) => {
       if (!map.current || !e.features?.[0]) return;
       map.current.getCanvas().style.cursor = 'pointer';
@@ -591,14 +612,25 @@ export function AirportMap() {
         number,
       ];
 
+      const altitude = props?.altitude ?? 0;
+      const altitudeDisplay = altitude >= 1000
+        ? `${(altitude / 1000).toFixed(1)}k'`
+        : `${altitude}'`;
+
       popup.current
         ?.setLngLat(coords)
         .setHTML(
           `<div class="popup-content">
-            <div class="popup-title">${props?.ident ?? ''}</div>
-            <div class="popup-subtitle">${props?.aircraftType ?? ''} (${props?.direction})</div>
-            <div class="popup-count" style="color: ${getDbColor(props?.dB ?? 0)}">${props?.dB ?? 0} dB</div>
-            <div class="popup-detail">Noise: ${(props?.noiseCategory ?? '').replace('_', ' ')}</div>
+            <div class="popup-registration">${props?.registration ?? props?.ident ?? ''}</div>
+            <div class="popup-operator">${props?.operator ?? 'Private'}${props?.operatorIata ? ` (${props.operatorIata})` : ''}</div>
+            <div class="popup-divider"></div>
+            <div class="popup-aircraft">${props?.aircraftType ?? ''} · ${(props?.aircraftCategory ?? '').replace('_', ' ')}</div>
+            <div class="popup-metrics">
+              <span class="popup-db" style="color: ${getDbLevelColor(props?.dB ?? 0)}">${props?.dB ?? 0} dB</span>
+              <span class="popup-altitude">@ ${altitudeDisplay}</span>
+            </div>
+            <div class="popup-phase">${props?.phase?.toUpperCase() ?? ''} · ${props?.direction?.toUpperCase() ?? ''}</div>
+            <div class="popup-hint">Click for details</div>
           </div>`
         )
         .addTo(map.current);
@@ -608,6 +640,19 @@ export function AirportMap() {
       if (!map.current) return;
       map.current.getCanvas().style.cursor = '';
       popup.current?.remove();
+    });
+
+    // Click handler to open flight details sidebar
+    map.current.on('click', 'aircraft-noise-points', (e) => {
+      if (!e.features?.[0]) return;
+      const props = e.features[0].properties;
+      const flightId = props?.flightId;
+
+      // Find the flight in our data
+      const clickedFlight = flights.find((f) => f.fa_flight_id === flightId);
+      if (clickedFlight) {
+        setSelectedFlight(clickedFlight);
+      }
     });
   }
 
