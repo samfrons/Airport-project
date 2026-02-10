@@ -10,11 +10,12 @@ import { TimeFilter } from '@/components/TimeFilter';
 import { useFlightStore } from '@/store/flightStore';
 
 export default function DashboardPage() {
-  const { loading, error, fetchFlights, fetchSummary } = useFlightStore();
+  const { loading, error, fetchFlights, fetchSummary, loadNoiseData } = useFlightStore();
 
   useEffect(() => {
     fetchFlights();
     fetchSummary();
+    loadNoiseData();
   }, []);
 
   const handleRefresh = () => {

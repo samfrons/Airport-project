@@ -1,5 +1,21 @@
 import { create } from 'zustand';
 import type { Flight, DailySummary, Airport, MapViewMode, DateRange } from '@/types/flight';
+import type { NoiseLayerSettings, NoiseSensor, NoiseComplaint } from '@/types/noise';
+
+// Default noise layer settings
+const defaultNoiseSettings: NoiseLayerSettings = {
+  visibility: {
+    sensors: false,
+    aircraftNoise: false,
+    complaints: false,
+  },
+  opacity: {
+    sensors: 0.8,
+    aircraftNoise: 0.6,
+    complaints: 0.7,
+  },
+  complaintsMode: 'markers',
+};
 
 interface FlightState {
   flights: Flight[];
@@ -11,6 +27,11 @@ interface FlightState {
   dateRange: DateRange;
   selectedCategory: string | null;
   selectedAirport: string | null;
+
+  // Noise layer state
+  noiseSettings: NoiseLayerSettings;
+  noiseSensors: NoiseSensor[];
+  noiseComplaints: NoiseComplaint[];
 
   // Actions
   setFlights: (flights: Flight[]) => void;
@@ -24,6 +45,14 @@ interface FlightState {
   setSelectedAirport: (code: string | null) => void;
   fetchFlights: () => Promise<void>;
   fetchSummary: () => Promise<void>;
+
+  // Noise actions
+  setNoiseSettings: (settings: NoiseLayerSettings) => void;
+  toggleNoiseLayer: (layer: keyof NoiseLayerSettings['visibility']) => void;
+  setNoiseLayerOpacity: (layer: keyof NoiseLayerSettings['opacity'], value: number) => void;
+  setNoiseSensors: (sensors: NoiseSensor[]) => void;
+  setNoiseComplaints: (complaints: NoiseComplaint[]) => void;
+  loadNoiseData: () => Promise<void>;
 }
 
 const API_BASE = '/api';
@@ -48,6 +77,11 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   },
   selectedCategory: null,
   selectedAirport: null,
+
+  // Noise layer state
+  noiseSettings: defaultNoiseSettings,
+  noiseSensors: [],
+  noiseComplaints: [],
 
   setFlights: (flights) => set({ flights }),
   setSummary: (summary) => set({ summary }),
@@ -103,6 +137,50 @@ export const useFlightStore = create<FlightState>((set, get) => ({
       set({ error: err instanceof Error ? err.message : 'Unknown error' });
     } finally {
       set({ loading: false });
+    }
+  },
+
+  // Noise actions
+  setNoiseSettings: (settings) => set({ noiseSettings: settings }),
+
+  toggleNoiseLayer: (layer) =>
+    set((state) => ({
+      noiseSettings: {
+        ...state.noiseSettings,
+        visibility: {
+          ...state.noiseSettings.visibility,
+          [layer]: !state.noiseSettings.visibility[layer],
+        },
+      },
+    })),
+
+  setNoiseLayerOpacity: (layer, value) =>
+    set((state) => ({
+      noiseSettings: {
+        ...state.noiseSettings,
+        opacity: {
+          ...state.noiseSettings.opacity,
+          [layer]: value,
+        },
+      },
+    })),
+
+  setNoiseSensors: (sensors) => set({ noiseSensors: sensors }),
+  setNoiseComplaints: (complaints) => set({ noiseComplaints: complaints }),
+
+  loadNoiseData: async () => {
+    // Dynamically import mock data to avoid SSR issues
+    const { mockNoiseSensors } = await import('@/data/noise/mockSensors');
+    const { mockComplaints } = await import('@/data/noise/mockComplaints');
+    const { mockFlightsForNoise, mockAirportsForNoise } = await import('@/data/noise/mockFlights');
+
+    // Load noise-specific data
+    set({ noiseSensors: mockNoiseSensors, noiseComplaints: mockComplaints });
+
+    // If no flights are loaded yet, use mock flights for demonstration
+    const { flights } = get();
+    if (flights.length === 0) {
+      set({ flights: mockFlightsForNoise, airports: mockAirportsForNoise });
     }
   },
 }));
