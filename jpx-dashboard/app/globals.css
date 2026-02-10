@@ -273,6 +273,32 @@ body {
   background: var(--border-strong);
 }
 
+/* ─── Mobile Responsive ──────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .stat-number {
+    font-size: 24px;
+  }
+
+  /* Ensure tables are scrollable on mobile */
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Charts need min-height on mobile */
+  canvas {
+    min-height: 200px;
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+  button, a, input, select {
+    min-height: 36px;
+  }
+}
+
 /* ─── Form Inputs ─────────────────────────────────────────────────── */
 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0.5);
