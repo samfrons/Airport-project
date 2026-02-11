@@ -45,6 +45,17 @@ from pydantic import BaseModel
 
 from src.api.aeroapi import AeroAPIClient, AeroAPIError
 
+# Mock data imports
+from data.mock.flightaware import (
+    generate_mock_track,
+    generate_mock_owner,
+    generate_mock_live_flights,
+    generate_mock_nearby_airports,
+    generate_mock_airport_info,
+    generate_mock_flight_counts,
+    generate_mock_search,
+)
+
 # ── Logging Configuration ─────────────────────────────────────────────────────
 
 logging.basicConfig(
@@ -82,18 +93,25 @@ app.add_middleware(
 # Single client instance with caching enabled
 # Cache TTL: owner lookups (24h), tracks (1h), live flights (5min)
 _client: Optional[AeroAPIClient] = None
+_mock_mode: bool = False
 
 
-def get_client() -> AeroAPIClient:
-    """Get or create the shared AeroAPI client."""
-    global _client
+def is_mock_mode() -> bool:
+    """Check if the server is running in mock mode (no API key)."""
+    return not bool(os.environ.get("AEROAPI_KEY"))
+
+
+def get_client() -> Optional[AeroAPIClient]:
+    """Get or create the shared AeroAPI client. Returns None if in mock mode."""
+    global _client, _mock_mode
+    api_key = os.environ.get("AEROAPI_KEY")
+
+    if not api_key:
+        _mock_mode = True
+        log.info("Running in MOCK MODE - no AEROAPI_KEY configured")
+        return None
+
     if _client is None:
-        api_key = os.environ.get("AEROAPI_KEY")
-        if not api_key:
-            raise HTTPException(
-                status_code=500,
-                detail="AEROAPI_KEY environment variable not set"
-            )
         _client = AeroAPIClient(
             api_key=api_key,
             enable_cache=True,
@@ -101,6 +119,7 @@ def get_client() -> AeroAPIClient:
             cache_ttl=3600,  # 1 hour default
             max_retries=3,
         )
+        _mock_mode = False
     return _client
 
 
@@ -110,6 +129,7 @@ class HealthResponse(BaseModel):
     status: str
     timestamp: str
     api_configured: bool
+    mock_mode: bool
 
 
 class APIStatsResponse(BaseModel):
@@ -166,6 +186,7 @@ async def health_check():
         status="healthy",
         timestamp=datetime.now(timezone.utc).isoformat(),
         api_configured=bool(api_key),
+        mock_mode=is_mock_mode(),
     )
 
 
@@ -173,6 +194,14 @@ async def health_check():
 async def get_api_stats():
     """Get API usage statistics for this server session."""
     client = get_client()
+    if client is None:
+        # Mock mode stats
+        return APIStatsResponse(
+            request_count=0,
+            cost_estimate_usd=0.0,
+            cache_enabled=False,
+            cache_size=0,
+        )
     summary = client.get_session_summary()
     return APIStatsResponse(
         request_count=summary["request_count"],
@@ -194,6 +223,13 @@ async def get_flight_track(fa_flight_id: str):
         Track positions with lat/lon/altitude/speed/heading
     """
     client = get_client()
+    if client is None:
+        # Return mock data
+        mock_data = generate_mock_track(fa_flight_id)
+        return {
+            **mock_data,
+            "cost_estimate": 0.0,
+        }
     try:
         data = client.flight_track(fa_flight_id)
         positions = data.get("positions", [])
@@ -221,6 +257,13 @@ async def get_aircraft_owner(registration: str):
         Owner name, location, and contact info
     """
     client = get_client()
+    if client is None:
+        # Return mock data
+        mock_data = generate_mock_owner(registration)
+        return {
+            **mock_data,
+            "cost_estimate": 0.0,
+        }
     try:
         data = client.aircraft_owner(registration.upper())
         return {
@@ -253,6 +296,13 @@ async def search_flights(
         -type H60                 (flights by aircraft type)
     """
     client = get_client()
+    if client is None:
+        # Return mock data
+        mock_data = generate_mock_search(q)
+        return {
+            **mock_data,
+            "cost_estimate": 0.0,
+        }
     try:
         data = client.search_flights(q, max_pages=max_pages)
         flights = data.get("flights", [])
@@ -277,6 +327,13 @@ async def get_live_flights(
     Returns arrivals, departures, and scheduled flights.
     """
     client = get_client()
+    if client is None:
+        # Return mock data
+        mock_data = generate_mock_live_flights(airport)
+        return {
+            **mock_data,
+            "cost_estimate": 0.0,
+        }
     try:
         # Fetch all flight types
         data = client.airport_flights(airport, flight_type="all", max_pages=max_pages)
@@ -302,6 +359,16 @@ async def get_nearby_airports(
     Get airports within a radius of the specified airport.
     """
     client = get_client()
+    if client is None:
+        # Return mock data
+        mock_data = generate_mock_nearby_airports(airport, radius)
+        return {
+            "airports": mock_data.get("nearby", []),
+            "center": airport,
+            "radius_miles": radius,
+            "mock": True,
+            "cost_estimate": 0.0,
+        }
     try:
         data = client.nearby_airports(airport, radius=radius)
         return {
@@ -323,6 +390,13 @@ async def get_airport_info(code: str):
         code: Airport ICAO code (e.g., "KJPX", "KJFK")
     """
     client = get_client()
+    if client is None:
+        # Return mock data
+        mock_data = generate_mock_airport_info(code)
+        return {
+            **mock_data,
+            "cost_estimate": 0.0,
+        }
     try:
         data = client.airport_info(code.upper())
         return {
@@ -343,6 +417,15 @@ async def get_flight_counts(
     Get current flight count snapshot for an airport.
     """
     client = get_client()
+    if client is None:
+        # Return mock data
+        mock_data = generate_mock_flight_counts(airport)
+        return {
+            **mock_data,
+            "airport": airport,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "cost_estimate": 0.0,
+        }
     try:
         data = client.airport_flight_counts(airport)
         return {
