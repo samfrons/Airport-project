@@ -44,6 +44,14 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from src.api.aeroapi import AeroAPIClient, AeroAPIError
+from src.api.weather import (
+    fetch_metar,
+    fetch_taf,
+    fetch_air_quality,
+    parse_metar,
+    parse_air_quality,
+    get_current_weather,
+)
 
 # Mock data imports
 from data.mock.flightaware import (
@@ -436,6 +444,116 @@ async def get_flight_counts(
         }
     except AeroAPIError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+
+# ── Weather Endpoints ────────────────────────────────────────────────────────
+
+@app.get("/weather/metar")
+async def get_metar(
+    airport: str = Query("KJPX", description="Airport ICAO code"),
+):
+    """
+    Get current METAR observation from NOAA Aviation Weather API.
+
+    Returns raw and parsed METAR data including:
+    - Temperature, dewpoint, humidity
+    - Wind speed, direction, gusts
+    - Visibility, pressure
+    - Cloud coverage and weather phenomena
+    - Flight category (VFR/MVFR/IFR/LIFR)
+    """
+    result = fetch_metar(airport)
+
+    if result.get("data"):
+        parsed = parse_metar(result["data"])
+        return {
+            "airport": airport,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "parsed": parsed,
+            "raw": result["data"],
+            "cached": result.get("cached", False),
+            "stale": result.get("stale", False),
+            "source": result.get("source", "NOAA Aviation Weather"),
+        }
+    else:
+        raise HTTPException(
+            status_code=503,
+            detail=result.get("error", "Failed to fetch METAR data"),
+        )
+
+
+@app.get("/weather/taf")
+async def get_taf(
+    airport: str = Query("KJPX", description="Airport ICAO code"),
+):
+    """
+    Get Terminal Aerodrome Forecast (TAF) from NOAA Aviation Weather API.
+
+    Returns the aviation weather forecast for the next 24-30 hours.
+    """
+    result = fetch_taf(airport)
+
+    if result.get("data"):
+        return {
+            "airport": airport,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "data": result["data"],
+            "cached": result.get("cached", False),
+            "stale": result.get("stale", False),
+            "source": result.get("source", "NOAA Aviation Weather"),
+        }
+    else:
+        raise HTTPException(
+            status_code=503,
+            detail=result.get("error", "Failed to fetch TAF data"),
+        )
+
+
+@app.get("/air-quality")
+async def get_air_quality(
+    lat: float = Query(40.9596, description="Latitude"),
+    lon: float = Query(-72.2517, description="Longitude"),
+    distance: int = Query(25, ge=1, le=100, description="Search radius in miles"),
+):
+    """
+    Get current air quality observations from EPA AirNow API.
+
+    Returns AQI readings for multiple pollutants (O3, PM2.5, etc.)
+    with EPA category classifications (Good, Moderate, Unhealthy, etc.)
+    """
+    result = fetch_air_quality(lat, lon, distance)
+
+    if result.get("data"):
+        parsed = parse_air_quality(result["data"])
+        return {
+            "location": {"lat": lat, "lon": lon},
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "parsed": parsed,
+            "raw": result["data"],
+            "cached": result.get("cached", False),
+            "stale": result.get("stale", False),
+            "source": result.get("source", "EPA AirNow"),
+        }
+    else:
+        # Return helpful error for missing API key
+        error_detail = result.get("error", "Failed to fetch air quality data")
+        help_msg = result.get("help", "")
+        if help_msg:
+            error_detail = f"{error_detail}. {help_msg}"
+
+        raise HTTPException(status_code=503, detail=error_detail)
+
+
+@app.get("/weather")
+async def get_weather(
+    airport: str = Query("KJPX", description="Airport ICAO code"),
+):
+    """
+    Get combined weather data: METAR, TAF, and air quality.
+
+    This is the primary endpoint for the dashboard weather display.
+    """
+    return get_current_weather(airport)
 
 
 # ── Error Handlers ────────────────────────────────────────────────────────────

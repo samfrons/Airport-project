@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,10 +23,47 @@ import {
   ChevronDown,
   ChevronRight,
   Lightbulb,
+  Radio,
+  Loader2,
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
+import { AirQualityInlineBadge } from './AirQualityBadge';
 import type { Flight } from '@/types/flight';
+
+// ─── Real Weather Data Types ─────────────────────────────────────────────────
+
+interface RealMetarData {
+  icao: string;
+  temperature_f: number | null;
+  dewpoint_f: number | null;
+  humidity: number | null;
+  wind_direction: number | null;
+  wind_speed_mph: number | null;
+  wind_gust_mph: number | null;
+  visibility_sm: number | null;
+  altimeter_inhg: number | null;
+  flight_category: string;
+  weather: string;
+  raw_text: string;
+}
+
+interface RealWeatherResponse {
+  timestamp: string;
+  airport: string;
+  metar?: {
+    parsed?: RealMetarData;
+    cached?: boolean;
+    stale?: boolean;
+    error?: string;
+  };
+  aqi?: {
+    overall_aqi?: number;
+    category?: string;
+    main_pollutant?: string;
+    error?: string;
+  };
+}
 
 ChartJS.register(
   CategoryScale,
@@ -525,6 +562,52 @@ export function WeatherCorrelation() {
   const dateRange = useFlightStore((s) => s.dateRange);
 
   const [isExpanded, setIsExpanded] = useState(true);
+
+  // ─── Real Weather Data State ───────────────────────────────────────
+  const [realWeather, setRealWeather] = useState<RealWeatherResponse | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
+  const [isRealData, setIsRealData] = useState(false);
+
+  // Fetch real weather data on mount and every 15 minutes
+  useEffect(() => {
+    let mounted = true;
+
+    async function fetchRealWeather() {
+      try {
+        const response = await fetch('/api/weather?airport=KJPX');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch weather data');
+        }
+
+        const data: RealWeatherResponse = await response.json();
+
+        if (mounted) {
+          setRealWeather(data);
+          setIsRealData(!data.metar?.error);
+          setWeatherError(data.metar?.error || null);
+          setWeatherLoading(false);
+        }
+      } catch (err) {
+        if (mounted) {
+          setWeatherError(err instanceof Error ? err.message : 'Unknown error');
+          setIsRealData(false);
+          setWeatherLoading(false);
+        }
+      }
+    }
+
+    fetchRealWeather();
+
+    // Refresh every 15 minutes
+    const interval = setInterval(fetchRealWeather, 900000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // ─── Build Correlation Data ───────────────────────────────────────
 
@@ -1029,64 +1112,101 @@ export function WeatherCorrelation() {
 
   const summaryStats = useMemo(() => {
     const daysWithOps = correlationData.filter((d) => d.flightCount > 0);
-    const avgTemp =
-      correlationData.length > 0
-        ? Math.round(
-            correlationData.reduce(
-              (s, d) => s + d.weather.avgTemperature,
-              0,
-            ) / correlationData.length,
-          )
-        : 0;
-    const avgWind =
-      correlationData.length > 0
-        ? Math.round(
-            (correlationData.reduce(
-              (s, d) => s + d.weather.avgWindSpeed,
-              0,
-            ) /
-              correlationData.length) *
-              10,
-          ) / 10
-        : 0;
-    const avgVis =
-      correlationData.length > 0
-        ? Math.round(
-            (correlationData.reduce(
-              (s, d) => s + d.weather.avgVisibility,
-              0,
-            ) /
-              correlationData.length) *
-              10,
-          ) / 10
-        : 0;
-    const avgHumidity =
-      correlationData.length > 0
-        ? Math.round(
-            correlationData.reduce((s, d) => s + d.weather.avgHumidity, 0) /
-              correlationData.length,
-          )
-        : 0;
 
-    // Count conditions
-    const conditionCounts = new Map<WeatherCondition, number>();
-    for (const day of correlationData) {
-      conditionCounts.set(
-        day.weather.dominantCondition,
-        (conditionCounts.get(day.weather.dominantCondition) ?? 0) + 1,
-      );
-    }
+    // Use real weather data if available, otherwise fall back to simulated
+    let avgTemp: number;
+    let avgWind: number;
+    let avgVis: number;
+    let avgHumidity: number;
     let mostCommon: WeatherCondition = 'clear';
-    let maxCount = 0;
-    for (const [cond, count] of conditionCounts) {
-      if (count > maxCount) {
-        mostCommon = cond;
-        maxCount = count;
+    let flightCategory = '';
+    let rawMetar = '';
+
+    if (realWeather?.metar?.parsed && !realWeather.metar.error) {
+      // Use real METAR data
+      const metar = realWeather.metar.parsed;
+      avgTemp = metar.temperature_f ?? 0;
+      avgWind = metar.wind_speed_mph ?? 0;
+      avgVis = metar.visibility_sm ?? 10;
+      avgHumidity = metar.humidity ?? 50;
+      flightCategory = metar.flight_category || '';
+      rawMetar = metar.raw_text || '';
+
+      // Map flight category to condition
+      if (metar.weather?.toLowerCase().includes('rain') || metar.weather?.toLowerCase().includes('ra')) {
+        mostCommon = 'rain';
+      } else if (metar.weather?.toLowerCase().includes('fg') || metar.weather?.toLowerCase().includes('fog')) {
+        mostCommon = 'fog';
+      } else if ((metar.wind_speed_mph ?? 0) > 20 || (metar.wind_gust_mph ?? 0) > 25) {
+        mostCommon = 'wind_advisory';
+      } else if (flightCategory === 'VFR') {
+        mostCommon = avgVis > 8 ? 'clear' : 'partly_cloudy';
+      } else if (flightCategory === 'MVFR') {
+        mostCommon = 'partly_cloudy';
+      } else if (flightCategory === 'IFR' || flightCategory === 'LIFR') {
+        mostCommon = 'overcast';
+      }
+    } else {
+      // Fall back to simulated data averages
+      avgTemp =
+        correlationData.length > 0
+          ? Math.round(
+              correlationData.reduce((s, d) => s + d.weather.avgTemperature, 0) /
+                correlationData.length,
+            )
+          : 0;
+      avgWind =
+        correlationData.length > 0
+          ? Math.round(
+              (correlationData.reduce((s, d) => s + d.weather.avgWindSpeed, 0) /
+                correlationData.length) *
+                10,
+            ) / 10
+          : 0;
+      avgVis =
+        correlationData.length > 0
+          ? Math.round(
+              (correlationData.reduce((s, d) => s + d.weather.avgVisibility, 0) /
+                correlationData.length) *
+                10,
+            ) / 10
+          : 0;
+      avgHumidity =
+        correlationData.length > 0
+          ? Math.round(
+              correlationData.reduce((s, d) => s + d.weather.avgHumidity, 0) /
+                correlationData.length,
+            )
+          : 0;
+
+      // Count conditions from simulated data
+      const conditionCounts = new Map<WeatherCondition, number>();
+      for (const day of correlationData) {
+        conditionCounts.set(
+          day.weather.dominantCondition,
+          (conditionCounts.get(day.weather.dominantCondition) ?? 0) + 1,
+        );
+      }
+      let maxCount = 0;
+      for (const [cond, count] of conditionCounts) {
+        if (count > maxCount) {
+          mostCommon = cond;
+          maxCount = count;
+        }
       }
     }
 
-    return { avgTemp, avgWind, avgVis, avgHumidity, mostCommon, totalDays: correlationData.length };
-  }, [correlationData]);
+    return {
+      avgTemp: Math.round(avgTemp),
+      avgWind: Math.round(avgWind * 10) / 10,
+      avgVis: Math.round(avgVis * 10) / 10,
+      avgHumidity: Math.round(avgHumidity),
+      mostCommon,
+      totalDays: correlationData.length,
+      flightCategory,
+      rawMetar,
+    };
+  }, [correlationData, realWeather]);
 
   // ─── Render ───────────────────────────────────────────────────────
 
@@ -1102,17 +1222,54 @@ export function WeatherCorrelation() {
             <CloudSun size={16} className="text-cyan-400" strokeWidth={1.5} />
           </div>
           <div className="text-left">
-            <h3 className="text-sm font-semibold text-zinc-100">
+            <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
               Weather Correlation Analysis
+              {isRealData && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-900/30 text-emerald-400 text-[9px] font-medium">
+                  <Radio size={8} className="animate-pulse" />
+                  LIVE
+                </span>
+              )}
+              {weatherLoading && (
+                <Loader2 size={12} className="animate-spin text-zinc-500" />
+              )}
             </h3>
             <p className="text-[10px] text-zinc-500 mt-0.5">
-              Simulated weather data for KJPX (East Hampton) correlated with
-              flight operations and noise
+              {isRealData
+                ? 'Real METAR/TAF observations from NOAA Aviation Weather'
+                : 'Simulated weather data for KJPX (East Hampton)'}{' '}
+              correlated with flight operations and noise
             </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-2 text-[10px] text-zinc-500">
+            {/* Flight category badge (VFR/IFR/etc) */}
+            {summaryStats.flightCategory && (
+              <span
+                className="px-1.5 py-0.5 font-semibold"
+                style={{
+                  backgroundColor:
+                    summaryStats.flightCategory === 'VFR'
+                      ? 'rgba(34, 197, 94, 0.2)'
+                      : summaryStats.flightCategory === 'MVFR'
+                        ? 'rgba(59, 130, 246, 0.2)'
+                        : summaryStats.flightCategory === 'IFR'
+                          ? 'rgba(239, 68, 68, 0.2)'
+                          : 'rgba(168, 85, 247, 0.2)',
+                  color:
+                    summaryStats.flightCategory === 'VFR'
+                      ? '#22c55e'
+                      : summaryStats.flightCategory === 'MVFR'
+                        ? '#3b82f6'
+                        : summaryStats.flightCategory === 'IFR'
+                          ? '#ef4444'
+                          : '#a855f7',
+                }}
+              >
+                {summaryStats.flightCategory}
+              </span>
+            )}
             <span
               className="px-1.5 py-0.5"
               style={{
@@ -1122,9 +1279,11 @@ export function WeatherCorrelation() {
             >
               {conditionConfig[summaryStats.mostCommon].label}
             </span>
-            <span className="tabular-nums">{summaryStats.avgTemp}°F avg</span>
+            <span className="tabular-nums">{summaryStats.avgTemp}°F</span>
             <span className="text-zinc-700">|</span>
-            <span className="tabular-nums">{summaryStats.avgWind} mph avg wind</span>
+            <span className="tabular-nums">{summaryStats.avgWind} mph wind</span>
+            <span className="text-zinc-700">|</span>
+            <AirQualityInlineBadge />
           </div>
           {isExpanded ? (
             <ChevronDown size={14} className="text-zinc-500" />
@@ -1320,11 +1479,33 @@ export function WeatherCorrelation() {
 
           {/* ─── Footer ────────────────────────────────────────────── */}
           <div className="px-5 py-3 border-t border-zinc-800/60 flex items-center justify-between">
-            <div className="text-[10px] text-zinc-600">
-              Weather data is simulated for demonstration purposes
+            <div className="text-[10px] text-zinc-600 flex items-center gap-2">
+              {isRealData ? (
+                <>
+                  <Radio size={10} className="text-emerald-500" />
+                  <span>Live METAR from NOAA Aviation Weather • AQI from EPA AirNow</span>
+                </>
+              ) : (
+                <>
+                  <span>Weather data is simulated (API unavailable)</span>
+                  {weatherError && (
+                    <span className="text-amber-500" title={weatherError}>
+                      • Error: {weatherError.slice(0, 40)}...
+                    </span>
+                  )}
+                </>
+              )}
             </div>
-            <div className="text-[9px] text-zinc-600">
-              Noise estimates from FAA certification profiles
+            <div className="text-[9px] text-zinc-600 flex items-center gap-2">
+              <span>Noise estimates from FAA certification profiles</span>
+              {summaryStats.rawMetar && (
+                <span
+                  className="text-zinc-500 cursor-help border-b border-dotted border-zinc-600"
+                  title={summaryStats.rawMetar}
+                >
+                  Raw METAR
+                </span>
+              )}
             </div>
           </div>
         </>
