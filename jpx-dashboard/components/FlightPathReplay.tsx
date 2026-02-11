@@ -15,8 +15,11 @@ import {
   AlertTriangle,
   Clock,
   Volume2,
+  MapPin,
+  Loader2,
+  User,
 } from 'lucide-react';
-import { useFlightStore } from '@/store/flightStore';
+import { useFlightStore, type FlightTrack, type AircraftOwner } from '@/store/flightStore';
 import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
 import type { Flight } from '@/types/flight';
 
@@ -847,9 +850,32 @@ export function FlightPathReplay() {
 // ─── Flight Card Sub-component ──────────────────────────────────────────────
 
 function FlightCard({ flight }: { flight: FlightWithNoise }) {
+  const { fetchFlightTrack, fetchAircraftOwner, flightTracks, aircraftOwners, trackLoading, ownerLoading } = useFlightStore();
+  const [showDetails, setShowDetails] = useState(false);
+  const [localTrackLoading, setLocalTrackLoading] = useState(false);
+  const [localOwnerLoading, setLocalOwnerLoading] = useState(false);
+
   const isArrival = flight.direction === 'arrival';
   const categoryColor =
     CATEGORY_COLORS[flight.aircraft_category] || CATEGORY_COLORS.unknown;
+
+  // Check if we have cached data
+  const cachedTrack = flight.fa_flight_id ? flightTracks.get(flight.fa_flight_id) : undefined;
+  const cachedOwner = flight.registration ? aircraftOwners.get(flight.registration.toUpperCase()) : undefined;
+
+  const handleFetchTrack = async () => {
+    if (!flight.fa_flight_id || cachedTrack) return;
+    setLocalTrackLoading(true);
+    await fetchFlightTrack(flight.fa_flight_id);
+    setLocalTrackLoading(false);
+  };
+
+  const handleFetchOwner = async () => {
+    if (!flight.registration || cachedOwner) return;
+    setLocalOwnerLoading(true);
+    await fetchAircraftOwner(flight.registration);
+    setLocalOwnerLoading(false);
+  };
 
   return (
     <div className="bg-zinc-950 border border-zinc-800 p-3 transition-all hover:border-zinc-700">
@@ -857,7 +883,7 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div
-            className="w-1.5 h-1.5 rounded-full"
+            className="w-1.5 h-1.5"
             style={{ backgroundColor: categoryColor }}
           />
           <span className="text-xs font-semibold text-zinc-100 tracking-wide">
@@ -898,23 +924,119 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
         <span className="font-medium">{flight.destination_code || '???'}</span>
       </div>
 
-      {/* Noise estimate */}
+      {/* Noise estimate + action buttons */}
       <div className="flex items-center justify-between pt-2 border-t border-zinc-800/50">
         <span className="text-[9px] text-zinc-600 uppercase tracking-wide">
           Est. Noise
         </span>
-        <span
-          className={`text-[11px] font-semibold tabular-nums ${
-            flight.noiseDb >= 85
-              ? 'text-red-400'
-              : flight.noiseDb >= 75
-                ? 'text-amber-400'
-                : 'text-zinc-300'
-          }`}
-        >
-          {flight.noiseDb} dB
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className={`text-[11px] font-semibold tabular-nums ${
+              flight.noiseDb >= 85
+                ? 'text-red-400'
+                : flight.noiseDb >= 75
+                  ? 'text-amber-400'
+                  : 'text-zinc-300'
+            }`}
+          >
+            {flight.noiseDb} dB
+          </span>
+        </div>
       </div>
+
+      {/* Real-time data buttons */}
+      <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-zinc-800/50">
+        {/* Track button */}
+        <button
+          onClick={handleFetchTrack}
+          disabled={!flight.fa_flight_id || localTrackLoading}
+          className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium transition-colors ${
+            cachedTrack
+              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+              : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 border border-zinc-700'
+          } ${!flight.fa_flight_id ? 'opacity-50 cursor-not-allowed' : ''}`}
+          title={cachedTrack ? `${cachedTrack.position_count} positions` : 'Fetch flight track'}
+        >
+          {localTrackLoading ? (
+            <Loader2 size={10} className="animate-spin" />
+          ) : (
+            <MapPin size={10} />
+          )}
+          {cachedTrack ? `${cachedTrack.position_count} pts` : 'Track'}
+        </button>
+
+        {/* Owner button */}
+        <button
+          onClick={handleFetchOwner}
+          disabled={!flight.registration || localOwnerLoading}
+          className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium transition-colors ${
+            cachedOwner
+              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+              : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 border border-zinc-700'
+          } ${!flight.registration ? 'opacity-50 cursor-not-allowed' : ''}`}
+          title={cachedOwner?.owner || 'Fetch owner info'}
+        >
+          {localOwnerLoading ? (
+            <Loader2 size={10} className="animate-spin" />
+          ) : (
+            <User size={10} />
+          )}
+          {cachedOwner ? 'Owner' : 'Owner'}
+        </button>
+
+        {/* Toggle details */}
+        {(cachedTrack || cachedOwner) && (
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="ml-auto text-[9px] text-zinc-500 hover:text-zinc-300"
+          >
+            {showDetails ? 'Hide' : 'Details'}
+          </button>
+        )}
+      </div>
+
+      {/* Expanded details */}
+      {showDetails && (cachedTrack || cachedOwner) && (
+        <div className="mt-2 pt-2 border-t border-zinc-800/50 space-y-2">
+          {/* Owner info */}
+          {cachedOwner && cachedOwner.owner && (
+            <div className="text-[10px]">
+              <div className="text-zinc-500 uppercase tracking-wide text-[8px] mb-0.5">Owner</div>
+              <div className="text-zinc-300">{cachedOwner.owner}</div>
+              {cachedOwner.location && (
+                <div className="text-zinc-500">{cachedOwner.location}</div>
+              )}
+            </div>
+          )}
+
+          {/* Track summary */}
+          {cachedTrack && cachedTrack.positions.length > 0 && (
+            <div className="text-[10px]">
+              <div className="text-zinc-500 uppercase tracking-wide text-[8px] mb-0.5">Track Data</div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-zinc-400">
+                <span>Positions:</span>
+                <span className="text-zinc-300">{cachedTrack.position_count}</span>
+                {cachedTrack.positions[0]?.altitude && (
+                  <>
+                    <span>Max Alt:</span>
+                    <span className="text-zinc-300">
+                      {Math.max(...cachedTrack.positions.map(p => p.altitude || 0)).toLocaleString()} ft
+                    </span>
+                  </>
+                )}
+                {cachedTrack.positions[0]?.groundspeed && (
+                  <>
+                    <span>Max Speed:</span>
+                    <span className="text-zinc-300">
+                      {Math.max(...cachedTrack.positions.map(p => p.groundspeed || 0))} kts
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
