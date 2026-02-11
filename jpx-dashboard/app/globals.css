@@ -21,6 +21,11 @@
   --jet-color: #60a5fa;
   --fw-color: #34d399;
   --curfew-color: #f59e0b;
+
+  /* Navigation transitions */
+  --nav-transition-duration: 300ms;
+  --nav-transition-timing: ease-out;
+  --hover-transition-duration: 150ms;
 }
 
 /* ─── Base ────────────────────────────────────────────────────────── */
@@ -312,4 +317,16 @@ select {
   background-repeat: no-repeat;
   background-size: 16px;
   padding-right: 32px !important;
+}
+
+/* ─── Reduced Motion Support ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

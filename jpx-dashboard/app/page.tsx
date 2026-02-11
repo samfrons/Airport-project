@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { TowerControl, RefreshCw, Radio, LogOut, User } from 'lucide-react';
+import { TowerControl, RefreshCw, Radio, LogOut } from 'lucide-react';
 import { AirportMap } from '@/components/AirportMap';
 import { StatsCards } from '@/components/StatsCards';
 import { FlightTable } from '@/components/FlightTable';
@@ -24,13 +24,15 @@ import {
   PanelSkeleton,
   TableSkeleton,
 } from '@/components/LoadingSkeleton';
-import { MobileNav } from '@/components/MobileNav';
+import { SideNav, ScrollToTop } from '@/components/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { useFlightStore } from '@/store/flightStore';
+import { useNavStore } from '@/store/navStore';
 
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
   const { loading, error, fetchFlights, fetchSummary, loadNoiseData, selectedFlight, setSelectedFlight } = useFlightStore();
+  const isNavExpanded = useNavStore((state) => state.isExpanded);
 
   useEffect(() => {
     fetchFlights();
@@ -45,12 +47,26 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950">
+      {/* Side Navigation */}
+      <SideNav />
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop />
+
+      {/* Main content wrapper with dynamic margin */}
+      <div
+        className={`
+          transition-all duration-300 ease-out
+          md:ml-[64px]
+          ${isNavExpanded ? 'md:ml-[280px]' : 'md:ml-[64px]'}
+        `}
+      >
       {/* ─── Header ────────────────────────────────────────────────── */}
       <header className="border-b border-zinc-800/60">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 pl-14 md:pl-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-4">
-              <div className="bg-blue-600 p-2 sm:p-2.5">
+              <div className="bg-blue-600 p-2 sm:p-2.5 hidden md:block">
                 <TowerControl className="text-white" size={18} strokeWidth={1.8} />
               </div>
               <div>
@@ -103,7 +119,7 @@ export default function DashboardPage() {
       </header>
 
       {/* ─── Main Content ──────────────────────────────────────────── */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <main className="px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Error Banner */}
         {error && (
           <div className="bg-red-950/40 border border-red-900/60 px-5 py-4">
@@ -270,7 +286,7 @@ export default function DashboardPage() {
 
       {/* ─── Footer ────────────────────────────────────────────────── */}
       <footer className="border-t border-zinc-800/60 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="px-4 sm:px-6 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-zinc-600 uppercase tracking-wider">
             <p>Data via FlightAware AeroAPI</p>
             <p>Wainscott Citizens Advisory Committee</p>
@@ -278,14 +294,12 @@ export default function DashboardPage() {
         </div>
       </footer>
 
-      {/* Mobile Navigation */}
-      <MobileNav />
-
       {/* Flight Details Sidebar */}
       <FlightDetailsSidebar
         flight={selectedFlight}
         onClose={() => setSelectedFlight(null)}
       />
+      </div>
     </div>
   );
 }
