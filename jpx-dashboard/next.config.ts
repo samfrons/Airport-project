@@ -8,20 +8,12 @@ const nextConfig: NextConfig = {
   // Output configuration for Vercel standalone mode
   output: 'standalone',
 
+  // Prevent Next.js from webpack-bundling sql.js (CJS + WASM doesn't survive bundling)
+  serverExternalPackages: ['sql.js'],
+
   // Ensure data directory is included in the build
   outputFileTracingIncludes: {
     '/api/*': ['./data/**/*'],
-  },
-
-  // Configure webpack for sql.js WASM support
-  webpack: (config) => {
-    // Handle WASM files
-    config.experiments = {
-      ...config.experiments,
-      asyncWebAssembly: true,
-    };
-
-    return config;
   },
 
   // Turbopack configuration (Next.js 16+)

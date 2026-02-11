@@ -15,7 +15,11 @@ export async function getDb(): Promise<Database> {
   }
 
   if (!sqlPromise) {
-    sqlPromise = initSqlJs();
+    // Point sql.js at its own WASM binary inside node_modules
+    const wasmBinary = fs.readFileSync(
+      path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm'),
+    );
+    sqlPromise = initSqlJs({ wasmBinary });
   }
 
   const SQL = await sqlPromise;

@@ -11,35 +11,27 @@ export async function GET(request: NextRequest) {
     const end = searchParams.get('end');
 
     let query = 'SELECT * FROM daily_summary WHERE 1=1';
-    const conditions: string[] = [];
+    const params: string[] = [];
 
     if (start) {
-      conditions.push(`operation_date >= '${start}'`);
+      query += ' AND operation_date >= ?';
+      params.push(start);
     }
     if (end) {
-      conditions.push(`operation_date <= '${end}'`);
-    }
-
-    if (conditions.length > 0) {
-      query += ' AND ' + conditions.join(' AND ');
+      query += ' AND operation_date <= ?';
+      params.push(end);
     }
 
     query += ' ORDER BY operation_date DESC';
 
-    const result = db.exec(query);
+    const stmt = db.prepare(query);
+    stmt.bind(params);
 
-    // Convert sql.js result to array of objects
     const summary: Record<string, unknown>[] = [];
-    if (result.length > 0) {
-      const { columns, values } = result[0];
-      for (const row of values) {
-        const item: Record<string, unknown> = {};
-        columns.forEach((col: string, i: number) => {
-          item[col] = row[i];
-        });
-        summary.push(item);
-      }
+    while (stmt.step()) {
+      summary.push(stmt.getAsObject());
     }
+    stmt.free();
 
     return NextResponse.json(summary);
   } catch (err) {
