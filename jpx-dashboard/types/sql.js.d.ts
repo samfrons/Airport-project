@@ -4,9 +4,20 @@ declare module 'sql.js' {
     values: (string | number | null | Uint8Array)[][];
   }
 
+  export interface Statement {
+    bind(params?: unknown[]): boolean;
+    step(): boolean;
+    getAsObject(): Record<string, unknown>;
+    free(): boolean;
+    run(params?: unknown[]): void;
+    reset(): void;
+  }
+
   export interface Database {
     run(sql: string, params?: unknown[]): Database;
     exec(sql: string, params?: unknown[]): QueryExecResult[];
+    prepare(sql: string): Statement;
+    export(): Uint8Array;
     close(): void;
   }
 
@@ -16,5 +27,6 @@ declare module 'sql.js' {
 
   export default function initSqlJs(config?: {
     locateFile?: (file: string) => string;
+    wasmBinary?: ArrayBuffer | Buffer | Uint8Array;
   }): Promise<SqlJsStatic>;
 }
