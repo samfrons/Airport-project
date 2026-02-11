@@ -1,20 +1,16 @@
 import { NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getFlightCount } from '@/lib/supabase/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const db = await getDb();
-    const result = db.exec('SELECT COUNT(*) as count FROM flights');
-
-    const count = result.length > 0 && result[0].values.length > 0
-      ? result[0].values[0][0] as number
-      : 0;
+    const count = await getFlightCount();
 
     return NextResponse.json({
       status: 'ok',
       database: 'connected',
+      provider: 'supabase',
       flight_count: count,
     });
   } catch (err) {

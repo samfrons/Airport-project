@@ -1,37 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getSummary } from '@/lib/supabase/db';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const db = await getDb();
     const { searchParams } = request.nextUrl;
-    const start = searchParams.get('start');
-    const end = searchParams.get('end');
+    const start = searchParams.get('start') || undefined;
+    const end = searchParams.get('end') || undefined;
 
-    let query = 'SELECT * FROM daily_summary WHERE 1=1';
-    const params: string[] = [];
-
-    if (start) {
-      query += ' AND operation_date >= ?';
-      params.push(start);
-    }
-    if (end) {
-      query += ' AND operation_date <= ?';
-      params.push(end);
-    }
-
-    query += ' ORDER BY operation_date DESC';
-
-    const stmt = db.prepare(query);
-    stmt.bind(params);
-
-    const summary: Record<string, unknown>[] = [];
-    while (stmt.step()) {
-      summary.push(stmt.getAsObject());
-    }
-    stmt.free();
+    const summary = await getSummary({ start, end });
 
     return NextResponse.json(summary);
   } catch (err) {

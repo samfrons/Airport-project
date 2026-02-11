@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, AIRPORT_COORDS } from '@/lib/db';
+import { getFlights, AIRPORT_COORDS, Flight } from '@/lib/supabase/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,65 +48,35 @@ function dbAtAltitude(baseDb: number, altitude: number): number {
 
 export async function GET(request: NextRequest) {
   try {
-    const db = await getDb();
     const { searchParams } = request.nextUrl;
-    const start = searchParams.get('start');
-    const end = searchParams.get('end');
-    const category = searchParams.get('category');
-    const direction = searchParams.get('direction');
+    const start = searchParams.get('start') || undefined;
+    const end = searchParams.get('end') || undefined;
+    const category = searchParams.get('category') || undefined;
+    const direction = searchParams.get('direction') || undefined;
 
-    let query = 'SELECT * FROM flights WHERE 1=1';
-    const params: string[] = [];
+    const rawFlights = await getFlights({ start, end, category, direction });
 
-    if (start) {
-      query += ' AND operation_date >= ?';
-      params.push(start);
-    }
-    if (end) {
-      query += ' AND operation_date <= ?';
-      params.push(end);
-    }
-    if (category && category !== 'all') {
-      query += ' AND aircraft_category = ?';
-      params.push(category);
-    }
-    if (direction && direction !== 'all') {
-      query += ' AND direction = ?';
-      params.push(direction);
-    }
-
-    query += ' ORDER BY operation_date DESC, actual_on DESC, actual_off DESC';
-
-    const stmt = db.prepare(query);
-    stmt.bind(params);
-
-    // Collect rows as objects
-    const flights: Record<string, unknown>[] = [];
-
-    while (stmt.step()) {
-      const row = stmt.getAsObject();
-
-      // Compute noise profile for this aircraft type
-      const type = row.aircraft_type as string;
-      const dir = row.direction as string;
+    // Add noise profile to each flight
+    const flights = rawFlights.map((flight: Flight) => {
+      const type = flight.aircraft_type || '';
+      const dir = flight.direction;
       const noise = NOISE_DB[type] || DEFAULT_NOISE;
       const baseDb = dir === 'arrival' ? noise.approach : noise.takeoff;
 
-      // Attach noise data to each flight
-      row.noise_profile = {
-        takeoff_db: noise.takeoff,
-        approach_db: noise.approach,
-        noise_category: noise.category,
-        effective_db: baseDb,
-        altitude_profile: ALTITUDES.map((alt) => ({
-          altitude_ft: alt,
-          db: dbAtAltitude(baseDb, alt),
-        })),
+      return {
+        ...flight,
+        noise_profile: {
+          takeoff_db: noise.takeoff,
+          approach_db: noise.approach,
+          noise_category: noise.category,
+          effective_db: baseDb,
+          altitude_profile: ALTITUDES.map((alt) => ({
+            altitude_ft: alt,
+            db: dbAtAltitude(baseDb, alt),
+          })),
+        },
       };
-
-      flights.push(row);
-    }
-    stmt.free();
+    });
 
     // Count flights by airport for mapping
     const airportCounts: Record<string, number> = {};
