@@ -1,6 +1,7 @@
 'use client';
 
-import { X, Plane, User, Volume2, Navigation, MapPin } from 'lucide-react';
+import { X, Plane, User, Volume2, Navigation, MapPin, TreePine, AlertTriangle } from 'lucide-react';
+import { useMemo } from 'react';
 import { useFlightStore } from '@/store/flightStore';
 import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
 import {
@@ -9,6 +10,8 @@ import {
   formatAltitude,
   getNoiseLabel,
 } from './NoiseCalculator';
+import { evaluateFlight } from '@/lib/biodiversityViolationEngine';
+import { getImpactSeverityColor } from '@/types/biodiversity';
 import type { Flight } from '@/types/flight';
 
 interface FlightDetailsSidebarProps {
@@ -22,6 +25,8 @@ export function FlightDetailsSidebar({ flight, onClose }: FlightDetailsSidebarPr
   const profile = getAircraftNoiseProfile(flight.aircraft_type);
   const baseDb = flight.direction === 'arrival' ? profile.approachDb : profile.takeoffDb;
   const altitudeProfile = generateAltitudeProfile(baseDb);
+  const thresholds = useFlightStore((s) => s.thresholds);
+  const bioViolation = useMemo(() => evaluateFlight(flight, thresholds), [flight, thresholds]);
 
   const maxDb = 100;
   const minDb = 65;
@@ -206,6 +211,82 @@ export function FlightDetailsSidebar({ flight, onClose }: FlightDetailsSidebarPr
             )}
           </div>
         </div>
+
+        {/* Biodiversity Impact */}
+        {bioViolation && (
+          <div>
+            <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.12em] mb-2 flex items-center gap-1">
+              <TreePine size={10} />
+              Wildlife Impact
+            </div>
+            <div className="bg-zinc-900 border border-zinc-800 p-3 space-y-2.5">
+              {/* Severity */}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-zinc-500">Severity</span>
+                <span
+                  className="text-[10px] font-semibold uppercase"
+                  style={{ color: getImpactSeverityColor(bioViolation.overallSeverity) }}
+                >
+                  {bioViolation.overallSeverity}
+                </span>
+              </div>
+
+              {/* Thresholds violated */}
+              <div>
+                <div className="text-[9px] text-zinc-600 mb-1">Thresholds Violated</div>
+                <div className="space-y-1">
+                  {bioViolation.violatedThresholds.map((t) => (
+                    <div
+                      key={t.thresholdId}
+                      className="flex items-start gap-1.5 text-[9px]"
+                    >
+                      <AlertTriangle
+                        size={8}
+                        className="mt-0.5 flex-shrink-0"
+                        style={{ color: getImpactSeverityColor(t.severity) }}
+                      />
+                      <span className="text-zinc-400 leading-relaxed">
+                        {t.thresholdLabel}
+                        {t.exceedanceDb != null && (
+                          <span className="text-red-400 ml-1">+{t.exceedanceDb} dB</span>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Protected species */}
+              {bioViolation.speciesAffected.filter((s) => s.conservationStatus).length > 0 && (
+                <div>
+                  <div className="text-[9px] text-red-500 mb-1">Protected Species Affected</div>
+                  <div className="flex flex-wrap gap-1">
+                    {bioViolation.speciesAffected
+                      .filter((s) => s.conservationStatus)
+                      .map((sp) => (
+                        <span
+                          key={sp.speciesId}
+                          className="text-[8px] px-1.5 py-0.5 bg-red-950/40 text-red-400 border border-red-900/20"
+                        >
+                          {sp.commonName}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Species count */}
+              <div className="flex justify-between text-[10px]">
+                <span className="text-zinc-500">Species affected</span>
+                <span className="text-zinc-300">{bioViolation.speciesAffected.length}</span>
+              </div>
+              <div className="flex justify-between text-[10px]">
+                <span className="text-zinc-500">Habitats impacted</span>
+                <span className="text-zinc-300">{bioViolation.habitatsAffected.length}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

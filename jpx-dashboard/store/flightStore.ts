@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { Flight, DailySummary, Airport, MapViewMode, DateRange } from '@/types/flight';
 import type { NoiseLayerSettings, NoiseSensor, NoiseComplaint } from '@/types/noise';
 import type { BiodiversityLayerSettings } from '@/types/biodiversity';
+import type { BiodiversityThreshold } from '@/types/biodiversityThresholds';
+import { biodiversityThresholds as defaultThresholds } from '@/data/biodiversity/thresholds';
 
 // Default noise layer settings
 const defaultNoiseSettings: NoiseLayerSettings = {
@@ -48,6 +50,9 @@ interface FlightState {
   // Biodiversity layer state
   biodiversitySettings: BiodiversityLayerSettings;
 
+  // Threshold management state
+  thresholds: BiodiversityThreshold[];
+
   // Actions
   setFlights: (flights: Flight[]) => void;
   setSummary: (summary: DailySummary[]) => void;
@@ -74,6 +79,40 @@ interface FlightState {
   setBiodiversitySettings: (settings: BiodiversityLayerSettings) => void;
   toggleBiodiversityLayer: () => void;
   setBiodiversityOpacity: (value: number) => void;
+
+  // Threshold management actions
+  addThreshold: (threshold: BiodiversityThreshold) => void;
+  updateThreshold: (id: string, updates: Partial<BiodiversityThreshold>) => void;
+  deleteThreshold: (id: string) => void;
+  toggleThreshold: (id: string) => void;
+  resetThresholds: () => void;
+}
+
+// ─── Threshold localStorage persistence ─────────────────────────────────────
+
+const THRESHOLDS_STORAGE_KEY = 'jpx-biodiversity-thresholds';
+
+function loadThresholdsFromStorage(): BiodiversityThreshold[] {
+  if (typeof window === 'undefined') return defaultThresholds;
+  try {
+    const stored = localStorage.getItem(THRESHOLDS_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as BiodiversityThreshold[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // Corrupted data — fall back to defaults
+  }
+  return defaultThresholds;
+}
+
+function saveThresholdsToStorage(thresholds: BiodiversityThreshold[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(THRESHOLDS_STORAGE_KEY, JSON.stringify(thresholds));
+  } catch {
+    // Storage full or unavailable — silently ignore
+  }
 }
 
 const API_BASE = '/api';
@@ -107,6 +146,9 @@ export const useFlightStore = create<FlightState>((set, get) => ({
 
   // Biodiversity layer state
   biodiversitySettings: defaultBiodiversitySettings,
+
+  // Threshold management state
+  thresholds: loadThresholdsFromStorage(),
 
   setFlights: (flights) => set({ flights }),
   setSummary: (summary) => set({ summary }),
@@ -227,5 +269,39 @@ export const useFlightStore = create<FlightState>((set, get) => ({
     if (flights.length === 0) {
       set({ flights: mockFlightsForNoise, airports: mockAirportsForNoise });
     }
+  },
+
+  // Threshold management actions
+  addThreshold: (threshold) => {
+    const updated = [...get().thresholds, threshold];
+    saveThresholdsToStorage(updated);
+    set({ thresholds: updated });
+  },
+
+  updateThreshold: (id, updates) => {
+    const updated = get().thresholds.map((t) =>
+      t.id === id ? { ...t, ...updates } : t
+    );
+    saveThresholdsToStorage(updated);
+    set({ thresholds: updated });
+  },
+
+  deleteThreshold: (id) => {
+    const updated = get().thresholds.filter((t) => t.id !== id);
+    saveThresholdsToStorage(updated);
+    set({ thresholds: updated });
+  },
+
+  toggleThreshold: (id) => {
+    const updated = get().thresholds.map((t) =>
+      t.id === id ? { ...t, enabled: !t.enabled } : t
+    );
+    saveThresholdsToStorage(updated);
+    set({ thresholds: updated });
+  },
+
+  resetThresholds: () => {
+    saveThresholdsToStorage(defaultThresholds);
+    set({ thresholds: defaultThresholds });
   },
 }));

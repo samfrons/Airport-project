@@ -1,227 +1,307 @@
 #!/usr/bin/env node
-// seed_test_data.js — Generate realistic test flight data for JPX Dashboard
-// Usage: cd jpx-dashboard && node scripts/seed_test_data.js
+// seed_test_data.js — Generate realistic East Hampton (JPX) flight data
+// Uses sql.js (no native deps). Run from jpx-dashboard/:
+//   node scripts/seed_test_data.js
+//
+// Generates 30 days of flights with all aircraft types from the noise profiles,
+// realistic operators, seasonal patterns, and proper hour distributions.
 
-import Database from "better-sqlite3";
-import { readFileSync, mkdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import initSqlJs from 'sql.js';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { dirname, resolve, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // ---------- paths ----------
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const PROJECT_ROOT = resolve(__dirname, "..");
-const DB_PATH = resolve(PROJECT_ROOT, "data", "jpx_flights.db");
-const SCHEMA_PATH = resolve(PROJECT_ROOT, "src", "db", "schema.sql");
+const PROJECT_ROOT = resolve(__dirname, '..');
+const DB_PATH = resolve(PROJECT_ROOT, 'data', 'jpx_flights.db');
+const SCHEMA_PATH = resolve(PROJECT_ROOT, 'src', 'db', 'schema.sql');
+const WASM_PATH = join(PROJECT_ROOT, 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+
+// ---------- boot sql.js ----------
+const wasmBinary = readFileSync(WASM_PATH);
+const SQL = await initSqlJs({ wasmBinary });
 
 // ---------- ensure data directory exists ----------
 mkdirSync(dirname(DB_PATH), { recursive: true });
 
-// ---------- open / create database ----------
-const db = new Database(DB_PATH);
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+// ---------- open fresh database ----------
+const db = new SQL.Database();
 
 // ---------- run schema ----------
-const schema = readFileSync(SCHEMA_PATH, "utf-8");
-db.exec(schema);
+const schema = readFileSync(SCHEMA_PATH, 'utf-8');
+db.run(schema);
 console.log(`Schema applied from ${SCHEMA_PATH}`);
 
-// ---------- seed data configuration ----------
+// ═══════════════════════════════════════════════════════════════════════════════
+//  AIRCRAFT FLEET — matches every type in data/noise/aircraftNoiseProfiles.ts
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const FLEET = [
+  // ─── Helicopters ───────────────────────────────────────────────────────────
+  // Robinson R22 — training / light personal
+  { type: 'R22', category: 'helicopter', registrations: ['N7022R', 'N803RH'], operator: null, operatorIata: null, weight: 1 },
+  // Robinson R44 — most common light helo at East Hampton
+  { type: 'R44', category: 'helicopter', registrations: ['N44RH', 'N503RH', 'N144RX', 'N844RA'], operator: null, operatorIata: null, weight: 5 },
+  // Robinson R66 — turbine upgrade of R44
+  { type: 'R66', category: 'helicopter', registrations: ['N166RB', 'N266RT'], operator: null, operatorIata: null, weight: 2 },
+  // Sikorsky S-76 — heavy VIP transport (Blade, charter)
+  { type: 'S76', category: 'helicopter', registrations: ['N76BL', 'N176SK', 'N276HF'], operator: 'Blade', operatorIata: 'BLD', weight: 4 },
+  // Eurocopter EC135
+  { type: 'EC35', category: 'helicopter', registrations: ['N135EC', 'N881EC', 'N535HB'], operator: 'HeliNY', operatorIata: 'HNY', weight: 3 },
+  // AgustaWestland AW109
+  { type: 'A109', category: 'helicopter', registrations: ['N109AW', 'N209LX'], operator: null, operatorIata: null, weight: 2 },
+  // Bell 206 JetRanger
+  { type: 'B06', category: 'helicopter', registrations: ['N206BH', 'N306JR'], operator: null, operatorIata: null, weight: 2 },
+  // Bell 407
+  { type: 'B407', category: 'helicopter', registrations: ['N407BX', 'N507BL'], operator: 'Blade', operatorIata: 'BLD', weight: 2 },
+  // Airbus AS350 Ecureuil
+  { type: 'AS50', category: 'helicopter', registrations: ['N350AS', 'N450HT'], operator: 'HeliNY', operatorIata: 'HNY', weight: 2 },
+
+  // ─── Jets ──────────────────────────────────────────────────────────────────
+  // Gulfstream G550
+  { type: 'GLF5', category: 'jet', registrations: ['N550GV', 'N551JP', 'N900GV'], operator: 'NetJets', operatorIata: 'NJA', weight: 3 },
+  // Gulfstream G450
+  { type: 'GLF4', category: 'jet', registrations: ['N450GA', 'N451WM'], operator: 'NetJets', operatorIata: 'NJA', weight: 2 },
+  // Bombardier Global Express
+  { type: 'GLEX', category: 'jet', registrations: ['N700BD', 'N701GL'], operator: 'VistaJet', operatorIata: 'VJT', weight: 2 },
+  // Cessna Citation Excel
+  { type: 'C56X', category: 'jet', registrations: ['N56XC', 'N560EL'], operator: 'Wheels Up', operatorIata: 'UP', weight: 3 },
+  // Cessna Citation Sovereign
+  { type: 'C680', category: 'jet', registrations: ['N680CS', 'N681JT'], operator: null, operatorIata: null, weight: 2 },
+  // Cessna CitationJet CJ1
+  { type: 'C525', category: 'jet', registrations: ['N525CJ', 'N526MA'], operator: null, operatorIata: null, weight: 2 },
+  // Embraer Phenom 300
+  { type: 'E55P', category: 'jet', registrations: ['N300EP', 'N301PH'], operator: 'Flexjet', operatorIata: 'LXJ', weight: 3 },
+  // Pilatus PC-12 (turboprop, typed as jet in profiles)
+  { type: 'PC12', category: 'jet', registrations: ['N12PC', 'N912PL', 'N812PT'], operator: 'Surf Air', operatorIata: 'URF', weight: 4 },
+  // Learjet 45
+  { type: 'LJ45', category: 'jet', registrations: ['N45LJ', 'N145LR'], operator: null, operatorIata: null, weight: 1 },
+  // Dassault Falcon 50
+  { type: 'FA50', category: 'jet', registrations: ['N50FA', 'N150DF'], operator: null, operatorIata: null, weight: 1 },
+
+  // ─── Fixed Wing (Propeller) ────────────────────────────────────────────────
+  // Cessna 172 Skyhawk
+  { type: 'C172', category: 'fixed_wing', registrations: ['N7345C', 'N4512C', 'N9283S'], operator: null, operatorIata: null, weight: 4 },
+  // Cessna 182 Skylane
+  { type: 'C182', category: 'fixed_wing', registrations: ['N182SL', 'N282RK'], operator: null, operatorIata: null, weight: 3 },
+  // Cessna 206 Stationair
+  { type: 'C206', category: 'fixed_wing', registrations: ['N206SA', 'N306TW'], operator: null, operatorIata: null, weight: 2 },
+  // Piper Cherokee
+  { type: 'PA28', category: 'fixed_wing', registrations: ['N8291P', 'N6183P', 'N3347W'], operator: null, operatorIata: null, weight: 4 },
+  // Piper Saratoga
+  { type: 'PA32', category: 'fixed_wing', registrations: ['N32PS', 'N132SR'], operator: null, operatorIata: null, weight: 2 },
+  // Beechcraft Bonanza
+  { type: 'BE36', category: 'fixed_wing', registrations: ['N36BE', 'N236BN'], operator: null, operatorIata: null, weight: 3 },
+  // Cirrus SR22
+  { type: 'SR22', category: 'fixed_wing', registrations: ['N22SR', 'N322CX', 'N722SR'], operator: null, operatorIata: null, weight: 4 },
+  // Piper PA-28 Archer (variant)
+  { type: 'P28A', category: 'fixed_wing', registrations: ['N28AR', 'N128PA'], operator: null, operatorIata: null, weight: 2 },
+  // Cessna 150 — training
+  { type: 'C150', category: 'fixed_wing', registrations: ['N150CE', 'N250CF'], operator: null, operatorIata: null, weight: 2 },
+];
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  AIRPORTS — origins and destinations for East Hampton traffic
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const AIRPORTS = [
-  { code: "KJFK", name: "John F Kennedy Intl", city: "New York" },
-  { code: "KLGA", name: "LaGuardia", city: "New York" },
-  { code: "KTEB", name: "Teterboro", city: "Teterboro" },
-  { code: "KHPN", name: "Westchester County", city: "White Plains" },
-  { code: "KFRG", name: "Republic", city: "Farmingdale" },
-  { code: "KISP", name: "Long Island MacArthur", city: "Ronkonkoma" },
-  { code: "KBDR", name: "Igor I Sikorsky Meml", city: "Bridgeport" },
-  { code: "KBOS", name: "Gen Edward Lawrence Logan Intl", city: "Boston" },
-  { code: "KPHL", name: "Philadelphia Intl", city: "Philadelphia" },
-  { code: "KMTP", name: "Montauk", city: "Montauk" },
-  { code: "KFOK", name: "Francis S Gabreski", city: "Westhampton Beach" },
+  // Heavy traffic
+  { code: 'KJFK', name: 'John F Kennedy Intl', city: 'New York', weight: 2 },
+  { code: 'KTEB', name: 'Teterboro', city: 'Teterboro', weight: 8 },
+  { code: 'KHPN', name: 'Westchester County', city: 'White Plains', weight: 6 },
+  { code: 'KFRG', name: 'Republic', city: 'Farmingdale', weight: 5 },
+
+  // Moderate traffic
+  { code: 'KLGA', name: 'LaGuardia', city: 'New York', weight: 3 },
+  { code: 'KISP', name: 'Long Island MacArthur', city: 'Ronkonkoma', weight: 4 },
+  { code: 'KFOK', name: 'Francis S Gabreski', city: 'Westhampton Beach', weight: 4 },
+  { code: 'KBDR', name: 'Igor I Sikorsky Meml', city: 'Bridgeport', weight: 3 },
+  { code: 'KCDW', name: 'Essex County', city: 'Caldwell', weight: 3 },
+  { code: 'KMMU', name: 'Morristown Municipal', city: 'Morristown', weight: 3 },
+  { code: 'KMTP', name: 'Montauk', city: 'Montauk', weight: 2 },
+
+  // Occasional long-range
+  { code: 'KBOS', name: 'Boston Logan Intl', city: 'Boston', weight: 2 },
+  { code: 'KPHL', name: 'Philadelphia Intl', city: 'Philadelphia', weight: 1 },
+  { code: 'KDCA', name: 'Reagan National', city: 'Washington', weight: 1 },
+  { code: 'KPBI', name: 'Palm Beach Intl', city: 'West Palm Beach', weight: 2 },
+  { code: 'KMIA', name: 'Miami Intl', city: 'Miami', weight: 1 },
 ];
 
-const AIRCRAFT = [
-  // Helicopters
-  { type: "R44",  category: "helicopter", reg: () => nNumber("H") },
-  { type: "R44",  category: "helicopter", reg: () => nNumber("H") },
-  { type: "EC35", category: "helicopter", reg: () => nNumber("H") },
-  { type: "EC35", category: "helicopter", reg: () => nNumber("H") },
-  // Jets
-  { type: "GLF5", category: "jet",        reg: () => nNumber("J") },
-  { type: "CL60", category: "jet",        reg: () => nNumber("J") },
-  { type: "GLF5", category: "jet",        reg: () => nNumber("J") },
-  // Fixed-wing
-  { type: "C172", category: "fixed_wing", reg: () => nNumber("F") },
-  { type: "PA28", category: "fixed_wing", reg: () => nNumber("F") },
-  { type: "C172", category: "fixed_wing", reg: () => nNumber("F") },
-  { type: "PA28", category: "fixed_wing", reg: () => nNumber("F") },
-];
+// ═══════════════════════════════════════════════════════════════════════════════
+//  NOISE PROFILES — dB at 1000 ft reference altitude
+//  Matches data/noise/aircraftNoiseProfiles.ts exactly
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// Pre-generate a fixed pool of registrations so some repeat across flights
-const REGISTRATIONS = [
-  "N44RH", "N117EC", "N503RH", "N881EC", "N22HB",  // helicopters
-  "N550GV", "N777CL", "N900GV",                      // jets
-  "N7345C", "N8291P", "N4512C", "N6183P",            // fixed-wing
-];
-
-// Map registrations to their aircraft profiles
-const REG_AIRCRAFT = {
-  N44RH:  { type: "R44",  category: "helicopter" },
-  N117EC: { type: "EC35", category: "helicopter" },
-  N503RH: { type: "R44",  category: "helicopter" },
-  N881EC: { type: "EC35", category: "helicopter" },
-  N22HB:  { type: "EC35", category: "helicopter" },
-  N550GV: { type: "GLF5", category: "jet" },
-  N777CL: { type: "CL60", category: "jet" },
-  N900GV: { type: "GLF5", category: "jet" },
-  N7345C: { type: "C172", category: "fixed_wing" },
-  N8291P: { type: "PA28", category: "fixed_wing" },
-  N4512C: { type: "C172", category: "fixed_wing" },
-  N6183P: { type: "PA28", category: "fixed_wing" },
+const NOISE_PROFILES = {
+  R22:  { takeoff: 78, approach: 76 },
+  R44:  { takeoff: 82, approach: 80 },
+  R66:  { takeoff: 83, approach: 81 },
+  S76:  { takeoff: 88, approach: 85 },
+  EC35: { takeoff: 84, approach: 82 },
+  A109: { takeoff: 85, approach: 83 },
+  B06:  { takeoff: 83, approach: 81 },
+  B407: { takeoff: 84, approach: 82 },
+  AS50: { takeoff: 82, approach: 80 },
+  GLF5: { takeoff: 92, approach: 88 },
+  GLF4: { takeoff: 90, approach: 86 },
+  GLEX: { takeoff: 91, approach: 87 },
+  C56X: { takeoff: 86, approach: 82 },
+  C680: { takeoff: 85, approach: 81 },
+  C525: { takeoff: 80, approach: 76 },
+  E55P: { takeoff: 82, approach: 78 },
+  PC12: { takeoff: 78, approach: 75 },
+  LJ45: { takeoff: 84, approach: 80 },
+  FA50: { takeoff: 85, approach: 81 },
+  C172: { takeoff: 75, approach: 72 },
+  C182: { takeoff: 76, approach: 73 },
+  C206: { takeoff: 77, approach: 74 },
+  PA28: { takeoff: 74, approach: 71 },
+  PA32: { takeoff: 76, approach: 73 },
+  BE36: { takeoff: 77, approach: 74 },
+  SR22: { takeoff: 76, approach: 73 },
+  P28A: { takeoff: 72, approach: 69 },
+  C150: { takeoff: 70, approach: 67 },
 };
 
-// ---------- helpers ----------
+// ═══════════════════════════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
 
-function nNumber(prefix) {
-  // Not actually used for generation; we pull from REGISTRATIONS
-  const num = Math.floor(Math.random() * 9000) + 1000;
-  return `N${num}${prefix}`;
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+/** Weighted random pick from an array of { ..., weight } objects */
+function weightedPick(items) {
+  const total = items.reduce((s, i) => s + i.weight, 0);
+  let r = Math.random() * total;
+  for (const item of items) {
+    r -= item.weight;
+    if (r <= 0) return item;
+  }
+  return items[items.length - 1];
 }
 
-function pick(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function randomInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-/** Return a Date object for a random time on the given date at the given ET hour */
-function buildDateET(dateStr, hourET) {
-  // dateStr is YYYY-MM-DD, hourET is 0-23 in America/New_York
-  // We'll approximate ET as UTC-5 (EST) for simplicity in test data
-  const minute = randomInt(0, 59);
-  const utcHour = hourET + 5; // EST offset
-  const d = new Date(`${dateStr}T00:00:00Z`);
-  d.setUTCHours(utcHour, minute, randomInt(0, 59));
-  return d;
-}
-
-function toISO(d) {
-  return d.toISOString().replace("T", "T").slice(0, 19) + "Z";
+/** YYYY-MM-DD string for a Date */
+function fmtDate(d) {
+  return d.toISOString().slice(0, 10);
 }
 
 function dayOfWeek(dateStr) {
-  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-  const d = new Date(dateStr + "T12:00:00Z");
-  return days[d.getUTCDay()];
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return days[new Date(dateStr + 'T12:00:00Z').getUTCDay()];
 }
 
 function isWeekend(dateStr) {
   const dow = dayOfWeek(dateStr);
-  return dow === "Saturday" || dow === "Sunday" ? 1 : 0;
+  return (dow === 'Saturday' || dow === 'Sunday') ? 1 : 0;
 }
 
 function isCurfew(hour) {
-  // Curfew: 8 PM (20) to 8 AM (7) inclusive  =>  hours 20-23, 0-7
   return (hour >= 20 || hour <= 7) ? 1 : 0;
 }
 
-function generateFaFlightId() {
-  // Simulates a FlightAware flight ID
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let id = "JPX";
-  for (let i = 0; i < 10; i++) id += chars[randomInt(0, chars.length - 1)];
-  return id + "-" + Date.now().toString(36) + randomInt(100, 999);
+/** Build an ISO 8601 timestamp for a given date + ET hour */
+function buildTimestamp(dateStr, hourET) {
+  const minute = randomInt(0, 59);
+  const second = randomInt(0, 59);
+  const utcHour = hourET + 5; // EST offset (approximate)
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCHours(utcHour, minute, second);
+  return d.toISOString().slice(0, 19) + 'Z';
 }
 
-// ---------- generate dates for the last 7 days ----------
+let idCounter = 0;
+function generateFaFlightId() {
+  idCounter++;
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let id = 'JPX';
+  for (let i = 0; i < 8; i++) id += chars[randomInt(0, chars.length - 1)];
+  return `${id}-${idCounter}`;
+}
 
-function last7Days() {
+// ═══════════════════════════════════════════════════════════════════════════════
+//  GENERATE 30 DAYS OF FLIGHTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function generateDates(numDays) {
   const dates = [];
   const now = new Date();
-  for (let i = 6; i >= 0; i--) {
+  for (let i = numDays - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    dates.push(`${yyyy}-${mm}-${dd}`);
+    dates.push(fmtDate(d));
   }
   return dates;
 }
 
-// ---------- generate flights ----------
+// Hour distribution — East Hampton: busy 8am-6pm, some evening, rare curfew
+function pickHour() {
+  const r = Math.random();
+  if (r < 0.03) return randomInt(0, 5);        // 3% late night / very early
+  if (r < 0.08) return randomInt(6, 7);         // 5% early morning
+  if (r < 0.75) return randomInt(8, 17);        // 67% daytime peak
+  if (r < 0.92) return randomInt(18, 19);       // 17% evening
+  return randomInt(20, 23);                      // 8% late evening / curfew
+}
 
 function generateFlights() {
-  const dates = last7Days();
+  const dates = generateDates(30);
   const flights = [];
 
-  // Weighted hour distribution — mostly daytime, some curfew
-  // Daytime hours (8-19) have heavier weight; curfew hours get a few flights
-  const hourWeights = [];
-  for (let h = 0; h < 24; h++) {
-    if (h >= 8 && h <= 18) {
-      hourWeights.push(h, h, h, h, h); // heavy weight for daytime
-    } else if (h >= 6 && h <= 7) {
-      hourWeights.push(h, h); // early morning — light
-    } else if (h >= 19 && h <= 21) {
-      hourWeights.push(h, h); // evening — moderate
-    } else {
-      hourWeights.push(h); // late night / very early — rare
-    }
-  }
-
   for (const dateStr of dates) {
-    // 3-6 flights per day
-    const numFlights = randomInt(3, 6);
-    for (let i = 0; i < numFlights; i++) {
-      const direction = pick(["arrival", "departure"]);
-      const reg = pick(REGISTRATIONS);
-      const ac = REG_AIRCRAFT[reg];
-      const airport = pick(AIRPORTS);
-      const hourET = pick(hourWeights);
-      const ts = buildDateET(dateStr, hourET);
+    const weekend = isWeekend(dateStr);
+
+    // More traffic on weekends (East Hampton pattern)
+    const baseFlights = weekend ? randomInt(15, 25) : randomInt(8, 18);
+
+    for (let i = 0; i < baseFlights; i++) {
+      const direction = Math.random() < 0.52 ? 'arrival' : 'departure';
+      const fleet = weightedPick(FLEET);
+      const reg = pick(fleet.registrations);
+      const airport = weightedPick(AIRPORTS);
+      const hourET = pickHour();
+      const ts = buildTimestamp(dateStr, hourET);
+
+      // Scheduled time 3-20 min before actual
+      const schedOffset = randomInt(3, 20) * 60 * 1000;
+      const schedDate = new Date(new Date(ts).getTime() - schedOffset);
+      const schedTs = schedDate.toISOString().slice(0, 19) + 'Z';
 
       let origin, destination;
-      if (direction === "arrival") {
+      if (direction === 'arrival') {
         origin = { code: airport.code, name: airport.name, city: airport.city };
-        destination = { code: "KJPX", name: "East Hampton", city: "East Hampton" };
+        destination = { code: 'KJPX', name: 'East Hampton', city: 'East Hampton' };
       } else {
-        origin = { code: "KJPX", name: "East Hampton", city: "East Hampton" };
+        origin = { code: 'KJPX', name: 'East Hampton', city: 'East Hampton' };
         destination = { code: airport.code, name: airport.name, city: airport.city };
       }
-
-      // Build scheduled time ~5-15 min before actual
-      const schedOffset = randomInt(5, 15) * 60 * 1000;
-      const schedTs = new Date(ts.getTime() - schedOffset);
 
       flights.push({
         fa_flight_id: generateFaFlightId(),
         ident: reg,
         registration: reg,
         direction,
-        aircraft_type: ac.type,
-        aircraft_category: ac.category,
-        operator: null,
-        operator_iata: null,
+        aircraft_type: fleet.type,
+        aircraft_category: fleet.category,
+        operator: fleet.operator,
+        operator_iata: fleet.operatorIata,
         origin_code: origin.code,
         origin_name: origin.name,
         origin_city: origin.city,
         destination_code: destination.code,
         destination_name: destination.name,
         destination_city: destination.city,
-        scheduled_off: direction === "departure" ? toISO(schedTs) : null,
-        actual_off: direction === "departure" ? toISO(ts) : null,
-        scheduled_on: direction === "arrival" ? toISO(schedTs) : null,
-        actual_on: direction === "arrival" ? toISO(ts) : null,
+        scheduled_off: direction === 'departure' ? schedTs : null,
+        actual_off: direction === 'departure' ? ts : null,
+        scheduled_on: direction === 'arrival' ? schedTs : null,
+        actual_on: direction === 'arrival' ? ts : null,
         operation_date: dateStr,
         operation_hour_et: hourET,
         is_curfew_period: isCurfew(hourET),
-        is_weekend: isWeekend(dateStr),
+        is_weekend: weekend,
       });
     }
   }
@@ -229,13 +309,28 @@ function generateFlights() {
   return flights;
 }
 
-// ---------- insert flights ----------
+// ═══════════════════════════════════════════════════════════════════════════════
+//  INSERT DATA
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const flights = generateFlights();
+console.log(`Generated ${flights.length} flights over 30 days.`);
 
-console.log(`Generated ${flights.length} test flights.`);
+// Print aircraft type distribution
+const typeCounts = {};
+for (const f of flights) {
+  typeCounts[f.aircraft_type] = (typeCounts[f.aircraft_type] || 0) + 1;
+}
+console.log('\nAircraft type distribution:');
+const sorted = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
+for (const [type, count] of sorted) {
+  const profile = NOISE_PROFILES[type];
+  console.log(`  ${type.padEnd(5)} ${String(count).padStart(4)} flights  (takeoff ${profile.takeoff} dB / approach ${profile.approach} dB)`);
+}
 
-const insertFlight = db.prepare(`
+// Insert flights
+db.run('BEGIN TRANSACTION');
+const stmt = db.prepare(`
   INSERT INTO flights (
     fa_flight_id, ident, registration, direction,
     aircraft_type, aircraft_category, operator, operator_iata,
@@ -243,80 +338,77 @@ const insertFlight = db.prepare(`
     destination_code, destination_name, destination_city,
     scheduled_off, actual_off, scheduled_on, actual_on,
     operation_date, operation_hour_et, is_curfew_period, is_weekend
-  ) VALUES (
-    @fa_flight_id, @ident, @registration, @direction,
-    @aircraft_type, @aircraft_category, @operator, @operator_iata,
-    @origin_code, @origin_name, @origin_city,
-    @destination_code, @destination_name, @destination_city,
-    @scheduled_off, @actual_off, @scheduled_on, @actual_on,
-    @operation_date, @operation_hour_et, @is_curfew_period, @is_weekend
-  )
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
-const insertMany = db.transaction((rows) => {
-  for (const row of rows) {
-    insertFlight.run(row);
-  }
-});
+for (const f of flights) {
+  stmt.run([
+    f.fa_flight_id, f.ident, f.registration, f.direction,
+    f.aircraft_type, f.aircraft_category, f.operator, f.operator_iata,
+    f.origin_code, f.origin_name, f.origin_city,
+    f.destination_code, f.destination_name, f.destination_city,
+    f.scheduled_off, f.actual_off, f.scheduled_on, f.actual_on,
+    f.operation_date, f.operation_hour_et, f.is_curfew_period, f.is_weekend,
+  ]);
+}
+stmt.free();
+db.run('COMMIT');
+console.log(`\nInserted ${flights.length} flights.`);
 
-insertMany(flights);
-console.log(`Inserted ${flights.length} flights into ${DB_PATH}`);
+// ─── Compute and insert daily_summary ────────────────────────────────────────
 
-// ---------- compute and insert daily_summary ----------
-
-const summaryQuery = db.prepare(`
+const summaryResult = db.exec(`
   SELECT
     operation_date,
-    COUNT(*)                                          AS total_operations,
-    SUM(CASE WHEN direction = 'arrival' THEN 1 ELSE 0 END)   AS arrivals,
-    SUM(CASE WHEN direction = 'departure' THEN 1 ELSE 0 END) AS departures,
-    SUM(CASE WHEN aircraft_category = 'helicopter' THEN 1 ELSE 0 END)  AS helicopters,
-    SUM(CASE WHEN aircraft_category = 'fixed_wing' THEN 1 ELSE 0 END)  AS fixed_wing,
-    SUM(CASE WHEN aircraft_category = 'jet' THEN 1 ELSE 0 END)         AS jets,
-    SUM(CASE WHEN aircraft_category = 'unknown' THEN 1 ELSE 0 END)     AS unknown_type,
-    SUM(CASE WHEN is_curfew_period = 1 THEN 1 ELSE 0 END)              AS curfew_operations,
-    COUNT(DISTINCT registration)                                         AS unique_aircraft,
-    is_weekend
+    COUNT(*)                                                     AS total_operations,
+    SUM(CASE WHEN direction = 'arrival' THEN 1 ELSE 0 END)      AS arrivals,
+    SUM(CASE WHEN direction = 'departure' THEN 1 ELSE 0 END)    AS departures,
+    SUM(CASE WHEN aircraft_category = 'helicopter' THEN 1 ELSE 0 END) AS helicopters,
+    SUM(CASE WHEN aircraft_category = 'fixed_wing' THEN 1 ELSE 0 END) AS fixed_wing,
+    SUM(CASE WHEN aircraft_category = 'jet' THEN 1 ELSE 0 END)        AS jets,
+    0 AS unknown_type,
+    SUM(CASE WHEN is_curfew_period = 1 THEN 1 ELSE 0 END)      AS curfew_operations,
+    COUNT(DISTINCT registration)                                  AS unique_aircraft
   FROM flights
   GROUP BY operation_date
   ORDER BY operation_date
 `);
 
-const insertSummary = db.prepare(`
-  INSERT OR REPLACE INTO daily_summary (
-    operation_date, total_operations, arrivals, departures,
-    helicopters, fixed_wing, jets, unknown_type,
-    curfew_operations, unique_aircraft, day_of_week
-  ) VALUES (
-    @operation_date, @total_operations, @arrivals, @departures,
-    @helicopters, @fixed_wing, @jets, @unknown_type,
-    @curfew_operations, @unique_aircraft, @day_of_week
-  )
-`);
+if (summaryResult.length > 0) {
+  const { columns, values } = summaryResult[0];
+  db.run('BEGIN TRANSACTION');
+  const sumStmt = db.prepare(`
+    INSERT OR REPLACE INTO daily_summary (
+      operation_date, total_operations, arrivals, departures,
+      helicopters, fixed_wing, jets, unknown_type,
+      curfew_operations, unique_aircraft, day_of_week
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
 
-const summaries = summaryQuery.all();
-const insertSummaries = db.transaction((rows) => {
-  for (const row of rows) {
-    insertSummary.run({
-      ...row,
-      day_of_week: dayOfWeek(row.operation_date),
-    });
+  for (const row of values) {
+    const dateIdx = columns.indexOf('operation_date');
+    const opDate = row[dateIdx];
+    sumStmt.run([...row, dayOfWeek(opDate)]);
   }
-});
+  sumStmt.free();
+  db.run('COMMIT');
+  console.log(`Inserted ${values.length} daily_summary rows.`);
+}
 
-insertSummaries(summaries);
-console.log(`Inserted ${summaries.length} daily_summary rows.`);
+// ─── Ingestion log entry ─────────────────────────────────────────────────────
 
-// ---------- also insert an ingestion_log entry ----------
-
-db.prepare(`
+db.run(`
   INSERT INTO ingestion_log (pull_date, completed_at, flights_fetched, flights_inserted, flights_skipped, api_requests_made, status)
   VALUES (?, datetime('now'), ?, ?, 0, 0, 'success')
-`).run(new Date().toISOString().slice(0, 10), flights.length, flights.length);
+`, [new Date().toISOString().slice(0, 10), flights.length, flights.length]);
+console.log('Inserted ingestion_log entry.');
 
-console.log("Inserted ingestion_log entry.");
+// ─── Save to disk ────────────────────────────────────────────────────────────
 
-// ---------- done ----------
-
+const data = db.export();
+const buffer = Buffer.from(data);
+writeFileSync(DB_PATH, buffer);
 db.close();
-console.log("\nSeed complete. Database ready at:", DB_PATH);
+
+console.log(`\nSeed complete. Database saved to: ${DB_PATH}`);
+console.log(`File size: ${(buffer.length / 1024).toFixed(1)} KB`);
