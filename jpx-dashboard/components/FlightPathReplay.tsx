@@ -320,9 +320,9 @@ export function FlightPathReplay() {
   // ── No data state ────────────────────────────────────────────────────────
   if (flights.length === 0) {
     return (
-      <div className="bg-zinc-900 border border-zinc-800 p-8">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8">
         <div className="text-center text-zinc-500 text-sm">
-          <Plane size={24} className="mx-auto mb-3 text-zinc-600" />
+          <Plane size={24} className="mx-auto mb-3 text-zinc-400 dark:text-zinc-600" />
           <p>No flight data available.</p>
           <p className="text-xs text-zinc-600 mt-1">
             Load flights using the date range filter to enable replay.
@@ -333,11 +333,11 @@ export function FlightPathReplay() {
   }
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
       {/* ── Header & Date Selector ──────────────────────────────────────── */}
-      <div className="px-6 pt-5 pb-4 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+      <div className="px-6 pt-5 pb-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-zinc-100 tracking-tight">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
             Flight Activity Replay
           </h3>
           <p className="text-[11px] text-zinc-500 mt-0.5">
@@ -349,14 +349,14 @@ export function FlightPathReplay() {
         <div className="relative">
           <button
             onClick={() => setDateDropdownOpen((v) => !v)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 border border-zinc-700 text-xs text-zinc-300 font-medium hover:border-zinc-600 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-xs text-zinc-700 dark:text-zinc-300 font-medium hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors"
           >
             <Clock size={12} className="text-zinc-500" />
             {selectedDate || 'Select date'}
             <ChevronDown size={12} className="text-zinc-500" />
           </button>
           {dateDropdownOpen && (
-            <div className="absolute right-0 top-full mt-1 z-20 bg-zinc-900 border border-zinc-700 shadow-xl max-h-56 overflow-y-auto min-w-[160px]">
+            <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 shadow-xl max-h-56 overflow-y-auto min-w-[160px]">
               {availableDates.length === 0 && (
                 <div className="px-3 py-2 text-[11px] text-zinc-500">
                   No dates in range
@@ -372,8 +372,8 @@ export function FlightPathReplay() {
                   }}
                   className={`block w-full text-left px-3 py-1.5 text-xs transition-colors ${
                     date === selectedDate
-                      ? 'bg-blue-600/20 text-blue-400'
-                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                      ? 'bg-blue-100 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200'
                   }`}
                 >
                   {date}
@@ -402,7 +402,7 @@ export function FlightPathReplay() {
                 <button
                   key={hour}
                   onClick={() => seekToHour(hour)}
-                  className="flex-1 relative group border-r border-zinc-800/50 last:border-r-0 transition-colors"
+                  className="flex-1 relative group border-r border-zinc-200/50 dark:border-zinc-800/50 last:border-r-0 transition-colors"
                   style={{
                     backgroundColor: isCurrent
                       ? 'rgba(59, 130, 246, 0.15)'
@@ -491,18 +491,18 @@ export function FlightPathReplay() {
       </div>
 
       {/* ── Playback Controls ───────────────────────────────────────────── */}
-      <div className="px-6 py-3 border-t border-zinc-800 flex items-center justify-between gap-4">
+      <div className="px-6 py-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-4">
         <div className="flex items-center gap-1">
           <button
             onClick={resetPlayback}
-            className="p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+            className="p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
             title="Reset to beginning"
           >
             <RotateCcw size={14} strokeWidth={1.8} />
           </button>
           <button
             onClick={stepBackward}
-            className="p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+            className="p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
             title="Step back 1 hour"
           >
             <SkipBack size={14} strokeWidth={1.8} />
@@ -512,7 +512,7 @@ export function FlightPathReplay() {
             className={`p-2 mx-1 transition-colors ${
               isPlaying
                 ? 'bg-blue-600 text-white hover:bg-blue-500'
-                : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 hover:text-white'
+                : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-300 dark:hover:bg-zinc-700 hover:text-zinc-900 dark:hover:text-white'
             }`}
             title={isPlaying ? 'Pause' : 'Play'}
           >
@@ -524,7 +524,7 @@ export function FlightPathReplay() {
           </button>
           <button
             onClick={stepForward}
-            className="p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+            className="p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
             title="Step forward 1 hour"
           >
             <SkipForward size={14} strokeWidth={1.8} />
@@ -533,7 +533,7 @@ export function FlightPathReplay() {
 
         {/* Current time display */}
         <div className="text-center">
-          <span className="text-lg font-semibold text-zinc-100 tabular-nums tracking-tight">
+          <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums tracking-tight">
             {formatTimeDisplay(currentHour, currentMinute)}
           </span>
         </div>
@@ -542,13 +542,13 @@ export function FlightPathReplay() {
         <div className="relative">
           <button
             onClick={() => setSpeedDropdownOpen((v) => !v)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 border border-zinc-700 text-xs font-medium text-zinc-300 hover:border-zinc-600 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors"
           >
             {speed}x
             <ChevronDown size={10} className="text-zinc-500" />
           </button>
           {speedDropdownOpen && (
-            <div className="absolute right-0 bottom-full mb-1 z-20 bg-zinc-900 border border-zinc-700 shadow-xl">
+            <div className="absolute right-0 bottom-full mb-1 z-20 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 shadow-xl">
               {SPEED_OPTIONS.map((s) => (
                 <button
                   key={s}
@@ -558,8 +558,8 @@ export function FlightPathReplay() {
                   }}
                   className={`block w-full text-left px-4 py-1.5 text-xs transition-colors ${
                     s === speed
-                      ? 'bg-blue-600/20 text-blue-400'
-                      : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                      ? 'bg-blue-100 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:hover:text-zinc-200'
                   }`}
                 >
                   {s}x
@@ -571,21 +571,21 @@ export function FlightPathReplay() {
       </div>
 
       {/* ── Running Stats Bar ───────────────────────────────────────────── */}
-      <div className="px-6 py-3 border-t border-zinc-800 bg-zinc-950/50">
+      <div className="px-6 py-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-100/50 dark:bg-zinc-950/50">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {/* Total ops */}
           <div>
-            <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.1em] mb-1">
+            <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.1em] mb-1">
               Operations
             </div>
-            <div className="text-lg font-semibold text-zinc-100 tabular-nums">
+            <div className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
               {runningStats.totalOps}
             </div>
           </div>
 
           {/* Arrivals / Departures */}
           <div>
-            <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.1em] mb-1">
+            <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.1em] mb-1">
               Arr / Dep
             </div>
             <div className="text-sm tabular-nums">
@@ -601,7 +601,7 @@ export function FlightPathReplay() {
 
           {/* Curfew violations */}
           <div>
-            <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.1em] mb-1">
+            <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.1em] mb-1">
               Curfew Violations
             </div>
             <div className="flex items-center gap-1.5">
@@ -622,14 +622,14 @@ export function FlightPathReplay() {
 
           {/* Peak noise */}
           <div>
-            <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.1em] mb-1">
+            <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.1em] mb-1">
               Peak Noise
             </div>
             <div className="flex items-center gap-1.5">
               {runningStats.peakNoiseDb > 0 && (
-                <Volume2 size={12} className="text-red-400" />
+                <Volume2 size={12} className="text-red-500 dark:text-red-400" />
               )}
-              <span className="text-sm font-semibold text-zinc-100 tabular-nums">
+              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
                 {runningStats.peakNoiseDb > 0
                   ? `${runningStats.peakNoiseDb} dB`
                   : '—'}
@@ -644,12 +644,12 @@ export function FlightPathReplay() {
 
           {/* Category breakdown — mini bar */}
           <div className="col-span-2">
-            <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.1em] mb-1">
+            <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.1em] mb-1">
               Category Breakdown
             </div>
             {runningStats.totalOps > 0 ? (
               <div>
-                <div className="flex h-3 overflow-hidden bg-zinc-800">
+                <div className="flex h-3 overflow-hidden bg-zinc-200 dark:bg-zinc-800">
                   {Object.entries(runningStats.categoryBreakdown)
                     .filter(([, count]) => count > 0)
                     .map(([cat, count]) => (
@@ -691,18 +691,18 @@ export function FlightPathReplay() {
       </div>
 
       {/* ── Active Flights Panel ────────────────────────────────────────── */}
-      <div className="px-6 py-4 border-t border-zinc-800">
+      <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-[0.1em]">
+          <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-[0.1em]">
             Active Flights &middot; {formatHour(currentHour)}
           </h4>
-          <span className="text-[11px] text-zinc-600 tabular-nums">
+          <span className="text-[11px] text-zinc-500 dark:text-zinc-600 tabular-nums">
             {activeFlights.length} operation{activeFlights.length !== 1 ? 's' : ''}
           </span>
         </div>
 
         {activeFlights.length === 0 ? (
-          <div className="text-center py-6 text-xs text-zinc-600">
+          <div className="text-center py-6 text-xs text-zinc-500 dark:text-zinc-600">
             No flights active at this hour
           </div>
         ) : (
@@ -715,14 +715,14 @@ export function FlightPathReplay() {
       </div>
 
       {/* ── Hour-by-Hour Summary Table ──────────────────────────────────── */}
-      <div className="px-6 py-4 border-t border-zinc-800">
-        <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-[0.1em] mb-3">
+      <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800">
+        <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-[0.1em] mb-3">
           Hour-by-Hour Summary
         </h4>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-zinc-800">
+              <tr className="border-b border-zinc-200 dark:border-zinc-800">
                 <th className="text-left py-2 px-2 text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
                   Hour
                 </th>
@@ -765,18 +765,18 @@ export function FlightPathReplay() {
                   <tr
                     key={row.hour}
                     onClick={() => seekToHour(row.hour)}
-                    className={`border-b border-zinc-800/50 cursor-pointer transition-colors ${
+                    className={`border-b border-zinc-200/50 dark:border-zinc-800/50 cursor-pointer transition-colors ${
                       isCurrent
-                        ? 'bg-blue-600/10'
+                        ? 'bg-blue-100/50 dark:bg-blue-600/10'
                         : isPassed
                           ? 'opacity-50'
-                          : 'hover:bg-zinc-800/50'
+                          : 'hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'
                     }`}
                   >
-                    <td className="py-1.5 px-2 font-medium text-zinc-300 tabular-nums whitespace-nowrap">
+                    <td className="py-1.5 px-2 font-medium text-zinc-700 dark:text-zinc-300 tabular-nums whitespace-nowrap">
                       {formatHour(row.hour)}
                     </td>
-                    <td className="py-1.5 px-2 text-right text-zinc-300 tabular-nums font-semibold">
+                    <td className="py-1.5 px-2 text-right text-zinc-700 dark:text-zinc-300 tabular-nums font-semibold">
                       {row.operations || <span className="text-zinc-700">&mdash;</span>}
                     </td>
                     <td className="py-1.5 px-2 text-right text-emerald-400/80 tabular-nums">
@@ -878,7 +878,7 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
   };
 
   return (
-    <div className="bg-zinc-950 border border-zinc-800 p-3 transition-all hover:border-zinc-700">
+    <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 p-3 transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
       {/* Top row: ident + direction */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
@@ -886,7 +886,7 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
             className="w-1.5 h-1.5"
             style={{ backgroundColor: categoryColor }}
           />
-          <span className="text-xs font-semibold text-zinc-100 tracking-wide">
+          <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 tracking-wide">
             {flight.ident}
           </span>
           {flight.registration && flight.registration !== flight.ident && (
@@ -914,29 +914,29 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
       {/* Operator & type */}
       <div className="text-[10px] text-zinc-500 mb-1.5 truncate">
         {flight.operator || 'Private'} &middot;{' '}
-        <span className="text-zinc-400">{flight.aircraft_type}</span>
+        <span className="text-zinc-600 dark:text-zinc-400">{flight.aircraft_type}</span>
       </div>
 
       {/* Route */}
-      <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 mb-2">
+      <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 dark:text-zinc-400 mb-2">
         <span className="font-medium">{flight.origin_code || '???'}</span>
-        <span className="text-zinc-600">&rarr;</span>
+        <span className="text-zinc-400 dark:text-zinc-600">&rarr;</span>
         <span className="font-medium">{flight.destination_code || '???'}</span>
       </div>
 
       {/* Noise estimate + action buttons */}
-      <div className="flex items-center justify-between pt-2 border-t border-zinc-800/50">
-        <span className="text-[9px] text-zinc-600 uppercase tracking-wide">
+      <div className="flex items-center justify-between pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
+        <span className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wide">
           Est. Noise
         </span>
         <div className="flex items-center gap-2">
           <span
             className={`text-[11px] font-semibold tabular-nums ${
               flight.noiseDb >= 85
-                ? 'text-red-400'
+                ? 'text-red-500 dark:text-red-400'
                 : flight.noiseDb >= 75
-                  ? 'text-amber-400'
-                  : 'text-zinc-300'
+                  ? 'text-amber-500 dark:text-amber-400'
+                  : 'text-zinc-700 dark:text-zinc-300'
             }`}
           >
             {flight.noiseDb} dB
@@ -945,15 +945,15 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
       </div>
 
       {/* Real-time data buttons */}
-      <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-zinc-800/50">
+      <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
         {/* Track button */}
         <button
           onClick={handleFetchTrack}
           disabled={!flight.fa_flight_id || localTrackLoading}
           className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium transition-colors ${
             cachedTrack
-              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-              : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 border border-zinc-700'
+              ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/30'
+              : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-700'
           } ${!flight.fa_flight_id ? 'opacity-50 cursor-not-allowed' : ''}`}
           title={cachedTrack ? `${cachedTrack.position_count} positions` : 'Fetch flight track'}
         >
@@ -971,8 +971,8 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
           disabled={!flight.registration || localOwnerLoading}
           className={`flex items-center gap-1 px-2 py-1 text-[9px] font-medium transition-colors ${
             cachedOwner
-              ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-              : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 border border-zinc-700'
+              ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-500/30'
+              : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 border border-zinc-300 dark:border-zinc-700'
           } ${!flight.registration ? 'opacity-50 cursor-not-allowed' : ''}`}
           title={cachedOwner?.owner || 'Fetch owner info'}
         >
@@ -988,7 +988,7 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
         {(cachedTrack || cachedOwner) && (
           <button
             onClick={() => setShowDetails(!showDetails)}
-            className="ml-auto text-[9px] text-zinc-500 hover:text-zinc-300"
+            className="ml-auto text-[9px] text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
           >
             {showDetails ? 'Hide' : 'Details'}
           </button>
@@ -997,12 +997,12 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
 
       {/* Expanded details */}
       {showDetails && (cachedTrack || cachedOwner) && (
-        <div className="mt-2 pt-2 border-t border-zinc-800/50 space-y-2">
+        <div className="mt-2 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50 space-y-2">
           {/* Owner info */}
           {cachedOwner && cachedOwner.owner && (
             <div className="text-[10px]">
               <div className="text-zinc-500 uppercase tracking-wide text-[8px] mb-0.5">Owner</div>
-              <div className="text-zinc-300">{cachedOwner.owner}</div>
+              <div className="text-zinc-700 dark:text-zinc-300">{cachedOwner.owner}</div>
               {cachedOwner.location && (
                 <div className="text-zinc-500">{cachedOwner.location}</div>
               )}
@@ -1013,13 +1013,13 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
           {cachedTrack && cachedTrack.positions.length > 0 && (
             <div className="text-[10px]">
               <div className="text-zinc-500 uppercase tracking-wide text-[8px] mb-0.5">Track Data</div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-zinc-400">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-zinc-600 dark:text-zinc-400">
                 <span>Positions:</span>
-                <span className="text-zinc-300">{cachedTrack.position_count}</span>
+                <span className="text-zinc-700 dark:text-zinc-300">{cachedTrack.position_count}</span>
                 {cachedTrack.positions[0]?.altitude && (
                   <>
                     <span>Max Alt:</span>
-                    <span className="text-zinc-300">
+                    <span className="text-zinc-700 dark:text-zinc-300">
                       {Math.max(...cachedTrack.positions.map(p => p.altitude || 0)).toLocaleString()} ft
                     </span>
                   </>
@@ -1027,7 +1027,7 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
                 {cachedTrack.positions[0]?.groundspeed && (
                   <>
                     <span>Max Speed:</span>
-                    <span className="text-zinc-300">
+                    <span className="text-zinc-700 dark:text-zinc-300">
                       {Math.max(...cachedTrack.positions.map(p => p.groundspeed || 0))} kts
                     </span>
                   </>

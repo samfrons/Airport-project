@@ -188,8 +188,8 @@ function ChipSelect<T extends string>({
               onClick={() => toggle(opt)}
               className={`text-[10px] px-2 py-1 transition-colors capitalize ${
                 isSelected
-                  ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40'
-                  : 'bg-zinc-800/60 text-zinc-500 border border-zinc-700/40 hover:text-zinc-300'
+                  ? 'bg-blue-600/30 text-blue-700 dark:text-blue-300 border border-blue-500/40'
+                  : 'bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-500 border border-zinc-300/40 dark:border-zinc-700/40 hover:text-zinc-700 dark:hover:text-zinc-300'
               }`}
             >
               {getLabel ? getLabel(opt) : opt}
@@ -302,16 +302,16 @@ export function ThresholdManager() {
   };
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-blue-900/30 p-1.5">
               <Settings2 size={16} className="text-blue-400" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Threshold Administration
               </h3>
               <p className="text-[10px] text-zinc-500 mt-0.5">
@@ -325,7 +325,7 @@ export function ThresholdManager() {
               className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition-colors ${
                 confirmReset
                   ? 'bg-red-900/40 text-red-400 border border-red-800/40'
-                  : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/40 hover:text-zinc-300'
+                  : 'bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-500 border border-zinc-300/40 dark:border-zinc-700/40 hover:text-zinc-700 dark:hover:text-zinc-300'
               }`}
             >
               <RotateCcw size={10} />
@@ -355,8 +355,8 @@ export function ThresholdManager() {
             return (
               <div
                 key={threshold.id}
-                className={`border bg-zinc-900/40 px-3 py-2.5 group ${
-                  threshold.enabled ? 'border-zinc-800/60' : 'border-zinc-800/30 opacity-50'
+                className={`border bg-white/40 dark:bg-zinc-900/40 px-3 py-2.5 group ${
+                  threshold.enabled ? 'border-zinc-200/60 dark:border-zinc-800/60' : 'border-zinc-200/30 dark:border-zinc-800/30 opacity-50'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
@@ -374,7 +374,7 @@ export function ThresholdManager() {
                       />
                     </button>
                     {typeIcons[threshold.type]}
-                    <span className="text-[11px] font-medium text-zinc-300">
+                    <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
                       {threshold.label}
                     </span>
                     {threshold.isCustom && (
@@ -391,7 +391,7 @@ export function ThresholdManager() {
                     </span>
                     <button
                       onClick={() => openEditForm(threshold)}
-                      className="text-[9px] px-1.5 py-0.5 bg-zinc-800/60 text-zinc-500 hover:text-zinc-200 transition-colors opacity-0 group-hover:opacity-100"
+                      className="text-[9px] px-1.5 py-0.5 bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors opacity-0 group-hover:opacity-100"
                     >
                       Edit
                     </button>
@@ -412,17 +412,17 @@ export function ThresholdManager() {
 
                 <div className="flex flex-wrap gap-1.5">
                   {threshold.noiseThresholdDb && (
-                    <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                    <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                       Limit: {threshold.noiseThresholdDb} dB
                     </span>
                   )}
                   {threshold.activeHours && (
-                    <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                    <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                       Hours: {threshold.activeHours.start}:00–{threshold.activeHours.end}:00
                     </span>
                   )}
                   {threshold.activeMonths && threshold.activeMonths.length > 0 && (
-                    <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                    <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                       Months: {threshold.activeMonths.map((m) => MONTH_LABELS[m - 1]).join(', ')}
                     </span>
                   )}
@@ -451,15 +451,15 @@ export function ThresholdManager() {
       {/* ─── Create / Edit Form Modal ─────────────────────────────────── */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
             {/* Form Header */}
-            <div className="px-5 py-4 border-b border-zinc-800/60 flex items-center justify-between sticky top-0 bg-zinc-900 z-10">
-              <h4 className="text-sm font-semibold text-zinc-100">
+            <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between sticky top-0 bg-white dark:bg-zinc-900 z-10">
+              <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 {editingId ? 'Edit Threshold' : 'New Threshold'}
               </h4>
               <button
                 onClick={closeForm}
-                className="text-zinc-500 hover:text-zinc-200 transition-colors"
+                className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
               >
                 <X size={16} />
               </button>
@@ -476,7 +476,7 @@ export function ThresholdManager() {
                   value={form.label}
                   onChange={(e) => updateField('label', e.target.value)}
                   placeholder="e.g. Helicopter Dawn Restriction"
-                  className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
                 />
               </div>
 
@@ -505,7 +505,7 @@ export function ThresholdManager() {
                     onChange={(e) =>
                       updateField('type', e.target.value as BiodiversityThreshold['type'])
                     }
-                    className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 focus:outline-none focus:border-blue-600 transition-colors"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-blue-600 transition-colors"
                   >
                     {THRESHOLD_TYPES.map(({ value, label }) => (
                       <option key={value} value={value}>
@@ -524,7 +524,7 @@ export function ThresholdManager() {
                     onChange={(e) =>
                       updateField('violationSeverity', e.target.value as ImpactSeverity)
                     }
-                    className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 focus:outline-none focus:border-blue-600 transition-colors"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-blue-600 transition-colors"
                   >
                     {SEVERITIES.map((sev) => (
                       <option key={sev} value={sev}>
@@ -552,7 +552,7 @@ export function ThresholdManager() {
                     placeholder="e.g. 72"
                     min={30}
                     max={120}
-                    className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
                   />
                 </div>
               )}
@@ -571,7 +571,7 @@ export function ThresholdManager() {
                       placeholder="e.g. 4"
                       min={0}
                       max={23}
-                      className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
+                      className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
                     />
                   </div>
                   <div>
@@ -585,7 +585,7 @@ export function ThresholdManager() {
                       placeholder="e.g. 7"
                       min={0}
                       max={23}
-                      className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
+                      className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
                     />
                   </div>
                 </div>
@@ -617,8 +617,8 @@ export function ThresholdManager() {
                           }}
                           className={`text-[10px] py-1.5 transition-colors ${
                             isActive
-                              ? 'bg-blue-600/30 text-blue-300 border border-blue-500/40'
-                              : 'bg-zinc-800/60 text-zinc-500 border border-zinc-700/40 hover:text-zinc-300'
+                              ? 'bg-blue-600/30 text-blue-700 dark:text-blue-300 border border-blue-500/40'
+                              : 'bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-500 border border-zinc-300/40 dark:border-zinc-700/40 hover:text-zinc-700 dark:hover:text-zinc-300'
                           }`}
                         >
                           {label}
@@ -668,10 +668,10 @@ export function ThresholdManager() {
               />
 
               {/* ─── Actions ─────────────────────────────────────── */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800/60">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-200/60 dark:border-zinc-800/60">
                 <button
                   onClick={closeForm}
-                  className="px-4 py-2 text-[11px] font-medium text-zinc-400 bg-zinc-800/50 border border-zinc-700/40 hover:text-zinc-200 transition-colors"
+                  className="px-4 py-2 text-[11px] font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-200/50 dark:bg-zinc-800/50 border border-zinc-300/40 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
                 >
                   Cancel
                 </button>

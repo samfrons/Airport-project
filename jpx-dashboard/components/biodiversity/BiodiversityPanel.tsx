@@ -39,11 +39,11 @@ const groupLabels: Record<TaxonomicGroup, string> = {
 };
 
 const severityBadge: Record<ImpactSeverity, { bg: string; text: string; label: string }> = {
-  critical: { bg: 'bg-red-950/60', text: 'text-red-400', label: 'Critical' },
-  high: { bg: 'bg-orange-950/60', text: 'text-orange-400', label: 'High' },
-  moderate: { bg: 'bg-amber-950/60', text: 'text-amber-400', label: 'Moderate' },
-  low: { bg: 'bg-lime-950/60', text: 'text-lime-400', label: 'Low' },
-  minimal: { bg: 'bg-green-950/60', text: 'text-green-400', label: 'Minimal' },
+  critical: { bg: 'bg-red-100 dark:bg-red-950/60', text: 'text-red-600 dark:text-red-400', label: 'Critical' },
+  high: { bg: 'bg-orange-100 dark:bg-orange-950/60', text: 'text-orange-600 dark:text-orange-400', label: 'High' },
+  moderate: { bg: 'bg-amber-100 dark:bg-amber-950/60', text: 'text-amber-600 dark:text-amber-400', label: 'Moderate' },
+  low: { bg: 'bg-lime-100 dark:bg-lime-950/60', text: 'text-lime-600 dark:text-lime-400', label: 'Low' },
+  minimal: { bg: 'bg-green-100 dark:bg-green-950/60', text: 'text-green-600 dark:text-green-400', label: 'Minimal' },
 };
 
 function SpeciesCard({ species }: { species: SpeciesImpact }) {
@@ -51,16 +51,16 @@ function SpeciesCard({ species }: { species: SpeciesImpact }) {
   const badge = severityBadge[species.severity];
 
   return (
-    <div className="border border-zinc-800/60 bg-zinc-900/40">
+    <div className="border border-zinc-200/60 dark:border-zinc-800/60 bg-zinc-50/40 dark:bg-zinc-900/40">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-3 py-2 hover:bg-zinc-800/30 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30 transition-colors"
       >
         <div className="flex items-center gap-2">
           <span className="text-zinc-500">{groupIcons[species.taxonomicGroup]}</span>
-          <span className="text-[11px] font-medium text-zinc-300">{species.commonName}</span>
+          <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">{species.commonName}</span>
           {species.conservationStatus && (
-            <span className="text-[8px] px-1.5 py-0.5 bg-red-950/40 text-red-400 border border-red-900/30 uppercase tracking-wider">
+            <span className="text-[8px] px-1.5 py-0.5 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200/30 dark:border-red-900/30 uppercase tracking-wider">
               {species.conservationStatus}
             </span>
           )}
@@ -73,19 +73,19 @@ function SpeciesCard({ species }: { species: SpeciesImpact }) {
         </div>
       </button>
       {expanded && (
-        <div className="px-3 pb-3 pt-1 border-t border-zinc-800/40 space-y-2">
+        <div className="px-3 pb-3 pt-1 border-t border-zinc-200/40 dark:border-zinc-800/40 space-y-2">
           <div className="text-[10px] text-zinc-500 italic">{species.scientificName}</div>
-          <p className="text-[11px] text-zinc-400 leading-relaxed">{species.description}</p>
+          <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed">{species.description}</p>
           <div className="flex flex-wrap gap-1.5 mt-1.5">
             {species.impactTypes.map((type) => (
-              <span key={type} className="text-[9px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 capitalize">
+              <span key={type} className="text-[9px] px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-500 capitalize">
                 {type}
               </span>
             ))}
           </div>
           <div className="flex items-center justify-between mt-1.5">
-            <span className="text-[9px] text-zinc-600">
-              Sensitivity threshold: <span className="text-zinc-400 tabular-nums">{species.sensitivityThresholdDb} dB</span>
+            <span className="text-[9px] text-zinc-500 dark:text-zinc-600">
+              Sensitivity threshold: <span className="text-zinc-600 dark:text-zinc-400 tabular-nums">{species.sensitivityThresholdDb} dB</span>
             </span>
             <span className="text-[9px] text-zinc-600">{species.source}</span>
           </div>
@@ -120,15 +120,15 @@ export function BiodiversityPanel() {
   ];
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div className="flex items-center gap-3 mb-1">
-          <div className="bg-emerald-900/40 p-1.5">
-            <TreePine size={16} className="text-emerald-400" strokeWidth={1.5} />
+          <div className="bg-emerald-100 dark:bg-emerald-900/40 p-1.5">
+            <TreePine size={16} className="text-emerald-600 dark:text-emerald-400" strokeWidth={1.5} />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-zinc-100">Biodiversity & Wildlife Impact</h3>
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Biodiversity & Wildlife Impact</h3>
             <p className="text-[10px] text-zinc-500 mt-0.5">
               Aircraft noise effects on local ecosystems based on peer-reviewed research
             </p>
@@ -137,15 +137,15 @@ export function BiodiversityPanel() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-zinc-800/60">
+      <div className="flex border-b border-zinc-200/60 dark:border-zinc-800/60">
         {tabs.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
             className={`flex-1 px-3 py-2 text-[11px] font-medium transition-colors ${
               activeTab === key
-                ? 'text-emerald-400 border-b-2 border-emerald-400 bg-emerald-950/20'
-                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'
+                ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600 dark:border-emerald-400 bg-emerald-100/20 dark:bg-emerald-950/20'
+                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30'
             }`}
           >
             {label}
@@ -160,31 +160,31 @@ export function BiodiversityPanel() {
           <div className="space-y-5">
             {/* Key Metrics */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-zinc-950/50 border border-zinc-800/60 px-3 py-3">
+              <div className="bg-zinc-100/50 dark:bg-zinc-950/50 border border-zinc-200/60 dark:border-zinc-800/60 px-3 py-3">
                 <div className="flex items-center gap-1.5 mb-1.5">
-                  <AlertTriangle size={10} className="text-red-400" />
+                  <AlertTriangle size={10} className="text-red-500 dark:text-red-400" />
                   <span className="text-[9px] text-zinc-500 uppercase tracking-wider">Critical/High</span>
                 </div>
-                <div className="text-xl font-semibold text-zinc-100 tabular-nums">
+                <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">
                   {criticalCount + highCount}
                 </div>
-                <div className="text-[10px] text-zinc-600">species severely impacted</div>
+                <div className="text-[10px] text-zinc-500 dark:text-zinc-600">species severely impacted</div>
               </div>
-              <div className="bg-zinc-950/50 border border-zinc-800/60 px-3 py-3">
+              <div className="bg-zinc-100/50 dark:bg-zinc-950/50 border border-zinc-200/60 dark:border-zinc-800/60 px-3 py-3">
                 <div className="flex items-center gap-1.5 mb-1.5">
-                  <TrendingDown size={10} className="text-amber-400" />
+                  <TrendingDown size={10} className="text-amber-500 dark:text-amber-400" />
                   <span className="text-[9px] text-zinc-500 uppercase tracking-wider">Species Loss</span>
                 </div>
-                <div className="text-xl font-semibold text-zinc-100 tabular-nums">-28%</div>
-                <div className="text-[10px] text-zinc-600">richness within 5km</div>
+                <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">-28%</div>
+                <div className="text-[10px] text-zinc-500 dark:text-zinc-600">richness within 5km</div>
               </div>
-              <div className="bg-zinc-950/50 border border-zinc-800/60 px-3 py-3">
+              <div className="bg-zinc-100/50 dark:bg-zinc-950/50 border border-zinc-200/60 dark:border-zinc-800/60 px-3 py-3">
                 <div className="flex items-center gap-1.5 mb-1.5">
-                  <BookOpen size={10} className="text-blue-400" />
+                  <BookOpen size={10} className="text-blue-500 dark:text-blue-400" />
                   <span className="text-[9px] text-zinc-500 uppercase tracking-wider">Protected</span>
                 </div>
-                <div className="text-xl font-semibold text-zinc-100 tabular-nums">{protectedCount}</div>
-                <div className="text-[10px] text-zinc-600">listed species affected</div>
+                <div className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 tabular-nums">{protectedCount}</div>
+                <div className="text-[10px] text-zinc-500 dark:text-zinc-600">listed species affected</div>
               </div>
             </div>
 
@@ -198,16 +198,16 @@ export function BiodiversityPanel() {
                   <div key={indicator.id} className="flex items-center gap-3 group">
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] text-zinc-300">{indicator.label}</span>
+                        <span className="text-[11px] text-zinc-700 dark:text-zinc-300">{indicator.label}</span>
                         <span className={`text-[11px] font-medium tabular-nums ${
-                          indicator.value < 0 ? 'text-red-400' : 'text-zinc-300'
+                          indicator.value < 0 ? 'text-red-500 dark:text-red-400' : 'text-zinc-700 dark:text-zinc-300'
                         }`}>
                           {indicator.value > 0 ? indicator.value : indicator.value}{indicator.unit.startsWith('%') ? indicator.unit : ` ${indicator.unit}`}
                         </span>
                       </div>
                       {/* Progress bar for negative indicators */}
                       {indicator.value < 0 && (
-                        <div className="mt-1 h-1 bg-zinc-800 w-full">
+                        <div className="mt-1 h-1 bg-zinc-200 dark:bg-zinc-800 w-full">
                           <div
                             className="h-full transition-all"
                             style={{
@@ -229,12 +229,12 @@ export function BiodiversityPanel() {
             </div>
 
             {/* Key Finding Highlight */}
-            <div className="bg-emerald-950/20 border border-emerald-900/30 px-4 py-3">
+            <div className="bg-emerald-100/20 dark:bg-emerald-950/20 border border-emerald-200/30 dark:border-emerald-900/30 px-4 py-3">
               <div className="text-[9px] text-emerald-600 uppercase tracking-wider mb-1.5">Key Research Finding</div>
-              <p className="text-[11px] text-zinc-300 leading-relaxed">
-                Even moderate aircraft noise at <span className="text-emerald-400 font-medium">~55 dB</span> causes
-                a <span className="text-red-400 font-medium">31% decline</span> in bird abundance and
-                a <span className="text-red-400 font-medium">25% decline</span> in species richness.
+              <p className="text-[11px] text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                Even moderate aircraft noise at <span className="text-emerald-600 dark:text-emerald-400 font-medium">~55 dB</span> causes
+                a <span className="text-red-500 dark:text-red-400 font-medium">31% decline</span> in bird abundance and
+                a <span className="text-red-500 dark:text-red-400 font-medium">25% decline</span> in species richness.
                 These noise levels are comparable to suburban neighborhoods and extend well beyond
                 the immediate airport boundary.
               </p>
@@ -250,10 +250,10 @@ export function BiodiversityPanel() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(speciesByGroup).map(([group, count]) => (
-                  <div key={group} className="flex items-center gap-1.5 bg-zinc-800/50 px-2 py-1">
+                  <div key={group} className="flex items-center gap-1.5 bg-zinc-200/50 dark:bg-zinc-800/50 px-2 py-1">
                     {groupIcons[group as TaxonomicGroup]}
-                    <span className="text-[10px] text-zinc-400">{groupLabels[group as TaxonomicGroup]}</span>
-                    <span className="text-[10px] text-zinc-600 tabular-nums">{count}</span>
+                    <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{groupLabels[group as TaxonomicGroup]}</span>
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-600 tabular-nums">{count}</span>
                   </div>
                 ))}
               </div>
@@ -270,8 +270,8 @@ export function BiodiversityPanel() {
                 onClick={() => setSelectedGroup('all')}
                 className={`px-2 py-1 text-[10px] font-medium transition-colors ${
                   selectedGroup === 'all'
-                    ? 'bg-emerald-900/40 text-emerald-400'
-                    : 'text-zinc-500 hover:text-zinc-300 bg-zinc-800/30'
+                    ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 bg-zinc-200/30 dark:bg-zinc-800/30'
                 }`}
               >
                 All ({speciesImpacts.length})
@@ -282,8 +282,8 @@ export function BiodiversityPanel() {
                   onClick={() => setSelectedGroup(group)}
                   className={`flex items-center gap-1 px-2 py-1 text-[10px] font-medium transition-colors ${
                     selectedGroup === group
-                      ? 'bg-emerald-900/40 text-emerald-400'
-                      : 'text-zinc-500 hover:text-zinc-300 bg-zinc-800/30'
+                      ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400'
+                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 bg-zinc-200/30 dark:bg-zinc-800/30'
                   }`}
                 >
                   {groupIcons[group]}
@@ -313,14 +313,14 @@ export function BiodiversityPanel() {
                 .map((habitat) => {
                   const badge = severityBadge[habitat.impactSeverity];
                   return (
-                    <div key={habitat.id} className="border border-zinc-800/60 bg-zinc-900/40 px-3 py-2.5">
+                    <div key={habitat.id} className="border border-zinc-200/60 dark:border-zinc-800/60 bg-zinc-50/40 dark:bg-zinc-900/40 px-3 py-2.5">
                       <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
                           <MapPin size={10} className="text-zinc-500" />
-                          <span className="text-[11px] font-medium text-zinc-300">{habitat.name}</span>
+                          <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">{habitat.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-zinc-400 tabular-nums">{habitat.estimatedNoiseExposure} dB</span>
+                          <span className="text-[10px] text-zinc-600 dark:text-zinc-400 tabular-nums">{habitat.estimatedNoiseExposure} dB</span>
                           <span className={`text-[9px] px-1.5 py-0.5 ${badge.bg} ${badge.text} uppercase tracking-wider`}>
                             {badge.label}
                           </span>
@@ -329,13 +329,13 @@ export function BiodiversityPanel() {
                       <p className="text-[10px] text-zinc-500 leading-relaxed mb-1.5">{habitat.description}</p>
                       <div className="flex flex-wrap gap-1">
                         {habitat.keySpecies.map((sp) => (
-                          <span key={sp} className="text-[9px] px-1.5 py-0.5 bg-zinc-800/60 text-zinc-500">
+                          <span key={sp} className="text-[9px] px-1.5 py-0.5 bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-500">
                             {sp}
                           </span>
                         ))}
                       </div>
                       <div className="mt-1.5">
-                        <div className="h-1 bg-zinc-800 w-full">
+                        <div className="h-1 bg-zinc-200 dark:bg-zinc-800 w-full">
                           <div
                             className="h-full transition-all"
                             style={{
@@ -345,8 +345,8 @@ export function BiodiversityPanel() {
                           />
                         </div>
                         <div className="flex justify-between mt-0.5">
-                          <span className="text-[8px] text-zinc-700 capitalize">{habitat.type}</span>
-                          <span className="text-[8px] text-zinc-700">0 dB ——— 90 dB</span>
+                          <span className="text-[8px] text-zinc-500 dark:text-zinc-700 capitalize">{habitat.type}</span>
+                          <span className="text-[8px] text-zinc-500 dark:text-zinc-700">0 dB ——— 90 dB</span>
                         </div>
                       </div>
                     </div>
@@ -364,25 +364,25 @@ export function BiodiversityPanel() {
             </p>
             <div className="space-y-2">
               {researchFindings.map((finding) => (
-                <div key={finding.id} className="border border-zinc-800/60 bg-zinc-900/40 px-3 py-2.5">
+                <div key={finding.id} className="border border-zinc-200/60 dark:border-zinc-800/60 bg-zinc-50/40 dark:bg-zinc-900/40 px-3 py-2.5">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-medium text-zinc-200">{finding.title}</span>
-                    <span className="text-[9px] text-zinc-600 tabular-nums">{finding.year}</span>
+                    <span className="text-[11px] font-medium text-zinc-800 dark:text-zinc-200">{finding.title}</span>
+                    <span className="text-[9px] text-zinc-500 dark:text-zinc-600 tabular-nums">{finding.year}</span>
                   </div>
-                  <p className="text-[11px] text-zinc-400 leading-relaxed mb-2">{finding.finding}</p>
+                  <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed mb-2">{finding.finding}</p>
                   <div className="flex items-center gap-3 flex-wrap">
                     {finding.noiseLevel && (
-                      <span className="text-[9px] px-1.5 py-0.5 bg-amber-950/40 text-amber-400">
+                      <span className="text-[9px] px-1.5 py-0.5 bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
                         {finding.noiseLevel}
                       </span>
                     )}
                     {finding.impactMetric && (
-                      <span className="text-[9px] px-1.5 py-0.5 bg-red-950/40 text-red-400">
+                      <span className="text-[9px] px-1.5 py-0.5 bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400">
                         {finding.impactMetric}
                       </span>
                     )}
                     {finding.taxonomicGroup && (
-                      <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500">
+                      <span className="flex items-center gap-1 text-[9px] px-1.5 py-0.5 bg-zinc-200 dark:bg-zinc-800 text-zinc-500">
                         {groupIcons[finding.taxonomicGroup]}
                         {groupLabels[finding.taxonomicGroup]}
                       </span>

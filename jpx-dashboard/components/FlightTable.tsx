@@ -175,31 +175,31 @@ export function FlightTable() {
   }
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
       {/* Search bar */}
-      <div className="px-5 py-3 border-b border-zinc-800/60 flex items-center gap-3">
-        <Search size={14} className="text-zinc-600 flex-shrink-0" />
+      <div className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-800/60 flex items-center gap-3">
+        <Search size={14} className="text-zinc-400 dark:text-zinc-600 flex-shrink-0" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => { setSearchQuery(e.target.value); setPage(0); }}
           placeholder="Search by tail number, operator, aircraft type, route..."
-          className="flex-1 bg-transparent text-[12px] text-zinc-300 placeholder:text-zinc-600 focus:outline-none"
+          className="flex-1 bg-transparent text-[12px] text-zinc-700 dark:text-zinc-300 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none"
         />
         {searchQuery && (
-          <button onClick={() => setSearchQuery('')} className="text-zinc-600 hover:text-zinc-300">
+          <button onClick={() => setSearchQuery('')} className="text-zinc-400 dark:text-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300">
             <X size={12} />
           </button>
         )}
       </div>
 
       {/* Toolbar */}
-      <div className="px-5 py-3 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-3">
+      <div className="px-5 py-3 border-b border-zinc-200 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-semibold text-zinc-200 tabular-nums">
+          <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 tabular-nums">
             {filteredFlights.length}
           </span>
-          <span className="text-xs text-zinc-600">flights</span>
+          <span className="text-xs text-zinc-500 dark:text-zinc-600">flights</span>
 
           {selectedAirport && (
             <span className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/25 text-amber-400 text-[11px] font-medium px-2 py-0.5">
@@ -219,7 +219,7 @@ export function FlightTable() {
           <select
             value={categoryFilter}
             onChange={(e) => { setCategoryFilter(e.target.value); setPage(0); }}
-            className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-medium px-2 py-1.5 focus:outline-none focus:border-blue-600 transition-colors"
+            className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-medium px-2 py-1.5 focus:outline-none focus:border-blue-600 transition-colors"
           >
             <option value="all">All types</option>
             <option value="helicopter">Helicopter</option>
@@ -232,7 +232,7 @@ export function FlightTable() {
           <select
             value={directionFilter}
             onChange={(e) => { setDirectionFilter(e.target.value); setPage(0); }}
-            className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-medium px-2 py-1.5 focus:outline-none focus:border-blue-600 transition-colors"
+            className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-medium px-2 py-1.5 focus:outline-none focus:border-blue-600 transition-colors"
           >
             <option value="all">All directions</option>
             <option value="arrival">Arrivals</option>
@@ -243,7 +243,7 @@ export function FlightTable() {
           <select
             value={violationFilter}
             onChange={(e) => { setViolationFilter(e.target.value); setPage(0); }}
-            className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-medium px-2 py-1.5 focus:outline-none focus:border-blue-600 transition-colors"
+            className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-medium px-2 py-1.5 focus:outline-none focus:border-blue-600 transition-colors"
           >
             <option value="all">All status</option>
             <option value="violations">With violations</option>
@@ -257,7 +257,7 @@ export function FlightTable() {
           <div className="flex items-center gap-1 ml-1">
             <button
               onClick={handleExportFlights}
-              className="flex items-center gap-1 px-2 py-1.5 bg-zinc-800/50 text-zinc-500 text-[10px] font-medium border border-zinc-700/40 hover:text-zinc-200 transition-colors"
+              className="flex items-center gap-1 px-2 py-1.5 bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 text-[10px] font-medium border border-zinc-200 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
               title="Export flights CSV"
             >
               <Download size={10} />
@@ -265,7 +265,7 @@ export function FlightTable() {
             </button>
             <button
               onClick={handleExportViolations}
-              className="flex items-center gap-1 px-2 py-1.5 bg-zinc-800/50 text-zinc-500 text-[10px] font-medium border border-zinc-700/40 hover:text-zinc-200 transition-colors"
+              className="flex items-center gap-1 px-2 py-1.5 bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 text-[10px] font-medium border border-zinc-200 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
               title="Export violations CSV"
             >
               <Download size={10} />
@@ -279,7 +279,7 @@ export function FlightTable() {
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-zinc-800">
+            <tr className="border-b border-zinc-200 dark:border-zinc-800">
               {([
                 { field: 'operation_date' as const, label: 'Date / Time' },
                 { field: 'ident' as const, label: 'Ident' },
@@ -288,7 +288,7 @@ export function FlightTable() {
               ] as const).map(({ field, label }) => (
                 <th
                   key={field}
-                  className="px-5 py-3 text-left text-[10px] font-medium text-zinc-600 uppercase tracking-widest cursor-pointer hover:text-zinc-400 transition-colors"
+                  className="px-5 py-3 text-left text-[10px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-widest cursor-pointer hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors"
                   onClick={() => handleSort(field)}
                 >
                   <div className="flex items-center gap-1.5">
@@ -297,13 +297,13 @@ export function FlightTable() {
                   </div>
                 </th>
               ))}
-              <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-600 uppercase tracking-widest">
+              <th className="px-5 py-3 text-left text-[10px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-widest">
                 Route
               </th>
-              <th className="px-5 py-3 text-center text-[10px] font-medium text-zinc-600 uppercase tracking-widest">
+              <th className="px-5 py-3 text-center text-[10px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-widest">
                 dB
               </th>
-              <th className="px-5 py-3 text-right text-[10px] font-medium text-zinc-600 uppercase tracking-widest">
+              <th className="px-5 py-3 text-right text-[10px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-widest">
                 Status
               </th>
             </tr>
@@ -317,25 +317,25 @@ export function FlightTable() {
               return (
                 <tr
                   key={flight.fa_flight_id}
-                  className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors cursor-pointer"
+                  className="border-b border-zinc-100 dark:border-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer"
                   onClick={() => setSelectedFlight(flight)}
                 >
                   {/* Date/Time */}
                   <td className="px-5 py-3 whitespace-nowrap">
-                    <div className="text-[13px] text-zinc-200 font-medium tabular-nums">
+                    <div className="text-[13px] text-zinc-800 dark:text-zinc-200 font-medium tabular-nums">
                       {formatDate(flight.operation_date)}
                     </div>
-                    <div className="text-[11px] text-zinc-600 tabular-nums mt-0.5">
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-600 tabular-nums mt-0.5">
                       {formatTime(flight.actual_on || flight.actual_off || flight.scheduled_on || flight.scheduled_off)}
                     </div>
                   </td>
 
                   {/* Ident */}
                   <td className="px-5 py-3 whitespace-nowrap">
-                    <div className="text-[13px] font-semibold text-zinc-200 tracking-wide">
+                    <div className="text-[13px] font-semibold text-zinc-800 dark:text-zinc-200 tracking-wide">
                       {flight.ident || '—'}
                     </div>
-                    <div className="text-[11px] text-zinc-600 mt-0.5">
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-600 mt-0.5">
                       {flight.registration || '—'}
                     </div>
                   </td>
@@ -344,11 +344,11 @@ export function FlightTable() {
                   <td className="px-5 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${categoryDotColors[flight.aircraft_category]}`} />
-                      <span className="text-[13px] text-zinc-300">
+                      <span className="text-[13px] text-zinc-700 dark:text-zinc-300">
                         {categoryLabels[flight.aircraft_category]}
                       </span>
                     </div>
-                    <div className="text-[11px] text-zinc-600 mt-0.5 pl-4">
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-600 mt-0.5 pl-4">
                       {flight.aircraft_type || '—'}
                     </div>
                   </td>
@@ -356,20 +356,20 @@ export function FlightTable() {
                   {/* Direction */}
                   <td className="px-5 py-3 whitespace-nowrap">
                     {flight.direction === 'arrival' ? (
-                      <PlaneLanding size={14} className="text-emerald-400" strokeWidth={1.8} />
+                      <PlaneLanding size={14} className="text-emerald-500 dark:text-emerald-400" strokeWidth={1.8} />
                     ) : (
-                      <PlaneTakeoff size={14} className="text-blue-400" strokeWidth={1.8} />
+                      <PlaneTakeoff size={14} className="text-blue-500 dark:text-blue-400" strokeWidth={1.8} />
                     )}
                   </td>
 
                   {/* Route */}
                   <td className="px-5 py-3 whitespace-nowrap">
-                    <div className="text-[13px] text-zinc-300 font-medium tracking-wide tabular-nums">
+                    <div className="text-[13px] text-zinc-700 dark:text-zinc-300 font-medium tracking-wide tabular-nums">
                       {flight.direction === 'arrival'
                         ? `${flight.origin_code || '?'} \u2192 KJPX`
                         : `KJPX \u2192 ${flight.destination_code || '?'}`}
                     </div>
-                    <div className="text-[11px] text-zinc-600 mt-0.5">
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-600 mt-0.5">
                       {flight.direction === 'arrival' ? flight.origin_city : flight.destination_city}
                     </div>
                   </td>
@@ -377,7 +377,7 @@ export function FlightTable() {
                   {/* Noise dB */}
                   <td className="px-5 py-3 whitespace-nowrap text-center">
                     <span className={`text-[12px] font-medium tabular-nums ${
-                      noiseDb >= 85 ? 'text-red-400' : noiseDb >= 75 ? 'text-amber-400' : noiseDb >= 65 ? 'text-yellow-500' : 'text-zinc-500'
+                      noiseDb >= 85 ? 'text-red-500 dark:text-red-400' : noiseDb >= 75 ? 'text-amber-500 dark:text-amber-400' : noiseDb >= 65 ? 'text-yellow-600 dark:text-yellow-500' : 'text-zinc-500'
                     }`}>
                       {noiseDb}
                     </span>
@@ -415,7 +415,7 @@ export function FlightTable() {
         </table>
 
         {sortedFlights.length === 0 && (
-          <div className="p-12 text-center text-sm text-zinc-600">
+          <div className="p-12 text-center text-sm text-zinc-500 dark:text-zinc-600">
             No flights found for the selected filters
           </div>
         )}
@@ -423,15 +423,15 @@ export function FlightTable() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="px-5 py-3 border-t border-zinc-800 flex items-center justify-between">
-          <div className="text-[11px] text-zinc-600 tabular-nums">
+        <div className="px-5 py-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+          <div className="text-[11px] text-zinc-500 dark:text-zinc-600 tabular-nums">
             Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sortedFlights.length)} of {sortedFlights.length}
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0}
-              className="p-1.5 text-zinc-500 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft size={14} />
             </button>
@@ -453,7 +453,7 @@ export function FlightTable() {
                   className={`w-7 h-7 text-[10px] font-medium tabular-nums transition-colors ${
                     page === pageNum
                       ? 'bg-blue-600 text-white'
-                      : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800'
+                      : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                   }`}
                 >
                   {pageNum + 1}
@@ -463,7 +463,7 @@ export function FlightTable() {
             <button
               onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
               disabled={page >= totalPages - 1}
-              className="p-1.5 text-zinc-500 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              className="p-1.5 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight size={14} />
             </button>

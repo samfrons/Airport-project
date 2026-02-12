@@ -47,12 +47,12 @@ function ViolationCard({
 
   return (
     <div
-      className="border bg-zinc-900/40"
+      className="border bg-white/40 dark:bg-zinc-900/40"
       style={{ borderColor: `${getImpactSeverityColor(violation.overallSeverity)}30` }}
     >
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-800/30 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30 transition-colors"
       >
         <div className="flex items-center gap-3">
           <div
@@ -61,7 +61,7 @@ function ViolationCard({
           />
           <div className="text-left">
             <div className="flex items-center gap-2">
-              <span className="text-[12px] font-semibold text-zinc-200 tracking-wide">
+              <span className="text-[12px] font-semibold text-zinc-800 dark:text-zinc-200 tracking-wide">
                 {violation.registration}
               </span>
               <span className="text-[10px] text-zinc-500">
@@ -73,7 +73,7 @@ function ViolationCard({
                 {violation.operationDate} · {violation.operationHour}:00 ET
               </span>
               <span className="text-[10px] text-zinc-600">·</span>
-              <span className="text-[10px] text-zinc-400 tabular-nums font-medium">
+              <span className="text-[10px] text-zinc-600 dark:text-zinc-400 tabular-nums font-medium">
                 {violation.estimatedNoiseDb} dB
               </span>
             </div>
@@ -102,7 +102,7 @@ function ViolationCard({
       </button>
 
       {expanded && (
-        <div className="px-3 pb-3 border-t border-zinc-800/40 space-y-3 pt-2">
+        <div className="px-3 pb-3 border-t border-zinc-200/40 dark:border-zinc-800/40 space-y-3 pt-2">
           {/* Violated Thresholds */}
           <div>
             <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1.5">
@@ -112,7 +112,7 @@ function ViolationCard({
               {violation.violatedThresholds.map((t) => (
                 <div
                   key={t.thresholdId}
-                  className="flex items-start gap-2 bg-zinc-950/50 px-2 py-1.5"
+                  className="flex items-start gap-2 bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5"
                 >
                   <AlertTriangle
                     size={10}
@@ -120,7 +120,7 @@ function ViolationCard({
                     style={{ color: getImpactSeverityColor(t.severity) }}
                   />
                   <div className="flex-1">
-                    <div className="text-[10px] font-medium text-zinc-300">
+                    <div className="text-[10px] font-medium text-zinc-700 dark:text-zinc-300">
                       {t.thresholdLabel}
                       {t.exceedanceDb != null && (
                         <span className="text-red-400 ml-1.5">+{t.exceedanceDb} dB</span>
@@ -146,7 +146,7 @@ function ViolationCard({
                     className={`text-[9px] px-1.5 py-0.5 ${
                       sp.conservationStatus
                         ? 'bg-red-950/40 text-red-400 border border-red-900/20'
-                        : 'bg-zinc-800/60 text-zinc-500'
+                        : 'bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-500'
                     }`}
                   >
                     {sp.commonName}
@@ -185,7 +185,7 @@ function ViolationCard({
           {/* Action */}
           <button
             onClick={() => onSelectFlight(violation.flightId)}
-            className="w-full text-[10px] text-center py-1.5 bg-zinc-800/50 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/50 transition-colors"
+            className="w-full text-[10px] text-center py-1.5 bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-300/50 dark:hover:bg-zinc-700/50 transition-colors"
           >
             View Flight Details
           </button>
@@ -209,7 +209,7 @@ function SummaryBar({ summary }: { summary: ViolationSummary }) {
 
   return (
     <div className="space-y-1.5">
-      <div className="flex h-2 w-full overflow-hidden bg-zinc-800">
+      <div className="flex h-2 w-full overflow-hidden bg-zinc-200 dark:bg-zinc-800">
         {segments.map(({ severity, count }) => (
           <div
             key={severity}
@@ -228,7 +228,7 @@ function SummaryBar({ summary }: { summary: ViolationSummary }) {
               style={{ backgroundColor: getImpactSeverityColor(severity) }}
             />
             <span className="text-[9px] text-zinc-500 capitalize">{severity}</span>
-            <span className="text-[9px] text-zinc-400 tabular-nums font-medium">{count}</span>
+            <span className="text-[9px] text-zinc-600 dark:text-zinc-400 tabular-nums font-medium">{count}</span>
           </div>
         ))}
       </div>
@@ -273,15 +273,15 @@ export function BiodiversityViolationsPanel() {
   ];
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div className="flex items-center gap-3 mb-1">
           <div className="bg-red-900/30 p-1.5">
             <Shield size={16} className="text-red-400" strokeWidth={1.5} />
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-zinc-100">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
               Biodiversity Threshold Violations
             </h3>
             <p className="text-[10px] text-zinc-500 mt-0.5">
@@ -289,7 +289,7 @@ export function BiodiversityViolationsPanel() {
             </p>
           </div>
           <div className="text-right">
-            <div className="text-xl font-bold text-zinc-100 tabular-nums">
+            <div className="text-xl font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">
               {summary.totalViolations}
             </div>
             <div className="text-[9px] text-zinc-600">violations</div>
@@ -298,27 +298,27 @@ export function BiodiversityViolationsPanel() {
       </div>
 
       {/* Summary Metrics */}
-      <div className="grid grid-cols-4 gap-px bg-zinc-800/60">
-        <div className="bg-zinc-900 px-4 py-3">
-          <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1">Critical</div>
+      <div className="grid grid-cols-4 gap-px bg-zinc-200/60 dark:bg-zinc-800/60">
+        <div className="bg-white dark:bg-zinc-900 px-4 py-3">
+          <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-1">Critical</div>
           <div className="text-lg font-bold tabular-nums" style={{ color: getImpactSeverityColor('critical') }}>
             {summary.bySeverity.critical}
           </div>
         </div>
-        <div className="bg-zinc-900 px-4 py-3">
-          <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1">Protected Spp.</div>
+        <div className="bg-white dark:bg-zinc-900 px-4 py-3">
+          <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-1">Protected Spp.</div>
           <div className="text-lg font-bold text-red-400 tabular-nums">
             {summary.protectedSpeciesViolations}
           </div>
         </div>
-        <div className="bg-zinc-900 px-4 py-3">
-          <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1">Habitats</div>
+        <div className="bg-white dark:bg-zinc-900 px-4 py-3">
+          <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-1">Habitats</div>
           <div className="text-lg font-bold text-emerald-400 tabular-nums">
             {summary.habitatViolations}
           </div>
         </div>
-        <div className="bg-zinc-900 px-4 py-3">
-          <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1">% of Flights</div>
+        <div className="bg-white dark:bg-zinc-900 px-4 py-3">
+          <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-1">% of Flights</div>
           <div className="text-lg font-bold text-amber-400 tabular-nums">
             {flights.length > 0
               ? ((summary.totalFlightsWithViolations / flights.length) * 100).toFixed(0)
@@ -329,12 +329,12 @@ export function BiodiversityViolationsPanel() {
       </div>
 
       {/* Severity Distribution Bar */}
-      <div className="px-5 py-3 border-b border-zinc-800/60">
+      <div className="px-5 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <SummaryBar summary={summary} />
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-zinc-800/60">
+      <div className="flex border-b border-zinc-200/60 dark:border-zinc-800/60">
         {tabs.map(({ key, label }) => (
           <button
             key={key}
@@ -342,7 +342,7 @@ export function BiodiversityViolationsPanel() {
             className={`flex-1 px-3 py-2 text-[11px] font-medium transition-colors ${
               activeTab === key
                 ? 'text-red-400 border-b-2 border-red-400 bg-red-950/10'
-                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'
+                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30'
             }`}
           >
             {label}
@@ -363,8 +363,8 @@ export function BiodiversityViolationsPanel() {
                   onClick={() => setSeverityFilter('all')}
                   className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
                     severityFilter === 'all'
-                      ? 'bg-zinc-700 text-zinc-200'
-                      : 'text-zinc-500 hover:text-zinc-300 bg-zinc-800/30'
+                      ? 'bg-zinc-300 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'
+                      : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 bg-zinc-200/30 dark:bg-zinc-800/30'
                   }`}
                 >
                   All ({violations.length})
@@ -375,13 +375,13 @@ export function BiodiversityViolationsPanel() {
                     onClick={() => setSeverityFilter(sev)}
                     className={`px-2 py-0.5 text-[10px] font-medium capitalize transition-colors ${
                       severityFilter === sev
-                        ? 'text-zinc-200'
-                        : 'text-zinc-500 hover:text-zinc-300'
+                        ? 'text-zinc-800 dark:text-zinc-200'
+                        : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 bg-zinc-200/30 dark:bg-zinc-800/30'
                     }`}
                     style={
                       severityFilter === sev
                         ? { backgroundColor: `${getImpactSeverityColor(sev)}30` }
-                        : { backgroundColor: 'rgba(39,39,42,0.3)' }
+                        : {}
                     }
                   >
                     {sev} ({summary.bySeverity[sev]})
@@ -442,7 +442,7 @@ export function BiodiversityViolationsPanel() {
                 return (
                   <div
                     key={threshold.id}
-                    className={`border bg-zinc-900/40 px-3 py-2.5 ${threshold.enabled ? 'border-zinc-800/60' : 'border-zinc-800/30 opacity-50'}`}
+                    className={`border bg-white/40 dark:bg-zinc-900/40 px-3 py-2.5 ${threshold.enabled ? 'border-zinc-200/60 dark:border-zinc-800/60' : 'border-zinc-200/30 dark:border-zinc-800/30 opacity-50'}`}
                   >
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
@@ -459,7 +459,7 @@ export function BiodiversityViolationsPanel() {
                           />
                         </button>
                         {typeIcons[threshold.type]}
-                        <span className="text-[11px] font-medium text-zinc-300">
+                        <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
                           {threshold.label}
                         </span>
                         {threshold.isCustom && (
@@ -488,17 +488,17 @@ export function BiodiversityViolationsPanel() {
                     </p>
                     <div className="flex flex-wrap gap-2 mt-1.5">
                       {threshold.noiseThresholdDb && (
-                        <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                           Limit: {threshold.noiseThresholdDb} dB
                         </span>
                       )}
                       {threshold.activeHours && (
-                        <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                           Hours: {threshold.activeHours.start}:00-{threshold.activeHours.end}:00
                         </span>
                       )}
                       {threshold.activeMonths && (
-                        <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                           Months: {threshold.activeMonths.join(', ')}
                         </span>
                       )}
@@ -542,11 +542,11 @@ export function BiodiversityViolationsPanel() {
                 {Object.entries(summary.byAircraftCategory)
                   .sort((a, b) => b[1] - a[1])
                   .map(([category, count]) => (
-                    <div key={category} className="flex items-center gap-1.5 bg-zinc-800/40 px-2 py-1.5">
-                      <span className="text-[10px] text-zinc-400 capitalize">
+                    <div key={category} className="flex items-center gap-1.5 bg-zinc-200/40 dark:bg-zinc-800/40 px-2 py-1.5">
+                      <span className="text-[10px] text-zinc-600 dark:text-zinc-400 capitalize">
                         {categoryLabels[category] || category}
                       </span>
-                      <span className="text-[11px] text-zinc-200 font-semibold tabular-nums">
+                      <span className="text-[11px] text-zinc-800 dark:text-zinc-200 font-semibold tabular-nums">
                         {count}
                       </span>
                     </div>
@@ -560,10 +560,10 @@ export function BiodiversityViolationsPanel() {
                 No violations detected in the current period
               </div>
             ) : (
-              <div className="border border-zinc-800/60">
+              <div className="border border-zinc-200/60 dark:border-zinc-800/60">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-zinc-800/60">
+                    <tr className="border-b border-zinc-200/60 dark:border-zinc-800/60">
                       <th className="px-3 py-2 text-left text-[9px] font-medium text-zinc-600 uppercase tracking-wider">
                         #
                       </th>
@@ -590,12 +590,12 @@ export function BiodiversityViolationsPanel() {
                       return (
                         <tr
                           key={offender.registration}
-                          className="border-b border-zinc-800/30 hover:bg-zinc-800/20 transition-colors"
+                          className="border-b border-zinc-200/30 dark:border-zinc-800/30 hover:bg-zinc-200/20 dark:hover:bg-zinc-800/20 transition-colors"
                         >
                           <td className="px-3 py-2 text-[10px] text-zinc-600 tabular-nums">
                             {idx + 1}
                           </td>
-                          <td className="px-3 py-2 text-[11px] font-semibold text-zinc-200 tracking-wide">
+                          <td className="px-3 py-2 text-[11px] font-semibold text-zinc-800 dark:text-zinc-200 tracking-wide">
                             {offender.registration}
                           </td>
                           <td className="px-3 py-2 text-[11px] text-zinc-400">
@@ -637,11 +637,11 @@ export function BiodiversityViolationsPanel() {
                   .map(([label, count]) => (
                     <div
                       key={label}
-                      className="flex items-center justify-between px-2 py-1.5 bg-zinc-950/40"
+                      className="flex items-center justify-between px-2 py-1.5 bg-zinc-100/40 dark:bg-zinc-950/40"
                     >
-                      <span className="text-[10px] text-zinc-400">{label}</span>
+                      <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{label}</span>
                       <div className="flex items-center gap-2">
-                        <div className="w-24 h-1.5 bg-zinc-800">
+                        <div className="w-24 h-1.5 bg-zinc-200 dark:bg-zinc-800">
                           <div
                             className="h-full bg-red-500/60"
                             style={{
@@ -652,7 +652,7 @@ export function BiodiversityViolationsPanel() {
                             }}
                           />
                         </div>
-                        <span className="text-[10px] text-zinc-300 tabular-nums font-medium w-6 text-right">
+                        <span className="text-[10px] text-zinc-700 dark:text-zinc-300 tabular-nums font-medium w-6 text-right">
                           {count}
                         </span>
                       </div>

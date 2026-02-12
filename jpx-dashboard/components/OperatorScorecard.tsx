@@ -39,11 +39,11 @@ interface OperatorProfile {
 type SortKey = 'violations' | 'critical' | 'flights' | 'rate' | 'operator';
 
 const severityBadge: Record<ImpactSeverity, { bg: string; text: string }> = {
-  critical: { bg: 'bg-red-950/60', text: 'text-red-400' },
-  high: { bg: 'bg-orange-950/60', text: 'text-orange-400' },
-  moderate: { bg: 'bg-amber-950/60', text: 'text-amber-400' },
-  low: { bg: 'bg-lime-950/60', text: 'text-lime-400' },
-  minimal: { bg: 'bg-green-950/60', text: 'text-green-400' },
+  critical: { bg: 'bg-red-100 dark:bg-red-950/60', text: 'text-red-600 dark:text-red-400' },
+  high: { bg: 'bg-orange-100 dark:bg-orange-950/60', text: 'text-orange-600 dark:text-orange-400' },
+  moderate: { bg: 'bg-amber-100 dark:bg-amber-950/60', text: 'text-amber-600 dark:text-amber-400' },
+  low: { bg: 'bg-lime-100 dark:bg-lime-950/60', text: 'text-lime-600 dark:text-lime-400' },
+  minimal: { bg: 'bg-green-100 dark:bg-green-950/60', text: 'text-green-600 dark:text-green-400' },
 };
 
 const categoryLabels: Record<string, string> = {
@@ -164,16 +164,16 @@ export function OperatorScorecard() {
   const repeatOffenders = profiles.filter((p) => p.violations.length >= 3).length;
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-amber-900/30 p-1.5">
-              <Users size={16} className="text-amber-400" strokeWidth={1.5} />
+            <div className="bg-amber-100 dark:bg-amber-900/30 p-1.5">
+              <Users size={16} className="text-amber-600 dark:text-amber-400" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">Operator Scorecards</h3>
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Operator Scorecards</h3>
               <p className="text-[10px] text-zinc-500 mt-0.5">
                 Violation profiles by operator — {totalOperators} operators, {operatorsWithViolations} with violations, {repeatOffenders} repeat offenders
               </p>
@@ -181,7 +181,7 @@ export function OperatorScorecard() {
           </div>
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/50 text-zinc-400 text-[10px] font-medium border border-zinc-700/40 hover:text-zinc-200 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 text-[10px] font-medium border border-zinc-300/40 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
           >
             <Download size={10} />
             Export CSV
@@ -190,15 +190,15 @@ export function OperatorScorecard() {
       </div>
 
       {/* Toolbar */}
-      <div className="px-5 py-3 border-b border-zinc-800/60 flex flex-wrap items-center gap-3">
+      <div className="px-5 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60 flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-          <Search size={12} className="text-zinc-600" />
+          <Search size={12} className="text-zinc-400 dark:text-zinc-600" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search operator, registration, aircraft type..."
-            className="flex-1 bg-transparent text-[11px] text-zinc-300 placeholder:text-zinc-600 focus:outline-none"
+            className="flex-1 bg-transparent text-[11px] text-zinc-700 dark:text-zinc-300 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none"
           />
         </div>
 
@@ -216,8 +216,8 @@ export function OperatorScorecard() {
               onClick={() => setSortKey(key)}
               className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
                 sortKey === key
-                  ? 'bg-zinc-700 text-zinc-200'
-                  : 'text-zinc-500 hover:text-zinc-300 bg-zinc-800/30'
+                  ? 'bg-zinc-300 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'
+                  : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 bg-zinc-200/30 dark:bg-zinc-800/30'
               }`}
             >
               {label}
@@ -240,18 +240,18 @@ export function OperatorScorecard() {
             return (
               <div
                 key={profile.operator}
-                className={`border bg-zinc-900/40 ${
+                className={`border bg-zinc-50/40 dark:bg-zinc-900/40 ${
                   profile.criticalCount > 0
-                    ? 'border-red-900/30'
+                    ? 'border-red-200/30 dark:border-red-900/30'
                     : profile.violations.length > 0
-                    ? 'border-amber-900/20'
-                    : 'border-zinc-800/60'
+                    ? 'border-amber-200/20 dark:border-amber-900/20'
+                    : 'border-zinc-200/60 dark:border-zinc-800/60'
                 }`}
               >
                 {/* Summary row */}
                 <button
                   onClick={() => toggleExpand(profile.operator)}
-                  className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-800/20 transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-200/20 dark:hover:bg-zinc-800/20 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     {profile.violations.length > 0 ? (
@@ -260,10 +260,10 @@ export function OperatorScorecard() {
                         style={{ backgroundColor: getImpactSeverityColor(profile.worstSeverity) }}
                       />
                     ) : (
-                      <div className="w-1 h-10 flex-shrink-0 bg-zinc-800" />
+                      <div className="w-1 h-10 flex-shrink-0 bg-zinc-200 dark:bg-zinc-800" />
                     )}
                     <div className="text-left">
-                      <div className="text-[12px] font-semibold text-zinc-200">
+                      <div className="text-[12px] font-semibold text-zinc-800 dark:text-zinc-200">
                         {profile.operator}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -280,7 +280,7 @@ export function OperatorScorecard() {
 
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <div className="text-[11px] font-medium text-zinc-400 tabular-nums">
+                      <div className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 tabular-nums">
                         {profile.flights.length} flights
                       </div>
                     </div>
@@ -314,33 +314,33 @@ export function OperatorScorecard() {
 
                 {/* Expanded detail */}
                 {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-zinc-800/40 space-y-3 pt-3">
+                  <div className="px-4 pb-4 border-t border-zinc-200/40 dark:border-zinc-800/40 space-y-3 pt-3">
                     {/* Quick stats */}
-                    <div className="grid grid-cols-5 gap-px bg-zinc-800/40">
-                      <div className="bg-zinc-950/50 px-2 py-1.5 text-center">
-                        <div className="text-[9px] text-zinc-600 uppercase tracking-wider">Flights</div>
-                        <div className="text-[13px] font-bold text-zinc-200 tabular-nums">{profile.flights.length}</div>
+                    <div className="grid grid-cols-5 gap-px bg-zinc-200/40 dark:bg-zinc-800/40">
+                      <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Flights</div>
+                        <div className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 tabular-nums">{profile.flights.length}</div>
                       </div>
-                      <div className="bg-zinc-950/50 px-2 py-1.5 text-center">
-                        <div className="text-[9px] text-zinc-600 uppercase tracking-wider">Violations</div>
+                      <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Violations</div>
                         <div className="text-[13px] font-bold tabular-nums" style={{ color: profile.violations.length > 0 ? '#ef4444' : '#71717a' }}>
                           {profile.violations.length}
                         </div>
                       </div>
-                      <div className="bg-zinc-950/50 px-2 py-1.5 text-center">
-                        <div className="text-[9px] text-zinc-600 uppercase tracking-wider">Critical</div>
+                      <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Critical</div>
                         <div className="text-[13px] font-bold tabular-nums" style={{ color: profile.criticalCount > 0 ? getImpactSeverityColor('critical') : '#71717a' }}>
                           {profile.criticalCount}
                         </div>
                       </div>
-                      <div className="bg-zinc-950/50 px-2 py-1.5 text-center">
-                        <div className="text-[9px] text-zinc-600 uppercase tracking-wider">Protected</div>
-                        <div className="text-[13px] font-bold text-amber-400 tabular-nums">
+                      <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Protected</div>
+                        <div className="text-[13px] font-bold text-amber-500 dark:text-amber-400 tabular-nums">
                           {profile.protectedSpeciesEvents}
                         </div>
                       </div>
-                      <div className="bg-zinc-950/50 px-2 py-1.5 text-center">
-                        <div className="text-[9px] text-zinc-600 uppercase tracking-wider">Rate</div>
+                      <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Rate</div>
                         <div className="text-[13px] font-bold tabular-nums" style={{ color: profile.violationRate > 0.5 ? '#ef4444' : profile.violationRate > 0 ? '#f59e0b' : '#71717a' }}>
                           {(profile.violationRate * 100).toFixed(0)}%
                         </div>
@@ -349,10 +349,10 @@ export function OperatorScorecard() {
 
                     {/* Fleet */}
                     <div>
-                      <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1.5">Fleet</div>
+                      <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-1.5">Fleet</div>
                       <div className="flex flex-wrap gap-1">
                         {Array.from(profile.registrations).slice(0, 12).map((reg) => (
-                          <span key={reg} className="text-[9px] px-1.5 py-0.5 bg-zinc-800/60 text-zinc-400">
+                          <span key={reg} className="text-[9px] px-1.5 py-0.5 bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400">
                             {reg}
                           </span>
                         ))}
@@ -367,7 +367,7 @@ export function OperatorScorecard() {
                     {/* Recent violations */}
                     {profile.violations.length > 0 && (
                       <div>
-                        <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-1.5">
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-1.5">
                           Recent Violations ({Math.min(profile.violations.length, 5)} of {profile.violations.length})
                         </div>
                         <div className="space-y-1">
@@ -378,11 +378,11 @@ export function OperatorScorecard() {
                                 const flight = flights.find((f) => f.fa_flight_id === v.flightId);
                                 if (flight) setSelectedFlight(flight);
                               }}
-                              className="w-full flex items-center justify-between px-2 py-1.5 bg-zinc-950/40 hover:bg-zinc-800/40 transition-colors text-left"
+                              className="w-full flex items-center justify-between px-2 py-1.5 bg-zinc-100/40 dark:bg-zinc-950/40 hover:bg-zinc-200/40 dark:hover:bg-zinc-800/40 transition-colors text-left"
                             >
                               <div className="flex items-center gap-2">
-                                <Plane size={9} className="text-zinc-600" />
-                                <span className="text-[10px] text-zinc-400 tabular-nums">
+                                <Plane size={9} className="text-zinc-500 dark:text-zinc-600" />
+                                <span className="text-[10px] text-zinc-600 dark:text-zinc-400 tabular-nums">
                                   {v.operationDate}
                                 </span>
                                 <span className="text-[10px] text-zinc-500">

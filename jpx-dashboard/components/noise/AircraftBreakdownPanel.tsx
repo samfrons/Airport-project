@@ -109,8 +109,8 @@ export function AircraftBreakdownPanel() {
   const minDb = 65;
 
   return (
-    <div className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-3 w-full">
-      <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.12em] mb-3 flex items-center gap-1.5">
+    <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-3 w-full">
+      <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.12em] mb-3 flex items-center gap-1.5">
         <Plane size={10} />
         Aircraft Type Breakdown
       </div>
@@ -121,7 +121,7 @@ export function AircraftBreakdownPanel() {
             {/* Category Header */}
             <button
               onClick={() => toggleCategory(cat.category)}
-              className="w-full flex items-center justify-between px-2 py-1.5 bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
+              className="w-full flex items-center justify-between px-2 py-1.5 bg-zinc-100/50 dark:bg-zinc-800/50 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
             >
               <div className="flex items-center gap-2">
                 {expandedCategories.has(cat.category) ? (
@@ -129,7 +129,7 @@ export function AircraftBreakdownPanel() {
                 ) : (
                   <ChevronRight size={12} className="text-zinc-500" />
                 )}
-                <span className="text-[11px] font-medium text-zinc-300">
+                <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
                   {cat.label}
                 </span>
                 <span className="text-[10px] text-zinc-500">({cat.count})</span>
@@ -152,10 +152,10 @@ export function AircraftBreakdownPanel() {
                   const barWidth = ((type.avgDb - minDb) / (maxDb - minDb)) * 100;
                   return (
                     <div key={type.aircraftType} className="flex items-center gap-2">
-                      <span className="text-[10px] text-zinc-400 w-10 font-mono">
+                      <span className="text-[10px] text-zinc-600 dark:text-zinc-400 w-10 font-mono">
                         {type.aircraftType}
                       </span>
-                      <div className="flex-1 h-2 bg-zinc-800 relative">
+                      <div className="flex-1 h-2 bg-zinc-200 dark:bg-zinc-800 relative">
                         <div
                           className="h-full transition-all"
                           style={{
@@ -183,9 +183,9 @@ export function AircraftBreakdownPanel() {
       </div>
 
       {/* Total */}
-      <div className="mt-3 pt-2 border-t border-zinc-800 flex justify-between text-[10px]">
-        <span className="text-zinc-600">Total Operations</span>
-        <span className="text-zinc-400 tabular-nums">{flights.length}</span>
+      <div className="mt-3 pt-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-between text-[10px]">
+        <span className="text-zinc-500 dark:text-zinc-600">Total Operations</span>
+        <span className="text-zinc-600 dark:text-zinc-400 tabular-nums">{flights.length}</span>
       </div>
     </div>
   );

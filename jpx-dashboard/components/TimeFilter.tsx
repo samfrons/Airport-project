@@ -41,35 +41,35 @@ export function TimeFilter() {
   return (
     <div className="flex flex-wrap items-center gap-4">
       {/* Quick Range Segmented Control */}
-      <div className="flex bg-zinc-900 border border-zinc-800 p-0.5">
+      <div className="flex bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-0.5">
         {quickRanges.map(range => (
           <button
             key={range.label}
             onClick={() => setQuickRange(range.days)}
-            className="px-3.5 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
+            className="px-3.5 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
             {range.label}
           </button>
         ))}
       </div>
 
-      <div className="w-px h-5 bg-zinc-800" />
+      <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800" />
 
       {/* Date Range */}
       <div className="flex items-center gap-2">
-        <CalendarDays size={14} className="text-zinc-600" strokeWidth={1.5} />
+        <CalendarDays size={14} className="text-zinc-500 dark:text-zinc-600" strokeWidth={1.5} />
         <input
           type="date"
           value={dateRange.start}
           onChange={e => handleDateChange('start', e.target.value)}
-          className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
+          className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
         />
-        <span className="text-zinc-600 text-xs">&ndash;</span>
+        <span className="text-zinc-500 dark:text-zinc-600 text-xs">&ndash;</span>
         <input
           type="date"
           value={dateRange.end}
           onChange={e => handleDateChange('end', e.target.value)}
-          className="px-3 py-1.5 bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
+          className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
         />
         <button
           onClick={handleApply}

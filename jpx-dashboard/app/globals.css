@@ -4,7 +4,33 @@
 @config "../tailwind.config.js";
 
 /* ─── Design Tokens ──────────────────────────────────────────────── */
+/* Light mode (default) */
 :root {
+  --bg-page: #fafafa;
+  --bg-surface: #ffffff;
+  --bg-raised: #f4f4f5;
+  --bg-inset: #e4e4e7;
+  --border-subtle: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-tertiary: #71717a;
+  --text-muted: #a1a1aa;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --heli-color: #dc2626;
+  --jet-color: #2563eb;
+  --fw-color: #059669;
+  --curfew-color: #d97706;
+
+  /* Navigation transitions */
+  --nav-transition-duration: 300ms;
+  --nav-transition-timing: ease-out;
+  --hover-transition-duration: 150ms;
+}
+
+/* Dark mode */
+.dark {
   --bg-page: #09090b;
   --bg-surface: #111113;
   --bg-raised: #18181b;
@@ -21,11 +47,6 @@
   --jet-color: #60a5fa;
   --fw-color: #34d399;
   --curfew-color: #f59e0b;
-
-  /* Navigation transitions */
-  --nav-transition-duration: 300ms;
-  --nav-transition-timing: ease-out;
-  --hover-transition-duration: 150ms;
 }
 
 /* ─── Base ────────────────────────────────────────────────────────── */
@@ -43,6 +64,7 @@ body {
   min-height: 100vh;
   background-color: var(--bg-page);
   color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ─── Typography Utilities ────────────────────────────────────────── */
@@ -67,6 +89,10 @@ body {
 .mapboxgl-ctrl-group {
   background-color: var(--bg-surface) !important;
   border: 1px solid var(--border-subtle) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+
+.dark .mapboxgl-ctrl-group {
   box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
 }
 
@@ -78,7 +104,13 @@ body {
   background-color: var(--bg-raised) !important;
 }
 
+/* Light mode: icons are naturally dark */
 .mapboxgl-ctrl-group button span {
+  filter: none;
+}
+
+/* Dark mode: invert icons to white */
+.dark .mapboxgl-ctrl-group button span {
   filter: invert(1);
 }
 
@@ -96,8 +128,12 @@ body {
   border: 1px solid var(--border-subtle) !important;
   padding: 0 !important;
   border-radius: 0 !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important;
   font-family: 'Inter', system-ui, sans-serif !important;
+}
+
+.dark .airport-popup .mapboxgl-popup-content {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
 }
 
 .airport-popup .mapboxgl-popup-tip {
@@ -306,8 +342,17 @@ body {
 
 /* ─── Form Inputs ─────────────────────────────────────────────────── */
 input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.5);
   cursor: pointer;
+}
+
+/* Light mode: darker calendar icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.3);
+}
+
+/* Dark mode: lighter calendar icon */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.5);
 }
 
 select {

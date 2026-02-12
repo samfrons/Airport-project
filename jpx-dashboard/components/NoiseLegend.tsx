@@ -40,17 +40,17 @@ export function NoiseLegend() {
   if (!hasAnyVisible) return null;
 
   return (
-    <div className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-3 min-w-[140px]">
+    <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-3 min-w-[140px]">
       {noiseSettings.visibility.sensors && (
         <div className="mb-3">
-          <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.12em] mb-2">
+          <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.12em] mb-2">
             Sensor Levels (dB)
           </div>
           <div className="flex flex-col gap-1">
             {sensorScale.map((item) => (
               <div key={item.dB} className="flex items-center gap-2">
                 <div className="w-3 h-3" style={{ backgroundColor: item.color }} />
-                <span className="text-[10px] text-zinc-400 tabular-nums w-10">{item.dB}</span>
+                <span className="text-[10px] text-zinc-600 dark:text-zinc-400 tabular-nums w-10">{item.dB}</span>
                 <span className="text-[10px] text-zinc-500">{item.label}</span>
               </div>
             ))}
@@ -61,17 +61,17 @@ export function NoiseLegend() {
       {noiseSettings.visibility.aircraftNoise && (
         <div
           className={
-            noiseSettings.visibility.sensors ? 'pt-3 border-t border-zinc-800 mb-3' : 'mb-3'
+            noiseSettings.visibility.sensors ? 'pt-3 border-t border-zinc-200 dark:border-zinc-800 mb-3' : 'mb-3'
           }
         >
-          <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.12em] mb-2">
+          <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.12em] mb-2">
             Aircraft Noise
           </div>
           <div className="flex flex-col gap-1">
             {aircraftCategories.map((item) => (
               <div key={item.category} className="flex items-center gap-2">
                 <div className="w-3 h-0.5" style={{ backgroundColor: item.color }} />
-                <span className="text-[10px] text-zinc-400">{item.category}</span>
+                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{item.category}</span>
               </div>
             ))}
           </div>
@@ -82,11 +82,11 @@ export function NoiseLegend() {
         <div
           className={
             noiseSettings.visibility.sensors || noiseSettings.visibility.aircraftNoise
-              ? 'pt-3 border-t border-zinc-800 mb-3'
+              ? 'pt-3 border-t border-zinc-200 dark:border-zinc-800 mb-3'
               : 'mb-3'
           }
         >
-          <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.12em] mb-2">
+          <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.12em] mb-2">
             Complaint Severity
           </div>
           <div className="flex items-center gap-3">
@@ -104,7 +104,7 @@ export function NoiseLegend() {
         <div
           className={
             hasVisibleLayer
-              ? 'pt-3 border-t border-zinc-800'
+              ? 'pt-3 border-t border-zinc-200 dark:border-zinc-800'
               : ''
           }
         >
@@ -118,8 +118,8 @@ export function NoiseLegend() {
                   className="w-3 h-3"
                   style={{ backgroundColor: item.color, opacity: 0.6 }}
                 />
-                <span className="text-[10px] text-zinc-400 w-14">{item.severity}</span>
-                <span className="text-[9px] text-zinc-600 tabular-nums">{item.range}</span>
+                <span className="text-[10px] text-zinc-600 dark:text-zinc-400 w-14">{item.severity}</span>
+                <span className="text-[9px] text-zinc-500 dark:text-zinc-600 tabular-nums">{item.range}</span>
               </div>
             ))}
           </div>

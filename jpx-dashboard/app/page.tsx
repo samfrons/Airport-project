@@ -16,6 +16,7 @@ import { WeatherCorrelation } from '@/components/WeatherCorrelation';
 import { FlightPathReplay } from '@/components/FlightPathReplay';
 import { AlertNotificationSystem } from '@/components/AlertNotificationSystem';
 import { ComplianceDashboard } from '@/components/ComplianceDashboard';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   ErrorBoundary,
   StatsCardsSkeleton,
@@ -46,7 +47,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Side Navigation */}
       <SideNav />
 
@@ -62,7 +63,7 @@ export default function DashboardPage() {
         `}
       >
       {/* ─── Header ────────────────────────────────────────────────── */}
-      <header className="border-b border-zinc-800/60">
+      <header className="border-b border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-transparent">
         <div className="px-4 sm:px-6 py-4 sm:py-5 pl-14 md:pl-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-4">
@@ -71,42 +72,43 @@ export default function DashboardPage() {
               </div>
               <div>
                 <div className="flex items-baseline gap-2 sm:gap-3">
-                  <h1 className="text-base sm:text-lg font-semibold text-zinc-50 tracking-tight">
+                  <h1 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight">
                     JPX Dashboard
                   </h1>
-                  <span className="hidden sm:inline text-[10px] font-medium text-zinc-500 uppercase tracking-widest">
+                  <span className="hidden sm:inline text-[10px] font-medium text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
                     East Hampton
                   </span>
                 </div>
-                <p className="text-[11px] sm:text-xs text-zinc-500 mt-0.5">
+                <p className="text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-500 mt-0.5">
                   Airport operations monitoring for KJPX
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden sm:flex items-center gap-1.5 text-zinc-600">
+              <div className="hidden sm:flex items-center gap-1.5 text-zinc-600 dark:text-zinc-600">
                 <Radio size={12} />
                 <span className="text-[10px] uppercase tracking-widest font-medium">
                   Live Data
                 </span>
               </div>
+              <ThemeToggle />
               <button
                 onClick={handleRefresh}
                 disabled={loading}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs sm:text-sm font-medium hover:border-zinc-700 hover:text-zinc-200 transition-all disabled:opacity-40"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs sm:text-sm font-medium hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200 transition-all disabled:opacity-40"
               >
                 <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
                 <span className="hidden sm:inline">Refresh</span>
               </button>
               {user && (
                 <div className="flex items-center gap-2">
-                  <span className="hidden lg:inline text-[10px] text-zinc-600 truncate max-w-[140px]" title={user.email}>
+                  <span className="hidden lg:inline text-[10px] text-zinc-500 dark:text-zinc-600 truncate max-w-[140px]" title={user.email}>
                     {user.email}
                   </span>
                   <button
                     onClick={signOut}
-                    className="flex items-center gap-1.5 px-2.5 py-2 bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-zinc-200 hover:border-zinc-700 transition-all"
+                    className="flex items-center gap-1.5 px-2.5 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-500 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all"
                     title="Sign out"
                   >
                     <LogOut size={14} />
@@ -147,7 +149,7 @@ export default function DashboardPage() {
             <h2 className="overline">Flight Routes</h2>
           </div>
           <ErrorBoundary sectionName="Flight Map" fallback={<MapSkeleton />}>
-            <div className="bg-zinc-900 border border-zinc-800 h-[480px] lg:h-[580px]">
+            <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 h-[480px] lg:h-[580px]">
               <AirportMap />
             </div>
           </ErrorBoundary>
@@ -285,9 +287,9 @@ export default function DashboardPage() {
       </main>
 
       {/* ─── Footer ────────────────────────────────────────────────── */}
-      <footer className="border-t border-zinc-800/60 mt-12">
+      <footer className="border-t border-zinc-200 dark:border-zinc-800/60 mt-12">
         <div className="px-4 sm:px-6 py-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-zinc-600 uppercase tracking-wider">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
             <p>Data via FlightAware AeroAPI</p>
             <p>Wainscott Citizens Advisory Committee</p>
           </div>

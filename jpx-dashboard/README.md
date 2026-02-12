@@ -1,43 +1,39 @@
 # JPX Airport Dashboard
 
-A public operations dashboard for **East Hampton Town Airport** (ICAO: KJPX, formerly KHTO), built for the Wainscott Citizens Advisory Committee (WCAC). The dashboard provides transparent, data-driven insights into airport operations — tracking flight volumes, aircraft types, route patterns, and voluntary curfew compliance.
+A public flight operations dashboard for **East Hampton Town Airport** (ICAO: KJPX, formerly KHTO), built for the Wainscott Citizens Advisory Committee (WCAC). The dashboard provides transparent, data-driven insights into airport operations—tracking flight volumes, aircraft types, route patterns, voluntary curfew compliance, and environmental impact.
 
-## What It Does
+## Overview
 
-- **Interactive flight map** — Mapbox GL map with curved bezier route arcs, color-coded by aircraft type, hover popups, click-to-filter, and three view modes (routes, stats, heatmap)
-- **Operations metrics** — Total operations, arrivals/departures split, aircraft type breakdown with visual indicators
-- **Curfew compliance** — Tracks flights during the voluntary 8 PM - 8 AM ET quiet hours with hourly distribution charts
-- **Flight log** — Sortable, filterable table of all operations with direction, aircraft type, origin/destination, and curfew status
-- **Time range filtering** — Quick presets (today, 7d, 30d, 90d) and custom date range picker
-- **Data pipeline** — Automated daily pulls from FlightAware AeroAPI v4 with aircraft classification and Eastern Time derivation
+| Purpose | Community noise monitoring and flight tracking for East Hampton Town Airport |
+|---------|-----------------------------------------------------------------------------|
+| Stakeholders | Wainscott Citizens Advisory Committee (WCAC), community members, local officials |
+| Collaborators | Marc Frons (WCAC), Sam Frons |
 
-## Architecture
+## Key Features
 
-```
-┌─────────────────┐     ┌────────────────┐     ┌──────────────────┐
-│  FlightAware    │────▶│  daily_pull.py  │────▶│  SQLite DB       │
-│  AeroAPI v4     │     │  (Python cron)  │     │  jpx_flights.db  │
-│  Standard tier  │     └────────────────┘     └────────┬─────────┘
-└─────────────────┘                                     │
-                                                ┌───────▼─────────┐
-                                                │  Next.js 15      │
-                                                │  API Routes +    │
-                                                │  React 19 SPA    │
-                                                └──────────────────┘
-```
+- **Flight operations tracking** — FlightAware AeroAPI v4 integration with daily batch pulls
+- **Interactive flight map** — Mapbox GL with curved bezier route arcs, three view modes (routes, stats, heatmap)
+- **Three-layer noise visualization** — Community sensors, aircraft-derived noise, and noise complaints
+- **Noise confidence system** — EASA-certified, category estimates, and unverified data clearly labeled
+- **Biodiversity impact analysis** — Five concentric impact zones with peer-reviewed research citations
+- **Curfew compliance monitoring** — Tracks 8 PM – 8 AM ET voluntary quiet hours
+- **Weather correlation** — Live METAR data from NOAA with simulated fallback indicators
+- **Operator performance scorecards** — Track compliance by operator
+- **Threshold manager** — Customizable biodiversity and noise thresholds (localStorage persistence)
+- **Export utilities** — CSV and PDF export for reports
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Framework | Next.js 15 (App Router) | Unified frontend + API, Vercel-native deployment |
-| Frontend | React 19, TypeScript 5.9, Tailwind CSS v4 | Dashboard UI components |
-| Map | Mapbox GL JS 3, custom bezier arcs, GeoJSON layers | Interactive geographic visualization |
-| Charts | Chart.js + react-chartjs-2 | Hourly curfew distribution |
-| State | Zustand | Cross-component state (filters, selections, data) |
-| API | Next.js Route Handlers, sql.js (WASM SQLite) | REST endpoints for flight data |
-| Database | SQLite with WAL mode | Flight operations, daily summaries, ingestion logs |
-| Pipeline | Python 3.11+, FlightAware AeroAPI v4 | Daily batch data ingestion |
-| Classification | Rule-based ICAO type matching | Helicopter / jet / fixed-wing / unknown |
-| Deployment | Vercel | Zero-config deploy from GitHub |
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | Next.js 15 (App Router) |
+| Language | TypeScript 5.9, React 19 |
+| Styling | Tailwind CSS v4 (dark theme, sharp edges) |
+| Maps | Mapbox GL JS 3.18 |
+| Charts | Chart.js 4.5 + react-chartjs-2 |
+| State | Zustand 5.0 |
+| Database | Supabase (PostgreSQL) |
+| Data Source | FlightAware AeroAPI v4 |
 
 ## Quick Start
 
@@ -46,30 +42,42 @@ A public operations dashboard for **East Hampton Town Airport** (ICAO: KJPX, for
 - **Node.js** 18+ and npm
 - **Python** 3.11+ (for the data pipeline)
 - **FlightAware AeroAPI key** ([Standard tier](https://www.flightaware.com/commercial/aeroapi/))
-- **Mapbox access token** (optional — set via `NEXT_PUBLIC_MAPBOX_TOKEN`, or uses the project default)
+- **Mapbox access token** (set via `NEXT_PUBLIC_MAPBOX_TOKEN`)
+- **Supabase project** (for database)
 
-### 1. Clone and set up
+### 1. Clone and Install
 
 ```bash
 git clone https://github.com/samfrons/Airport-project.git
 cd Airport-project/jpx-dashboard
-./scripts/setup.sh
+npm install
 ```
 
-The setup script creates a Python virtualenv, installs dependencies, initializes the SQLite database, and copies `.env.example` to `.env`.
+### 2. Configure Environment
 
-### 2. Configure API credentials
+Create a `.env.local` file with:
+
+```env
+# FlightAware API
+AEROAPI_KEY=your-flightaware-api-key
+
+# Mapbox
+NEXT_PUBLIC_MAPBOX_TOKEN=your-mapbox-token
+
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+### 3. Set Up Python Environment (for data pipeline)
 
 ```bash
-# Edit .env and add your FlightAware API key
-vi .env
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-```
-AEROAPI_KEY=your-flightaware-api-key
-```
-
-### 3. Pull flight data
+### 4. Pull Flight Data
 
 ```bash
 source venv/bin/activate
@@ -84,21 +92,18 @@ python scripts/daily_pull.py --date 2025-08-15
 python scripts/daily_pull.py --date 2025-08-01 --end 2025-08-31
 ```
 
-Or seed the database with test data for development:
+Or seed with test data for development:
 
 ```bash
 npm run seed
 ```
 
-### 4. Start the dev server
+### 5. Start Development Server
 
 ```bash
-npm install
 npm run dev
 # Runs on http://localhost:3000
 ```
-
-Open **http://localhost:3000** in your browser. The API routes and frontend are served from the same Next.js server — no separate backend needed.
 
 ## Project Structure
 
@@ -107,70 +112,107 @@ jpx-dashboard/
 ├── app/                        # Next.js App Router
 │   ├── layout.tsx              # Root layout (metadata, global CSS)
 │   ├── page.tsx                # Main dashboard page
-│   ├── globals.css             # Design tokens, Mapbox overrides, animations
+│   ├── globals.css             # Design tokens, Mapbox overrides
 │   └── api/                    # API Route Handlers
-│       ├── flights/route.ts    # GET /api/flights
+│       ├── flights/            # Flight operations endpoints
+│       │   ├── route.ts        # GET /api/flights (with filters)
+│       │   ├── live/route.ts   # GET /api/flights/live
+│       │   ├── search/route.ts # GET /api/flights/search
+│       │   └── [id]/track/     # GET /api/flights/:id/track
+│       ├── aircraft/           # Aircraft data
+│       │   └── [reg]/owner/    # GET /api/aircraft/:reg/owner
+│       ├── weather/            # Weather endpoints
+│       │   ├── route.ts        # GET /api/weather
+│       │   ├── metar/route.ts  # GET /api/weather/metar
+│       │   └── taf/route.ts    # GET /api/weather/taf
 │       ├── summary/route.ts    # GET /api/summary
 │       ├── stats/route.ts      # GET /api/stats
+│       ├── air-quality/        # GET /api/air-quality
 │       └── health/route.ts     # GET /api/health
-├── components/                 # React components
+├── components/                 # React components (31 total)
 │   ├── AirportMap.tsx          # Mapbox GL map with routes/stats/heatmap
 │   ├── StatsCards.tsx          # Operations metrics grid
 │   ├── FlightTable.tsx         # Sortable flight log with filters
 │   ├── CurfewChart.tsx         # Hourly distribution bar chart
-│   └── TimeFilter.tsx          # Date range selector
-├── store/
-│   └── flightStore.ts          # Zustand store (flights, filters, map state)
-├── types/
-│   └── flight.ts               # TypeScript interfaces
-├── lib/
-│   └── db.ts                   # Database helper + airport coordinates
-├── src/                        # Python data pipeline
-│   ├── api/
-│   │   └── aeroapi.py          # FlightAware AeroAPI v4 client
-│   ├── db/
-│   │   ├── database.py         # SQLite operations (insert, summarize, log)
-│   │   └── schema.sql          # Database schema (flights, daily_summary, ingestion_log)
-│   └── analysis/
-│       └── classify.py         # Aircraft type classification + time utilities
-├── scripts/
-│   ├── setup.sh                # One-time project setup
-│   ├── daily_pull.py           # Daily batch data ingestion
+│   ├── TimeFilter.tsx          # Date range selector
+│   ├── WeatherCorrelation.tsx  # Weather-noise correlation panel
+│   ├── OperatorScorecard.tsx   # Operator compliance metrics
+│   ├── ComplaintForm.tsx       # Noise complaint submission
+│   ├── AlertNotificationSystem.tsx
+│   ├── ComplianceDashboard.tsx
+│   ├── FlightPathReplay.tsx    # Animated flight replay
+│   ├── biodiversity/           # Biodiversity subsystem (3 components)
+│   │   ├── BiodiversityPanel.tsx
+│   │   ├── BiodiversityViolationsPanel.tsx
+│   │   └── ThresholdManager.tsx
+│   ├── noise/                  # Noise subsystem (5 components)
+│   │   ├── FlightDetailsSidebar.tsx
+│   │   ├── AircraftBreakdownPanel.tsx
+│   │   ├── AltitudeLegend.tsx
+│   │   └── NoiseConfidenceBadge.tsx
+│   └── navigation/             # Navigation subsystem (5 components)
+│       ├── SideNav.tsx
+│       ├── NavGroup.tsx
+│       ├── NavItem.tsx
+│       ├── QuickActions.tsx
+│       └── ScrollToTop.tsx
+├── store/                      # Zustand state management
+│   ├── flightStore.ts          # Main store (flights, noise, biodiversity)
+│   ├── navStore.ts             # Navigation state
+│   └── themeStore.ts           # Dark/light mode
+├── types/                      # TypeScript interfaces
+│   ├── flight.ts               # Flight, DailySummary, Airport
+│   ├── noise.ts                # NoiseSensor, NoiseComplaint
+│   ├── biodiversity.ts         # Species, Habitats, Research
+│   └── biodiversityThresholds.ts
+├── lib/                        # Utilities and database
+│   ├── db.ts                   # Database helper + airport coordinates
+│   ├── exportUtils.ts          # CSV/PDF export
+│   ├── biodiversityViolationEngine.ts
+│   ├── noise/                  # Noise calculation engine
+│   │   └── trackNoiseCalculator.ts
+│   └── supabase/               # Supabase client configuration
+├── data/                       # Data files
+│   ├── biodiversity/           # Species and habitat data
+│   │   └── thresholds.ts       # Default biodiversity thresholds
+│   └── noise/                  # Noise profiles and mock data
+│       └── easa/               # EASA certification data
+│           └── icaoToEasaMap.ts
+├── scripts/                    # Python data pipeline
+│   ├── daily_pull.py           # FlightAware daily batch
 │   ├── query_stats.py          # CLI stats queries
-│   └── seed_test_data.js       # Generate test data for development
-├── data/                       # SQLite database (committed for Vercel)
-├── docs/
-│   └── ARCHITECTURE.md         # Architecture decisions and project status
-├── tests/
-│   └── test_api.py             # API integration tests
-├── next.config.ts              # Next.js configuration
-├── tailwind.config.js          # Design system tokens
-├── tsconfig.json               # TypeScript configuration
-├── CLAUDE.md                   # Context for Claude Code sessions
-├── .env.example                # API key template
-└── requirements.txt            # Python dependencies
+│   └── api_server.py           # Python API server
+├── docs/                       # Documentation
+│   ├── ARCHITECTURE.md         # System architecture
+│   ├── FEATURES.md             # Feature documentation
+│   └── DATA-SOURCES.md         # Data sources and confidence
+└── CLAUDE.md                   # Claude Code context
 ```
 
 ## API Endpoints
 
-All API routes are Next.js Route Handlers served from the same origin as the frontend.
-
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/flights` | GET | Flight operations with filtering |
-| `/api/summary` | GET | Pre-aggregated daily summary stats |
-| `/api/stats` | GET | Aggregate statistics across all data |
-| `/api/health` | GET | Database connection and flight count |
+| `/api/flights` | GET | Flight operations with date/category/direction filters |
+| `/api/flights/live` | GET | Current live flights |
+| `/api/flights/search` | GET | Search flights by query |
+| `/api/flights/:id/track` | GET | Flight track positions |
+| `/api/aircraft/:reg/owner` | GET | Aircraft owner lookup |
+| `/api/summary` | GET | Daily aggregated statistics |
+| `/api/stats` | GET | Overall metrics |
+| `/api/weather` | GET | Current weather conditions |
+| `/api/weather/metar` | GET | METAR observations |
+| `/api/weather/taf` | GET | TAF forecasts |
+| `/api/air-quality` | GET | Air quality index |
+| `/api/health` | GET | Database status |
 
-### Query parameters
+### Query Parameters
 
-**`/api/flights`** and **`/api/summary`**:
+**`/api/flights`**:
 - `start` — Start date (YYYY-MM-DD)
 - `end` — End date (YYYY-MM-DD)
-
-**`/api/flights`** additionally:
-- `category` — Filter by aircraft type: `helicopter`, `jet`, `fixed_wing`, or `all`
-- `direction` — Filter by direction: `arrival`, `departure`, or `all`
+- `category` — Filter: `helicopter`, `jet`, `fixed_wing`, or `all`
+- `direction` — Filter: `arrival`, `departure`, or `all`
 
 ### Example
 
@@ -178,153 +220,67 @@ All API routes are Next.js Route Handlers served from the same origin as the fro
 curl "http://localhost:3000/api/flights?start=2025-08-01&end=2025-08-31&category=helicopter"
 ```
 
-## Deployment (Vercel)
+## Data Pipeline
 
-The project is configured for Vercel deployment with `sql.js` (pure JavaScript SQLite) for serverless compatibility.
+Flight data is pulled daily from FlightAware AeroAPI v4:
 
-### Vercel Dashboard Setup
+```bash
+# Daily cron job (recommended: 6 AM ET)
+python scripts/daily_pull.py
+```
+
+**Cost model:**
+- Standard tier: $100/mo flat fee
+- Airport history query: ~$0.01 per page (15 records)
+- ~100 ops/day at JPX = ~7 pages = ~$0.07/day
+- Monthly actual usage: **~$2-5/mo**
+
+## Deployment
+
+### Vercel (Recommended)
 
 1. Import the `Airport-project` repository from GitHub
-2. **Critical:** Set **Root Directory** to `jpx-dashboard` (the Next.js app is in a subdirectory)
-3. Vercel auto-detects Next.js — framework settings are in `vercel.json`
-4. Add environment variables (optional):
-   - `NEXT_PUBLIC_MAPBOX_TOKEN` — Custom Mapbox token
-
-### Database for Vercel
-
-The SQLite database (`data/jpx_flights.db`) is committed to the repo for Vercel deployment. The `next.config.ts` includes the data directory in build traces:
-
-```typescript
-outputFileTracingIncludes: {
-  '/api/*': ['./data/**/*'],
-}
-```
+2. Set **Root Directory** to `jpx-dashboard`
+3. Add environment variables in Vercel dashboard:
+   - `NEXT_PUBLIC_MAPBOX_TOKEN`
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy
 
 ### CLI Deployment
 
 ```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# From the jpx-dashboard directory:
 cd jpx-dashboard
-vercel          # Preview deploy
-vercel --prod   # Production deploy
+npx vercel          # Preview deploy
+npx vercel --prod   # Production deploy
 ```
 
-## Database Schema
-
-Three tables in `data/jpx_flights.db`:
-
-**`flights`** — One row per operation (arrival or departure)
-- FlightAware identifiers (`fa_flight_id`, `ident`, `registration`)
-- Direction, aircraft type/category, operator
-- Origin and destination (code, name, city)
-- UTC timestamps (scheduled and actual)
-- Derived Eastern Time fields (`operation_date`, `operation_hour_et`, `is_curfew_period`, `is_weekend`)
-
-**`daily_summary`** — Pre-aggregated daily stats for fast dashboard queries
-- Counts by direction, aircraft type, curfew status, unique aircraft
-
-**`ingestion_log`** — Tracks each batch pull for debugging and auditing
-
-## CLI Tools
-
-### Query stats from the database
+## Development Commands
 
 ```bash
-source venv/bin/activate
-
-# Overall database summary
-python scripts/query_stats.py
-
-# Single day detail
-python scripts/query_stats.py --date 2025-08-15
-
-# Monthly summary
-python scripts/query_stats.py --month 2025-08
-
-# Curfew violations (last 50)
-python scripts/query_stats.py --curfew
-
-# Top operators by volume
-python scripts/query_stats.py --top-operators 10
-
-# Helicopter breakdown by type
-python scripts/query_stats.py --helicopters
+npm run dev         # Start dev server (http://localhost:3000)
+npm run build       # Production build
+npm run start       # Start production server
+npm run lint        # ESLint
+npm run seed        # Generate test data
+npm run test        # Run tests
+npm run test:watch  # Run tests in watch mode
 ```
 
-## Design System
+## Documentation
 
-The dashboard uses a **Swiss International Typographic Style** with a dark theme optimized for data readability.
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) — System architecture and design decisions
+- [FEATURES.md](docs/FEATURES.md) — Feature documentation for users
+- [DATA-SOURCES.md](docs/DATA-SOURCES.md) — Data sources and confidence levels
+- [NOISE-METHODOLOGY.md](docs/NOISE-METHODOLOGY.md) — Aircraft noise estimation methodology and EASA data
 
-- **Font**: Inter with OpenType features (cv02, cv03, cv04, cv11)
-- **Palette**: Zinc-based dark theme (#09090b page, #111113 surface, #18181b raised, #27272a borders)
-- **Accent**: Blue-600 (#2563eb) — used sparingly for interactive elements
-- **Aircraft colors**: Helicopter `#f87171` (red), Jet `#60a5fa` (blue), Fixed Wing `#34d399` (green)
-- **Borders**: All sharp edges (0 border-radius), except `rounded-full` for indicator dots
-- **Typography**: `.overline` labels (10px/uppercase/wide tracking), `.stat-number` for large metrics (32px/tabular-nums)
-- **Icons**: Lucide React at 14-16px with `strokeWidth` 1.5-1.8
+## Contributing
 
-## Key Design Decisions
+This project is maintained by:
+- **Marc Frons** (WCAC) — API integration, data pipeline, classification logic
+- **Sam Frons** — Dashboard UI, charts/visualizations, map, deployment
 
-1. **Next.js over Vite + Express.** Unified frontend and API in one project. API Route Handlers replace the separate Express server, and Vercel deployment is zero-config.
-
-2. **Daily batch, not real-time.** Data is pulled once daily to keep API costs at ~$2-5/mo vs. hundreds for real-time polling.
-
-3. **KJPX for 2022+, KHTO for pre-2022.** The airport ICAO code changed in May 2022. The pipeline handles this automatically.
-
-4. **Rule-based aircraft classification.** Maintained sets of known ICAO type codes for helicopters, jets, and fixed-wing. Unknown types should be periodically reviewed and added.
-
-5. **Curfew = 8 PM to 8 AM Eastern.** All times stored as UTC in the database. Eastern Time derivation happens at ingestion.
-
-6. **SQLite for now.** Trivially upgradeable to PostgreSQL/Turso if concurrent access or edge deployment is needed.
-
-7. **Raw Mapbox GL, not react-map-gl wrapper.** Direct control over layers, sources, and event handlers for performance with dynamic GeoJSON data.
-
-## Data Source
-
-Flight data from [FlightAware AeroAPI v4](https://www.flightaware.com/commercial/aeroapi/) (Standard tier, $100/mo). Historical data available from January 2011 onward.
-
-### Cost model
-
-- Standard tier: $100/mo flat fee
-- Airport history query: ~$0.01 per page (15 records)
-- ~100 daily operations at JPX = ~7 pages = ~$0.07/day
-- Monthly API usage: ~$2-5/mo (well under the $100 minimum)
-- Owner lookup: ~$0.005 per query (used sparingly)
-
-## Development
-
-```bash
-npm run dev      # Start dev server (http://localhost:3000)
-npm run build    # Production build
-npm run start    # Start production server
-npm run lint     # ESLint
-npm run seed     # Generate test data
-```
-
-### Using with Claude Code
-
-```bash
-# From the jpx-dashboard directory:
-claude
-
-# Claude Code reads CLAUDE.md automatically for project context.
-# Example prompts:
-#   "Pull yesterday's flights and store them in the database"
-#   "Show me curfew violations for last week"
-#   "Add a function to classify helicopters by ICAO type code"
-```
-
-## Collaboration
-
-Marc Frons and Sam Frons work from this shared GitHub repo.
-
-- **Marc (Backend):** API integration, data pipeline, database, batch scripts, classification logic
-- **Sam (Frontend):** Dashboard UI, charts/visualizations, map, responsive design, deployment
-
-Both collaborators maintain Claude Projects with the same knowledge files. When making significant architecture decisions, update `docs/ARCHITECTURE.md` so the other person's Claude sessions stay in sync.
+Both collaborators maintain Claude Projects with shared knowledge files. Update `CLAUDE.md` and `docs/ARCHITECTURE.md` when making significant decisions.
 
 ## License
 

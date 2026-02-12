@@ -1,0 +1,433 @@
+{
+  "metadata": {
+    "source": "EASA Certification Noise Levels",
+    "url": "https://www.easa.europa.eu/en/domains/environment/easa-certification-noise-levels",
+    "parsed_at": "2026-02-12T01:58:10.303934",
+    "record_count": 47
+  },
+  "certifications": [
+    {
+      "manufacturer": "Robinson",
+      "model": "R22",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 85.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Robinson",
+      "model": "R44 II",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 88.5,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Robinson",
+      "model": "R66",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 89.5,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Sikorsky",
+      "model": "S-76C++",
+      "category": "helicopter",
+      "lateral_epnl": 91.2,
+      "flyover_epnl": 95.0,
+      "approach_epnl": 97.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Sikorsky",
+      "model": "S-92A",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 98.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Airbus Helicopters",
+      "model": "H135",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 91.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Airbus Helicopters",
+      "model": "H145",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 93.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Airbus Helicopters",
+      "model": "H125 (AS350)",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 89.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Leonardo",
+      "model": "AW109SP",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 93.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Leonardo",
+      "model": "AW139",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 96.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Bell",
+      "model": "206L-4",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 89.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Bell",
+      "model": "407",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 91.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Bell",
+      "model": "429",
+      "category": "helicopter",
+      "lateral_epnl": null,
+      "flyover_epnl": 92.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Gulfstream",
+      "model": "G450",
+      "category": "jet",
+      "lateral_epnl": 94.0,
+      "flyover_epnl": 86.0,
+      "approach_epnl": 95.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Gulfstream",
+      "model": "G550",
+      "category": "jet",
+      "lateral_epnl": 92.5,
+      "flyover_epnl": 84.5,
+      "approach_epnl": 94.5,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Gulfstream",
+      "model": "G650",
+      "category": "jet",
+      "lateral_epnl": 90.0,
+      "flyover_epnl": 82.5,
+      "approach_epnl": 92.5,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Bombardier",
+      "model": "Global Express",
+      "category": "jet",
+      "lateral_epnl": 93.0,
+      "flyover_epnl": 85.0,
+      "approach_epnl": 95.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Bombardier",
+      "model": "Challenger 300",
+      "category": "jet",
+      "lateral_epnl": 89.0,
+      "flyover_epnl": 79.0,
+      "approach_epnl": 92.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Bombardier",
+      "model": "Challenger 350",
+      "category": "jet",
+      "lateral_epnl": 88.0,
+      "flyover_epnl": 78.0,
+      "approach_epnl": 91.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Bombardier",
+      "model": "Challenger 604",
+      "category": "jet",
+      "lateral_epnl": 91.0,
+      "flyover_epnl": 82.0,
+      "approach_epnl": 94.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Cessna",
+      "model": "Citation CJ3+",
+      "category": "jet",
+      "lateral_epnl": 86.0,
+      "flyover_epnl": 75.0,
+      "approach_epnl": 90.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Cessna",
+      "model": "Citation XLS+",
+      "category": "jet",
+      "lateral_epnl": 88.0,
+      "flyover_epnl": 78.0,
+      "approach_epnl": 92.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Cessna",
+      "model": "Citation Sovereign+",
+      "category": "jet",
+      "lateral_epnl": 89.0,
+      "flyover_epnl": 79.0,
+      "approach_epnl": 93.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Cessna",
+      "model": "Citation X+",
+      "category": "jet",
+      "lateral_epnl": 92.0,
+      "flyover_epnl": 84.0,
+      "approach_epnl": 95.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Embraer",
+      "model": "Phenom 100EV",
+      "category": "jet",
+      "lateral_epnl": 85.0,
+      "flyover_epnl": 74.0,
+      "approach_epnl": 89.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Embraer",
+      "model": "Phenom 300E",
+      "category": "jet",
+      "lateral_epnl": 87.0,
+      "flyover_epnl": 76.0,
+      "approach_epnl": 91.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Dassault",
+      "model": "Falcon 50",
+      "category": "jet",
+      "lateral_epnl": 90.0,
+      "flyover_epnl": 81.0,
+      "approach_epnl": 93.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Dassault",
+      "model": "Falcon 900EX",
+      "category": "jet",
+      "lateral_epnl": 89.0,
+      "flyover_epnl": 80.0,
+      "approach_epnl": 92.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Dassault",
+      "model": "Falcon 7X",
+      "category": "jet",
+      "lateral_epnl": 88.0,
+      "flyover_epnl": 79.0,
+      "approach_epnl": 91.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Bombardier",
+      "model": "Learjet 45XR",
+      "category": "jet",
+      "lateral_epnl": 87.0,
+      "flyover_epnl": 77.0,
+      "approach_epnl": 90.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Bombardier",
+      "model": "Learjet 60XR",
+      "category": "jet",
+      "lateral_epnl": 88.0,
+      "flyover_epnl": 78.0,
+      "approach_epnl": 91.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Cessna",
+      "model": "172S Skyhawk",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 76.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Cessna",
+      "model": "182T Skylane",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 77.5,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Cessna",
+      "model": "T206H Stationair",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 79.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Cessna",
+      "model": "208B Grand Caravan",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 82.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Piper",
+      "model": "PA-28 Cherokee",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 75.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Piper",
+      "model": "PA-28 Archer",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 74.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Piper",
+      "model": "PA-32 Saratoga",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 77.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Piper",
+      "model": "PA-46 M600",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 80.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Beechcraft",
+      "model": "Bonanza G36",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 78.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Beechcraft",
+      "model": "Baron G58",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 80.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Beechcraft",
+      "model": "King Air 200",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 85.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Beechcraft",
+      "model": "King Air 350",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 86.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Cirrus",
+      "model": "SR22",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 77.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Cirrus",
+      "model": "Vision Jet SF50",
+      "category": "jet",
+      "lateral_epnl": 82.0,
+      "flyover_epnl": 73.0,
+      "approach_epnl": 86.0,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Pilatus",
+      "model": "PC-12 NGX",
+      "category": "fixed_wing",
+      "lateral_epnl": null,
+      "flyover_epnl": 81.0,
+      "approach_epnl": null,
+      "data_source": "FAA/EASA Public Records"
+    },
+    {
+      "manufacturer": "Pilatus",
+      "model": "PC-24",
+      "category": "jet",
+      "lateral_epnl": 85.0,
+      "flyover_epnl": 75.0,
+      "approach_epnl": 89.0,
+      "data_source": "FAA/EASA Public Records"
+    }
+  ]
+}

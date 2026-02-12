@@ -53,7 +53,7 @@ export function QuickActions() {
   ];
 
   return (
-    <div className="px-2 py-2 border-b border-zinc-800/60">
+    <div className="px-2 py-2 border-b border-zinc-200 dark:border-zinc-800/60">
       <div className={`flex ${showLabels ? 'flex-row gap-1' : 'flex-col gap-1'}`}>
         {actions.map((action) => (
           <button
@@ -62,8 +62,8 @@ export function QuickActions() {
             disabled={action.isLoading}
             className={`
               flex items-center justify-center gap-2 py-2 text-xs font-medium
-              bg-zinc-800/40 border border-zinc-800 text-zinc-400
-              hover:border-zinc-700 hover:text-zinc-200 transition-all
+              bg-zinc-100 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400
+              hover:border-zinc-300 dark:hover:border-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-200 transition-all
               disabled:opacity-40 disabled:cursor-not-allowed
               ${showLabels ? 'flex-1 px-2' : 'px-3'}
             `}

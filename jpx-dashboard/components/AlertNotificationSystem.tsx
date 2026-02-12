@@ -117,25 +117,25 @@ const PRIORITY_CONFIG: Record<
   { bg: string; text: string; border: string; label: string; iconBg: string }
 > = {
   critical: {
-    bg: 'bg-red-950/60',
-    text: 'text-red-400',
-    border: 'border-red-900/40',
+    bg: 'bg-red-100 dark:bg-red-950/60',
+    text: 'text-red-600 dark:text-red-400',
+    border: 'border-red-200 dark:border-red-900/40',
     label: 'Critical',
-    iconBg: 'bg-red-900/40',
+    iconBg: 'bg-red-200 dark:bg-red-900/40',
   },
   warning: {
-    bg: 'bg-amber-950/60',
-    text: 'text-amber-400',
-    border: 'border-amber-900/40',
+    bg: 'bg-amber-100 dark:bg-amber-950/60',
+    text: 'text-amber-600 dark:text-amber-400',
+    border: 'border-amber-200 dark:border-amber-900/40',
     label: 'Warning',
-    iconBg: 'bg-amber-900/40',
+    iconBg: 'bg-amber-200 dark:bg-amber-900/40',
   },
   info: {
-    bg: 'bg-blue-950/60',
-    text: 'text-blue-400',
-    border: 'border-blue-900/40',
+    bg: 'bg-blue-100 dark:bg-blue-950/60',
+    text: 'text-blue-600 dark:text-blue-400',
+    border: 'border-blue-200 dark:border-blue-900/40',
     label: 'Info',
-    iconBg: 'bg-blue-900/40',
+    iconBg: 'bg-blue-200 dark:bg-blue-900/40',
   },
 };
 
@@ -618,12 +618,11 @@ function AlertCard({
 
   return (
     <div
-      className={`border ${config.border} ${alert.acknowledged ? 'opacity-50' : ''} transition-opacity`}
-      style={{ backgroundColor: 'rgba(9,9,11,0.4)' }}
+      className={`border ${config.border} ${alert.acknowledged ? 'opacity-50' : ''} transition-opacity bg-zinc-100/40 dark:bg-zinc-950/40`}
     >
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-800/30 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30 transition-colors"
       >
         <div className="flex items-center gap-3">
           <div className={`p-1 ${config.iconBg} flex-shrink-0`}>
@@ -631,7 +630,7 @@ function AlertCard({
           </div>
           <div className="text-left min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-semibold text-zinc-200">
+              <span className="text-[11px] font-semibold text-zinc-800 dark:text-zinc-200">
                 {alert.ruleName}
               </span>
               <span
@@ -640,25 +639,25 @@ function AlertCard({
                 {config.label}
               </span>
             </div>
-            <div className="text-[10px] text-zinc-400 mt-0.5 truncate max-w-[320px]">
+            <div className="text-[10px] text-zinc-600 dark:text-zinc-400 mt-0.5 truncate max-w-[320px]">
               {alert.message}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[9px] text-zinc-600 tabular-nums">
+              <span className="text-[9px] text-zinc-500 dark:text-zinc-600 tabular-nums">
                 {formattedTime}
               </span>
               {alert.flightIdent && (
                 <>
-                  <span className="text-[9px] text-zinc-700">|</span>
-                  <span className="text-[9px] text-zinc-500 font-medium">
+                  <span className="text-[9px] text-zinc-400 dark:text-zinc-700">|</span>
+                  <span className="text-[9px] text-zinc-600 dark:text-zinc-500 font-medium">
                     {alert.flightIdent}
                   </span>
                 </>
               )}
               {alert.operator && (
                 <>
-                  <span className="text-[9px] text-zinc-700">|</span>
-                  <span className="text-[9px] text-zinc-500">
+                  <span className="text-[9px] text-zinc-400 dark:text-zinc-700">|</span>
+                  <span className="text-[9px] text-zinc-600 dark:text-zinc-500">
                     {alert.operator}
                   </span>
                 </>
@@ -673,28 +672,28 @@ function AlertCard({
                 e.stopPropagation();
                 onAcknowledge(alert.id);
               }}
-              className="text-[9px] px-2 py-1 bg-zinc-800/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700/60 transition-colors"
+              className="text-[9px] px-2 py-1 bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-300/60 dark:hover:bg-zinc-700/60 transition-colors"
               title="Acknowledge"
             >
               <Check size={10} />
             </button>
           )}
           {alert.acknowledged && (
-            <span className="text-[9px] text-zinc-600">
+            <span className="text-[9px] text-zinc-500 dark:text-zinc-600">
               <CheckCheck size={12} />
             </span>
           )}
           {expanded ? (
-            <ChevronDown size={10} className="text-zinc-600" />
+            <ChevronDown size={10} className="text-zinc-500 dark:text-zinc-600" />
           ) : (
-            <ChevronRight size={10} className="text-zinc-600" />
+            <ChevronRight size={10} className="text-zinc-500 dark:text-zinc-600" />
           )}
         </div>
       </button>
 
       {expanded && (
-        <div className="px-3 pb-3 border-t border-zinc-800/40 pt-2">
-          <p className="text-[10px] text-zinc-400 leading-relaxed">
+        <div className="px-3 pb-3 border-t border-zinc-200/40 dark:border-zinc-800/40 pt-2">
+          <p className="text-[10px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
             {alert.details}
           </p>
         </div>
@@ -737,16 +736,16 @@ function RuleFormModal({
   const isValid = form.name.trim().length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 dark:bg-black/60">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Form Header */}
-        <div className="px-5 py-4 border-b border-zinc-800/60 flex items-center justify-between sticky top-0 bg-zinc-900 z-10">
-          <h4 className="text-sm font-semibold text-zinc-100">
+        <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between sticky top-0 bg-white dark:bg-zinc-900 z-10">
+          <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             {editingRule ? 'Edit Alert Rule' : 'New Alert Rule'}
           </h4>
           <button
             onClick={onClose}
-            className="text-zinc-500 hover:text-zinc-200 transition-colors"
+            className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
           >
             <X size={16} />
           </button>
@@ -763,7 +762,7 @@ function RuleFormModal({
               value={form.name}
               onChange={(e) => updateField('name', e.target.value)}
               placeholder="e.g. Late Night Helicopter Alert"
-              className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
+              className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
             />
           </div>
 
@@ -777,7 +776,7 @@ function RuleFormModal({
               onChange={(e) => updateField('description', e.target.value)}
               placeholder="What does this rule monitor..."
               rows={2}
-              className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors resize-none"
+              className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors resize-none"
             />
           </div>
 
@@ -790,7 +789,7 @@ function RuleFormModal({
               <select
                 value={form.triggerType}
                 onChange={(e) => updateField('triggerType', e.target.value as TriggerType)}
-                className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 focus:outline-none focus:border-blue-600 transition-colors"
+                className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-blue-600 transition-colors"
               >
                 {(Object.entries(TRIGGER_TYPE_LABELS) as [TriggerType, string][]).map(
                   ([value, label]) => (
@@ -809,7 +808,7 @@ function RuleFormModal({
               <select
                 value={form.priority}
                 onChange={(e) => updateField('priority', e.target.value as AlertPriority)}
-                className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 focus:outline-none focus:border-blue-600 transition-colors"
+                className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-blue-600 transition-colors"
               >
                 <option value="info">Info</option>
                 <option value="warning">Warning</option>
@@ -831,7 +830,7 @@ function RuleFormModal({
                 placeholder="e.g. 85"
                 min={50}
                 max={120}
-                className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
+                className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
               />
               <p className="text-[9px] text-zinc-600 mt-1">
                 Triggers when a flight's estimated noise exceeds this dB level.
@@ -847,7 +846,7 @@ function RuleFormModal({
               <select
                 value={form.minSeverity}
                 onChange={(e) => updateField('minSeverity', e.target.value as ImpactSeverity)}
-                className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 focus:outline-none focus:border-blue-600 transition-colors"
+                className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-blue-600 transition-colors"
               >
                 {(['minimal', 'low', 'moderate', 'high', 'critical'] as ImpactSeverity[]).map(
                   (sev) => (
@@ -875,7 +874,7 @@ function RuleFormModal({
                 placeholder="e.g. 8"
                 min={1}
                 max={100}
-                className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
+                className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
               />
               <p className="text-[9px] text-zinc-600 mt-1">
                 Triggers when more than this many flights occur in a single hour.
@@ -896,7 +895,7 @@ function RuleFormModal({
                   placeholder="e.g. 3"
                   min={1}
                   max={100}
-                  className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
                 />
               </div>
               <div>
@@ -910,7 +909,7 @@ function RuleFormModal({
                   placeholder="e.g. 7"
                   min={1}
                   max={365}
-                  className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-500 dark:placeholder:text-zinc-600 focus:outline-none focus:border-blue-600 transition-colors"
                 />
               </div>
               <p className="col-span-2 text-[9px] text-zinc-600">
@@ -920,8 +919,8 @@ function RuleFormModal({
           )}
 
           {form.triggerType === 'curfew_violation' && (
-            <div className="px-3 py-2.5 bg-zinc-800/40 border border-zinc-700/40">
-              <p className="text-[10px] text-zinc-500 leading-relaxed">
+            <div className="px-3 py-2.5 bg-zinc-100/40 dark:bg-zinc-800/40 border border-zinc-300/40 dark:border-zinc-700/40">
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-500 leading-relaxed">
                 No additional parameters needed. This rule triggers on any flight operating during
                 the voluntary curfew period (8 PM - 8 AM ET).
               </p>
@@ -943,16 +942,16 @@ function RuleFormModal({
                 }`}
               />
             </button>
-            <span className="text-[11px] text-zinc-400">
+            <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
               {form.enabled ? 'Rule enabled' : 'Rule disabled'}
             </span>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800/60">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-200/60 dark:border-zinc-800/60">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-[11px] font-medium text-zinc-400 bg-zinc-800/50 border border-zinc-700/40 hover:text-zinc-200 transition-colors"
+              className="px-4 py-2 text-[11px] font-medium text-zinc-600 dark:text-zinc-400 bg-zinc-200/50 dark:bg-zinc-800/50 border border-zinc-300/40 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
             >
               Cancel
             </button>
@@ -1006,7 +1005,7 @@ function AlertSummaryBar({ alerts }: { alerts: TriggeredAlert[] }) {
     <div className="space-y-3">
       {/* Priority distribution bar */}
       <div className="space-y-1.5">
-        <div className="flex h-2 w-full overflow-hidden bg-zinc-800">
+        <div className="flex h-2 w-full overflow-hidden bg-zinc-200 dark:bg-zinc-800">
           {segments.map(({ priority, count, color }) => (
             <div
               key={priority}
@@ -1029,31 +1028,31 @@ function AlertSummaryBar({ alerts }: { alerts: TriggeredAlert[] }) {
       </div>
 
       {/* Summary metrics */}
-      <div className="grid grid-cols-4 gap-px bg-zinc-800/60">
-        <div className="bg-zinc-900 px-3 py-2.5">
-          <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-0.5">Total</div>
-          <div className="text-base font-bold text-zinc-100 tabular-nums">{total}</div>
+      <div className="grid grid-cols-4 gap-px bg-zinc-200/60 dark:bg-zinc-800/60">
+        <div className="bg-white dark:bg-zinc-900 px-3 py-2.5">
+          <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-0.5">Total</div>
+          <div className="text-base font-bold text-zinc-900 dark:text-zinc-100 tabular-nums">{total}</div>
         </div>
-        <div className="bg-zinc-900 px-3 py-2.5">
-          <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-0.5">Critical</div>
-          <div className="text-base font-bold text-red-400 tabular-nums">{byCritical}</div>
+        <div className="bg-white dark:bg-zinc-900 px-3 py-2.5">
+          <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-0.5">Critical</div>
+          <div className="text-base font-bold text-red-600 dark:text-red-400 tabular-nums">{byCritical}</div>
         </div>
-        <div className="bg-zinc-900 px-3 py-2.5">
-          <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-0.5 truncate" title="Top Rule">Top Rule</div>
-          <div className="text-[10px] font-semibold text-zinc-300 truncate" title={topRule ? topRule[0] : '-'}>
+        <div className="bg-white dark:bg-zinc-900 px-3 py-2.5">
+          <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-0.5 truncate" title="Top Rule">Top Rule</div>
+          <div className="text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 truncate" title={topRule ? topRule[0] : '-'}>
             {topRule ? topRule[0] : '-'}
           </div>
           {topRule && (
-            <div className="text-[9px] text-zinc-600 tabular-nums">{topRule[1]}x</div>
+            <div className="text-[9px] text-zinc-500 dark:text-zinc-600 tabular-nums">{topRule[1]}x</div>
           )}
         </div>
-        <div className="bg-zinc-900 px-3 py-2.5">
-          <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-0.5 truncate" title="Top Operator">Top Operator</div>
-          <div className="text-[10px] font-semibold text-zinc-300 truncate" title={topOperator ? topOperator[0] : '-'}>
+        <div className="bg-white dark:bg-zinc-900 px-3 py-2.5">
+          <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-0.5 truncate" title="Top Operator">Top Operator</div>
+          <div className="text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 truncate" title={topOperator ? topOperator[0] : '-'}>
             {topOperator ? topOperator[0] : '-'}
           </div>
           {topOperator && (
-            <div className="text-[9px] text-zinc-600 tabular-nums">{topOperator[1]}x</div>
+            <div className="text-[9px] text-zinc-500 dark:text-zinc-600 tabular-nums">{topOperator[1]}x</div>
           )}
         </div>
       </div>
@@ -1202,14 +1201,14 @@ export function AlertNotificationSystem() {
   ];
 
   return (
-    <div className="bg-zinc-950 border border-zinc-800">
+    <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
       {/* ─── Notification Bell Header ─────────────────────────────── */}
-      <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setBellExpanded(!bellExpanded)}
-              className="relative bg-zinc-800/60 p-2 hover:bg-zinc-700/60 transition-colors"
+              className="relative bg-zinc-200/60 dark:bg-zinc-800/60 p-2 hover:bg-zinc-300/60 dark:hover:bg-zinc-700/60 transition-colors"
             >
               {unacknowledgedCount > 0 ? (
                 <Bell size={18} className="text-amber-400" />
@@ -1223,10 +1222,10 @@ export function AlertNotificationSystem() {
               )}
             </button>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Alert Notification System
               </h3>
-              <p className="text-[10px] text-zinc-500 mt-0.5">
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
                 {allAlerts.length} alerts total, {unacknowledgedCount} unacknowledged
               </p>
             </div>
@@ -1235,7 +1234,7 @@ export function AlertNotificationSystem() {
             {unacknowledgedCount > 0 && (
               <button
                 onClick={acknowledgeAll}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium bg-zinc-800/50 text-zinc-400 border border-zinc-700/40 hover:text-zinc-200 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 border border-zinc-300/40 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
               >
                 <CheckCheck size={10} />
                 Acknowledge All
@@ -1253,11 +1252,11 @@ export function AlertNotificationSystem() {
       </div>
 
       {/* ─── Alert Summary Bar ────────────────────────────────────── */}
-      <div className="px-5 py-3 border-b border-zinc-800/60">
+      <div className="px-5 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <AlertSummaryBar alerts={allAlerts} />
         {allAlerts.length === 0 && (
           <div className="text-center py-2">
-            <p className="text-[11px] text-zinc-600">
+            <p className="text-[11px] text-zinc-500 dark:text-zinc-600">
               No alerts triggered for current flights and rules.
             </p>
           </div>
@@ -1265,25 +1264,25 @@ export function AlertNotificationSystem() {
       </div>
 
       {/* ─── Tabs ─────────────────────────────────────────────────── */}
-      <div className="flex border-b border-zinc-800/60">
+      <div className="flex border-b border-zinc-200/60 dark:border-zinc-800/60">
         {tabs.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
             className={`flex-1 px-3 py-2 text-[11px] font-medium transition-colors ${
               activeTab === key
-                ? 'text-amber-400 border-b-2 border-amber-400 bg-amber-950/10'
-                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'
+                ? 'text-amber-600 dark:text-amber-400 border-b-2 border-amber-600 dark:border-amber-400 bg-amber-100/10 dark:bg-amber-950/10'
+                : 'text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30'
             }`}
           >
             {label}
             {key === 'feed' && unacknowledgedCount > 0 && (
-              <span className="ml-1.5 text-[9px] px-1.5 py-0.5 bg-red-900/50 text-red-400 rounded-full tabular-nums">
+              <span className="ml-1.5 text-[9px] px-1.5 py-0.5 bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 tabular-nums">
                 {unacknowledgedCount}
               </span>
             )}
             {key === 'rules' && (
-              <span className="ml-1.5 text-[9px] text-zinc-600 tabular-nums">
+              <span className="ml-1.5 text-[9px] text-zinc-500 dark:text-zinc-600 tabular-nums">
                 {rules.length}
               </span>
             )}
@@ -1299,8 +1298,8 @@ export function AlertNotificationSystem() {
             {/* Filters */}
             <div className="flex items-start gap-3 flex-wrap">
               <div className="flex items-center gap-1.5">
-                <Filter size={10} className="text-zinc-600" />
-                <span className="text-[9px] text-zinc-600 uppercase tracking-wider">Priority:</span>
+                <Filter size={10} className="text-zinc-500 dark:text-zinc-600" />
+                <span className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Priority:</span>
                 <div className="flex gap-1">
                   {(['all', 'critical', 'warning', 'info'] as const).map((p) => (
                     <button
@@ -1309,9 +1308,9 @@ export function AlertNotificationSystem() {
                       className={`px-2 py-0.5 text-[10px] font-medium capitalize transition-colors ${
                         priorityFilter === p
                           ? p === 'all'
-                            ? 'bg-zinc-700 text-zinc-200'
+                            ? 'bg-zinc-300 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'
                             : `${PRIORITY_CONFIG[p].bg} ${PRIORITY_CONFIG[p].text}`
-                          : 'text-zinc-500 hover:text-zinc-300 bg-zinc-800/30'
+                          : 'text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 bg-zinc-200/30 dark:bg-zinc-800/30'
                       }`}
                     >
                       {p === 'all' ? 'All' : PRIORITY_CONFIG[p].label}
@@ -1321,14 +1320,14 @@ export function AlertNotificationSystem() {
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span className="text-[9px] text-zinc-600 uppercase tracking-wider">Type:</span>
+                <span className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Type:</span>
                 <div className="flex gap-1">
                   <button
                     onClick={() => setTriggerFilter('all')}
                     className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
                       triggerFilter === 'all'
-                        ? 'bg-zinc-700 text-zinc-200'
-                        : 'text-zinc-500 hover:text-zinc-300 bg-zinc-800/30'
+                        ? 'bg-zinc-300 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'
+                        : 'text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 bg-zinc-200/30 dark:bg-zinc-800/30'
                     }`}
                   >
                     All
@@ -1340,8 +1339,8 @@ export function AlertNotificationSystem() {
                         onClick={() => setTriggerFilter(type)}
                         className={`px-2 py-0.5 text-[10px] font-medium transition-colors ${
                           triggerFilter === type
-                            ? 'bg-zinc-700 text-zinc-200'
-                            : 'text-zinc-500 hover:text-zinc-300 bg-zinc-800/30'
+                            ? 'bg-zinc-300 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'
+                            : 'text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 bg-zinc-200/30 dark:bg-zinc-800/30'
                         }`}
                       >
                         {label}
@@ -1352,7 +1351,7 @@ export function AlertNotificationSystem() {
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span className="text-[9px] text-zinc-600 uppercase tracking-wider">Status:</span>
+                <span className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Status:</span>
                 <div className="flex gap-1">
                   {(['all', 'unacknowledged', 'acknowledged'] as const).map((s) => (
                     <button
@@ -1360,8 +1359,8 @@ export function AlertNotificationSystem() {
                       onClick={() => setAckFilter(s)}
                       className={`px-2 py-0.5 text-[10px] font-medium capitalize transition-colors ${
                         ackFilter === s
-                          ? 'bg-zinc-700 text-zinc-200'
-                          : 'text-zinc-500 hover:text-zinc-300 bg-zinc-800/30'
+                          ? 'bg-zinc-300 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200'
+                          : 'text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300 bg-zinc-200/30 dark:bg-zinc-800/30'
                       }`}
                     >
                       {s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
@@ -1373,7 +1372,7 @@ export function AlertNotificationSystem() {
 
             {/* Alert list */}
             {filteredAlerts.length === 0 ? (
-              <div className="py-8 text-center text-[11px] text-zinc-600">
+              <div className="py-8 text-center text-[11px] text-zinc-500 dark:text-zinc-600">
                 {allAlerts.length === 0
                   ? 'No alerts triggered for the current data and rules.'
                   : 'No alerts match the current filters.'}
@@ -1388,7 +1387,7 @@ export function AlertNotificationSystem() {
                   />
                 ))}
                 {filteredAlerts.length > 100 && (
-                  <div className="text-center text-[10px] text-zinc-600 py-2">
+                  <div className="text-center text-[10px] text-zinc-500 dark:text-zinc-600 py-2">
                     Showing 100 of {filteredAlerts.length} alerts
                   </div>
                 )}
@@ -1401,13 +1400,13 @@ export function AlertNotificationSystem() {
         {activeTab === 'rules' && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] text-zinc-500 leading-relaxed">
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-500 leading-relaxed">
                 Alert rules define conditions that trigger notifications. Each rule
                 evaluates flights and violations to generate alerts.
               </p>
             </div>
 
-            <div className="text-[9px] text-zinc-600 uppercase tracking-wider">
+            <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
               {rules.length} Rules | {rules.filter((r) => r.enabled).length} Active
             </div>
 
@@ -1420,10 +1419,10 @@ export function AlertNotificationSystem() {
                 return (
                   <div
                     key={rule.id}
-                    className={`border bg-zinc-900/40 px-3 py-2.5 group ${
+                    className={`border bg-white/40 dark:bg-zinc-900/40 px-3 py-2.5 group ${
                       rule.enabled
-                        ? 'border-zinc-800/60'
-                        : 'border-zinc-800/30 opacity-50'
+                        ? 'border-zinc-200/60 dark:border-zinc-800/60'
+                        : 'border-zinc-200/30 dark:border-zinc-800/30 opacity-50'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
@@ -1440,8 +1439,8 @@ export function AlertNotificationSystem() {
                             }`}
                           />
                         </button>
-                        <TriggerIcon size={12} className="text-zinc-500" />
-                        <span className="text-[11px] font-medium text-zinc-300">
+                        <TriggerIcon size={12} className="text-zinc-500 dark:text-zinc-500" />
+                        <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
                           {rule.name}
                         </span>
                       </div>
@@ -1451,58 +1450,58 @@ export function AlertNotificationSystem() {
                         >
                           {config.label}
                         </span>
-                        <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                           {TRIGGER_TYPE_LABELS[rule.triggerType]}
                         </span>
                         <span
                           className={`text-[10px] tabular-nums font-medium ${
-                            alertCount > 0 ? 'text-amber-400' : 'text-zinc-600'
+                            alertCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-500 dark:text-zinc-600'
                           }`}
                         >
                           {alertCount} alerts
                         </span>
                         <button
                           onClick={() => openEditRule(rule)}
-                          className="text-zinc-600 hover:text-zinc-200 transition-colors opacity-0 group-hover:opacity-100"
+                          className="text-zinc-500 dark:text-zinc-600 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors opacity-0 group-hover:opacity-100"
                           title="Edit rule"
                         >
                           <Pencil size={11} />
                         </button>
                         <button
                           onClick={() => handleDeleteRule(rule.id)}
-                          className="text-zinc-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                          className="text-zinc-500 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
                           title="Delete rule"
                         >
                           <Trash2 size={11} />
                         </button>
                       </div>
                     </div>
-                    <p className="text-[10px] text-zinc-500 leading-relaxed">
+                    <p className="text-[10px] text-zinc-600 dark:text-zinc-500 leading-relaxed">
                       {rule.description}
                     </p>
                     {/* Show parameters */}
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
                       {rule.triggerType === 'noise_threshold' && (
-                        <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                           Min: {(rule.params as NoiseThresholdParams).minDb} dB
                         </span>
                       )}
                       {rule.triggerType === 'species_impact' && (
-                        <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5 capitalize">
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5 capitalize">
                           Min Severity: {(rule.params as SpeciesImpactParams).minSeverity}
                         </span>
                       )}
                       {rule.triggerType === 'high_volume' && (
-                        <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                           Max: {(rule.params as HighVolumeParams).maxFlightsPerHour} flights/hr
                         </span>
                       )}
                       {rule.triggerType === 'repeat_offender' && (
                         <>
-                          <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                          <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                             Min: {(rule.params as RepeatOffenderParams).minViolations} violations
                           </span>
-                          <span className="text-[9px] text-zinc-600 bg-zinc-800/60 px-1.5 py-0.5">
+                          <span className="text-[9px] text-zinc-500 dark:text-zinc-600 bg-zinc-200/60 dark:bg-zinc-800/60 px-1.5 py-0.5">
                             Period: {(rule.params as RepeatOffenderParams).periodDays} days
                           </span>
                         </>

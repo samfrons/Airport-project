@@ -105,16 +105,16 @@ export function ComplaintForm() {
   }, [category, severity, neighborhood, description, addComplaint, existingComplaints]);
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
       {/* Header */}
-      <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-indigo-900/30 p-1.5">
-              <MessageSquarePlus size={16} className="text-indigo-400" strokeWidth={1.5} />
+            <div className="bg-indigo-100 dark:bg-indigo-900/30 p-1.5">
+              <MessageSquarePlus size={16} className="text-indigo-600 dark:text-indigo-400" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">Community Noise Reports</h3>
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Community Noise Reports</h3>
               <p className="text-[10px] text-zinc-500 mt-0.5">
                 Submit noise complaints — {existingComplaints.length} reports on file
               </p>
@@ -124,7 +124,7 @@ export function ComplaintForm() {
             onClick={() => setIsOpen(!isOpen)}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition-colors ${
               isOpen
-                ? 'bg-zinc-800 text-zinc-300 border border-zinc-700'
+                ? 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-300 dark:border-zinc-700'
                 : 'bg-indigo-600 text-white hover:bg-indigo-500'
             }`}
           >
@@ -139,8 +139,8 @@ export function ComplaintForm() {
         <div className="p-5 space-y-4">
           {submitted ? (
             <div className="py-8 text-center space-y-2">
-              <CheckCircle size={32} className="text-emerald-400 mx-auto" />
-              <p className="text-sm font-medium text-zinc-200">Report Submitted</p>
+              <CheckCircle size={32} className="text-emerald-500 dark:text-emerald-400 mx-auto" />
+              <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Report Submitted</p>
               <p className="text-[11px] text-zinc-500">
                 Your complaint has been recorded and will appear on the noise map.
               </p>
@@ -156,7 +156,7 @@ export function ComplaintForm() {
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as ComplaintCategory)}
-                    className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 focus:outline-none focus:border-indigo-600"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-indigo-600"
                   >
                     {COMPLAINT_CATEGORIES.map(({ value, label }) => (
                       <option key={value} value={value}>{label}</option>
@@ -170,7 +170,7 @@ export function ComplaintForm() {
                   <select
                     value={neighborhood}
                     onChange={(e) => setNeighborhood(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 focus:outline-none focus:border-indigo-600"
+                    className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 focus:outline-none focus:border-indigo-600"
                   >
                     {NEIGHBORHOODS.map((n) => (
                       <option key={n} value={n}>{n}</option>
@@ -191,8 +191,8 @@ export function ComplaintForm() {
                       onClick={() => setSeverity(value)}
                       className={`flex-1 py-2 text-center transition-colors ${
                         severity === value
-                          ? 'bg-indigo-600/30 text-indigo-300 border border-indigo-500/40'
-                          : 'bg-zinc-800/60 text-zinc-500 border border-zinc-700/40 hover:text-zinc-300'
+                          ? 'bg-indigo-100 dark:bg-indigo-600/30 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-500/40'
+                          : 'bg-zinc-100/60 dark:bg-zinc-800/60 text-zinc-500 border border-zinc-300/40 dark:border-zinc-700/40 hover:text-zinc-700 dark:hover:text-zinc-300'
                       }`}
                     >
                       <div className="text-[11px] font-medium">{value}</div>
@@ -216,9 +216,9 @@ export function ComplaintForm() {
                   placeholder="Describe what you heard, when, and how it affected you..."
                   rows={3}
                   maxLength={500}
-                  className="w-full bg-zinc-800 border border-zinc-700 px-3 py-2 text-[12px] text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-indigo-600 resize-none"
+                  className="w-full bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 px-3 py-2 text-[12px] text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-indigo-600 resize-none"
                 />
-                <div className="text-[9px] text-zinc-700 text-right mt-0.5">
+                <div className="text-[9px] text-zinc-500 dark:text-zinc-700 text-right mt-0.5">
                   {description.length}/500
                 </div>
               </div>
@@ -246,7 +246,7 @@ export function ComplaintForm() {
             {recentComplaints.slice(0, 3).map((c) => (
               <div
                 key={c.id}
-                className="flex items-center justify-between px-2 py-1.5 bg-zinc-950/40"
+                className="flex items-center justify-between px-2 py-1.5 bg-zinc-100/40 dark:bg-zinc-950/40"
               >
                 <div className="flex items-center gap-2">
                   <MapPin size={9} className="text-zinc-600" />

@@ -44,8 +44,8 @@ export function NoiseLayerControls() {
   ];
 
   return (
-    <div className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-3 min-w-[200px]">
-      <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.12em] mb-3 flex items-center gap-1.5">
+    <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-3 min-w-[200px]">
+      <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.12em] mb-3 flex items-center gap-1.5">
         <Sliders size={10} />
         Noise Layers
       </div>
@@ -57,8 +57,8 @@ export function NoiseLayerControls() {
               onClick={() => toggleNoiseLayer(key)}
               className={`w-full flex items-center justify-between gap-2 px-2 py-1.5 transition-colors ${
                 noiseSettings.visibility[key]
-                  ? 'bg-zinc-800 text-zinc-200'
-                  : 'text-zinc-500 hover:bg-zinc-800/50'
+                  ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200'
+                  : 'text-zinc-500 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -66,7 +66,7 @@ export function NoiseLayerControls() {
                 <span className="text-[11px] font-medium">{label}</span>
               </div>
               {noiseSettings.visibility[key] ? (
-                <Eye size={12} className="text-blue-400" />
+                <Eye size={12} className="text-blue-500 dark:text-blue-400" />
               ) : (
                 <EyeOff size={12} />
               )}
@@ -81,14 +81,14 @@ export function NoiseLayerControls() {
                   step="0.1"
                   value={noiseSettings.opacity[key]}
                   onChange={(e) => setNoiseLayerOpacity(key, parseFloat(e.target.value))}
-                  className="w-full h-1 bg-zinc-700 appearance-none cursor-pointer accent-blue-500"
+                  className="w-full h-1 bg-zinc-300 dark:bg-zinc-700 appearance-none cursor-pointer accent-blue-500"
                   style={{
                     background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
                       noiseSettings.opacity[key] * 100
-                    }%, #3f3f46 ${noiseSettings.opacity[key] * 100}%, #3f3f46 100%)`,
+                    }%, var(--bg-raised) ${noiseSettings.opacity[key] * 100}%, var(--bg-raised) 100%)`,
                   }}
                 />
-                <div className="flex justify-between text-[9px] text-zinc-600 mt-0.5">
+                <div className="flex justify-between text-[9px] text-zinc-500 dark:text-zinc-600 mt-0.5">
                   <span>{description}</span>
                   <span>{Math.round(noiseSettings.opacity[key] * 100)}%</span>
                 </div>
@@ -100,9 +100,9 @@ export function NoiseLayerControls() {
 
       {/* Complaints display mode selector */}
       {noiseSettings.visibility.complaints && (
-        <div className="mt-3 pt-3 border-t border-zinc-800">
-          <div className="text-[9px] text-zinc-600 mb-1.5">Complaint Display</div>
-          <div className="flex gap-px bg-zinc-800 p-0.5">
+        <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="text-[9px] text-zinc-500 dark:text-zinc-600 mb-1.5">Complaint Display</div>
+          <div className="flex gap-px bg-zinc-200 dark:bg-zinc-800 p-0.5">
             {complaintsDisplayModes.map(({ mode, label }) => (
               <button
                 key={mode}
@@ -115,7 +115,7 @@ export function NoiseLayerControls() {
                 className={`flex-1 px-2 py-1 text-[10px] font-medium transition-colors ${
                   noiseSettings.complaintsMode === mode
                     ? 'bg-blue-600 text-white'
-                    : 'text-zinc-500 hover:text-zinc-300'
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
                 }`}
               >
                 {label}
@@ -126,8 +126,8 @@ export function NoiseLayerControls() {
       )}
 
       {/* Biodiversity Layer */}
-      <div className="mt-3 pt-3 border-t border-zinc-800">
-        <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5">
+      <div className="mt-3 pt-3 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.12em] mb-2 flex items-center gap-1.5">
           <TreePine size={10} />
           Biodiversity
         </div>
@@ -137,8 +137,8 @@ export function NoiseLayerControls() {
             onClick={toggleBiodiversityLayer}
             className={`w-full flex items-center justify-between gap-2 px-2 py-1.5 transition-colors ${
               biodiversitySettings.visible
-                ? 'bg-emerald-900/30 text-emerald-300'
-                : 'text-zinc-500 hover:bg-zinc-800/50'
+                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                : 'text-zinc-500 hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50'
             }`}
           >
             <div className="flex items-center gap-2">
@@ -146,7 +146,7 @@ export function NoiseLayerControls() {
               <span className="text-[11px] font-medium">Wildlife Impact</span>
             </div>
             {biodiversitySettings.visible ? (
-              <Eye size={12} className="text-emerald-400" />
+              <Eye size={12} className="text-emerald-500 dark:text-emerald-400" />
             ) : (
               <EyeOff size={12} />
             )}
@@ -161,14 +161,14 @@ export function NoiseLayerControls() {
                 step="0.1"
                 value={biodiversitySettings.opacity}
                 onChange={(e) => setBiodiversityOpacity(parseFloat(e.target.value))}
-                className="w-full h-1 bg-zinc-700 appearance-none cursor-pointer accent-emerald-500"
+                className="w-full h-1 bg-zinc-300 dark:bg-zinc-700 appearance-none cursor-pointer accent-emerald-500"
                 style={{
                   background: `linear-gradient(to right, #10b981 0%, #10b981 ${
                     biodiversitySettings.opacity * 100
-                  }%, #3f3f46 ${biodiversitySettings.opacity * 100}%, #3f3f46 100%)`,
+                  }%, var(--bg-raised) ${biodiversitySettings.opacity * 100}%, var(--bg-raised) 100%)`,
                 }}
               />
-              <div className="flex justify-between text-[9px] text-zinc-600 mt-0.5">
+              <div className="flex justify-between text-[9px] text-zinc-500 dark:text-zinc-600 mt-0.5">
                 <span>Ecological zones</span>
                 <span>{Math.round(biodiversitySettings.opacity * 100)}%</span>
               </div>

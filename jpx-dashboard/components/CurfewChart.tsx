@@ -120,7 +120,7 @@ export function CurfewChart() {
   const pct = flights.length > 0 ? ((curfewTotal / flights.length) * 100).toFixed(1) : '0';
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 p-6">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6">
       {/* Chart legend */}
       <div className="flex items-center justify-end gap-5 mb-5">
         <div className="flex items-center gap-2">
@@ -138,14 +138,14 @@ export function CurfewChart() {
       </div>
 
       {/* Summary footer */}
-      <div className="mt-5 pt-4 border-t border-zinc-800 flex items-center justify-between">
+      <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
         <p className="text-xs text-zinc-500">
-          <span className="text-zinc-200 font-semibold tabular-nums">{curfewTotal}</span>
+          <span className="text-zinc-800 dark:text-zinc-200 font-semibold tabular-nums">{curfewTotal}</span>
           {' '}operations during curfew hours
         </p>
         <p className="text-xs text-zinc-500">
           <span className={`font-semibold tabular-nums ${
-            curfewTotal > 0 ? 'text-amber-400' : 'text-emerald-400'
+            curfewTotal > 0 ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-500 dark:text-emerald-400'
           }`}>
             {pct}%
           </span>

@@ -1,49 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFlights, AIRPORT_COORDS, Flight } from '@/lib/supabase/db';
+import {
+  getEASANoiseProfile,
+  CATEGORY_AVERAGES,
+} from '@/data/noise/easa/icaoToEasaMap';
 
 export const dynamic = 'force-dynamic';
 
-// ─── Noise profiles (mirrors data/noise/aircraftNoiseProfiles.ts) ────────────
-// dB at 1000 ft reference altitude
-const NOISE_DB: Record<string, { takeoff: number; approach: number; category: string }> = {
-  R22:  { takeoff: 78, approach: 76, category: 'moderate' },
-  R44:  { takeoff: 82, approach: 80, category: 'loud' },
-  R66:  { takeoff: 83, approach: 81, category: 'loud' },
-  S76:  { takeoff: 88, approach: 85, category: 'very_loud' },
-  EC35: { takeoff: 84, approach: 82, category: 'loud' },
-  A109: { takeoff: 85, approach: 83, category: 'loud' },
-  B06:  { takeoff: 83, approach: 81, category: 'loud' },
-  B407: { takeoff: 84, approach: 82, category: 'loud' },
-  AS50: { takeoff: 82, approach: 80, category: 'loud' },
-  GLF5: { takeoff: 92, approach: 88, category: 'very_loud' },
-  GLF4: { takeoff: 90, approach: 86, category: 'very_loud' },
-  GLEX: { takeoff: 91, approach: 87, category: 'very_loud' },
-  C56X: { takeoff: 86, approach: 82, category: 'loud' },
-  C680: { takeoff: 85, approach: 81, category: 'loud' },
-  C525: { takeoff: 80, approach: 76, category: 'moderate' },
-  E55P: { takeoff: 82, approach: 78, category: 'moderate' },
-  PC12: { takeoff: 78, approach: 75, category: 'moderate' },
-  LJ45: { takeoff: 84, approach: 80, category: 'loud' },
-  FA50: { takeoff: 85, approach: 81, category: 'loud' },
-  C172: { takeoff: 75, approach: 72, category: 'moderate' },
-  C182: { takeoff: 76, approach: 73, category: 'moderate' },
-  C206: { takeoff: 77, approach: 74, category: 'moderate' },
-  PA28: { takeoff: 74, approach: 71, category: 'moderate' },
-  PA32: { takeoff: 76, approach: 73, category: 'moderate' },
-  BE36: { takeoff: 77, approach: 74, category: 'moderate' },
-  SR22: { takeoff: 76, approach: 73, category: 'moderate' },
-  P28A: { takeoff: 72, approach: 69, category: 'quiet' },
-  C150: { takeoff: 70, approach: 67, category: 'quiet' },
-};
+// ─── Reference constants ────────────────────────────────────────────────────
+const REFERENCE_ALT = 1000; // feet AGL (EASA certification reference)
+const STANDARD_ALTITUDES = [500, 1000, 2000, 3000];
 
-const DEFAULT_NOISE = { takeoff: 80, approach: 76, category: 'moderate' };
-const REFERENCE_ALT = 1000; // feet AGL
-const ALTITUDES = [500, 1000, 2000, 3000];
-
-/** Inverse-square-law noise at a given altitude */
+/**
+ * Calculate noise level at a given altitude using inverse square law
+ * This is a simplified calculation for display purposes.
+ * For accurate ground-level estimates, use trackNoiseCalculator.ts
+ *
+ * @param baseDb Reference dB at 1000ft
+ * @param altitude Target altitude in feet
+ * @returns Adjusted dB level
+ */
 function dbAtAltitude(baseDb: number, altitude: number): number {
-  const attenuation = 20 * Math.log10(REFERENCE_ALT / altitude);
-  return Math.round((baseDb + attenuation) * 10) / 10;
+  if (altitude <= 0) return baseDb + 20; // Very loud at ground level
+  const attenuation = 20 * Math.log10(altitude / REFERENCE_ALT);
+  return Math.round((baseDb - attenuation) * 10) / 10;
+}
+
+/**
+ * Determine noise category from dB level
+ */
+function getNoiseCategory(db: number): 'quiet' | 'moderate' | 'loud' | 'very_loud' {
+  if (db < 75) return 'quiet';
+  if (db < 82) return 'moderate';
+  if (db < 88) return 'loud';
+  return 'very_loud';
 }
 
 export async function GET(request: NextRequest) {
@@ -56,21 +46,41 @@ export async function GET(request: NextRequest) {
 
     const rawFlights = await getFlights({ start, end, category, direction });
 
-    // Add noise profile to each flight
+    // Add EASA-based noise profile to each flight
     const flights = rawFlights.map((flight: Flight) => {
-      const type = flight.aircraft_type || '';
+      const icaoType = flight.aircraft_type || '';
       const dir = flight.direction;
-      const noise = NOISE_DB[type] || DEFAULT_NOISE;
-      const baseDb = dir === 'arrival' ? noise.approach : noise.takeoff;
+
+      // Get EASA noise profile (falls back to category average if not found)
+      const easaProfile = getEASANoiseProfile(icaoType);
+
+      // Select appropriate dB based on direction
+      const baseDb = dir === 'arrival' ? easaProfile.approachDb : easaProfile.takeoffDb;
 
       return {
         ...flight,
         noise_profile: {
-          takeoff_db: noise.takeoff,
-          approach_db: noise.approach,
-          noise_category: noise.category,
+          // Core noise data from EASA
+          takeoff_db: easaProfile.takeoffDb,
+          approach_db: easaProfile.approachDb,
           effective_db: baseDb,
-          altitude_profile: ALTITUDES.map((alt) => ({
+          noise_category: getNoiseCategory(baseDb),
+
+          // EASA certification data (when available)
+          lateral_epnl: easaProfile.lateralEpnl,
+          flyover_epnl: easaProfile.flyoverEpnl,
+          approach_epnl: easaProfile.approachEpnl,
+
+          // Aircraft identification
+          manufacturer: easaProfile.easaManufacturer,
+          model: easaProfile.easaModel,
+
+          // Data quality indicators
+          data_source: easaProfile.dataSource,
+          confidence: easaProfile.confidence,
+
+          // Altitude profile for visualization
+          altitude_profile: STANDARD_ALTITUDES.map((alt) => ({
             altitude_ft: alt,
             db: dbAtAltitude(baseDb, alt),
           })),

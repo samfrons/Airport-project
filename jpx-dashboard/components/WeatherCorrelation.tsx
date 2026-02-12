@@ -1211,18 +1211,18 @@ export function WeatherCorrelation() {
   // ─── Render ───────────────────────────────────────────────────────
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
       {/* Header / Toggle */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-5 py-4 border-b border-zinc-800/60 flex items-center justify-between hover:bg-zinc-800/20 transition-colors"
+        className="w-full px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between hover:bg-zinc-100/20 dark:hover:bg-zinc-800/20 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className="bg-cyan-900/30 p-1.5">
-            <CloudSun size={16} className="text-cyan-400" strokeWidth={1.5} />
+          <div className="bg-cyan-100 dark:bg-cyan-900/30 p-1.5">
+            <CloudSun size={16} className="text-cyan-600 dark:text-cyan-400" strokeWidth={1.5} />
           </div>
           <div className="text-left">
-            <h3 className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
               Weather Correlation Analysis
               {isRealData && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-emerald-900/30 text-emerald-400 text-[9px] font-medium">
@@ -1234,7 +1234,7 @@ export function WeatherCorrelation() {
                 <Loader2 size={12} className="animate-spin text-zinc-500" />
               )}
             </h3>
-            <p className="text-[10px] text-zinc-500 mt-0.5">
+            <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
               {isRealData
                 ? 'Real METAR/TAF observations from NOAA Aviation Weather'
                 : 'Simulated weather data for KJPX (East Hampton)'}{' '}
@@ -1243,7 +1243,7 @@ export function WeatherCorrelation() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="hidden sm:flex items-center gap-2 text-[10px] text-zinc-500">
+          <div className="hidden sm:flex items-center gap-2 text-[10px] text-zinc-600 dark:text-zinc-500">
             {/* Flight category badge (VFR/IFR/etc) */}
             {summaryStats.flightCategory && (
               <span
@@ -1280,9 +1280,9 @@ export function WeatherCorrelation() {
               {conditionConfig[summaryStats.mostCommon].label}
             </span>
             <span className="tabular-nums">{summaryStats.avgTemp}°F</span>
-            <span className="text-zinc-700">|</span>
+            <span className="text-zinc-400 dark:text-zinc-700">|</span>
             <span className="tabular-nums">{summaryStats.avgWind} mph wind</span>
-            <span className="text-zinc-700">|</span>
+            <span className="text-zinc-400 dark:text-zinc-700">|</span>
             <AirQualityInlineBadge />
           </div>
           {isExpanded ? (
@@ -1296,61 +1296,61 @@ export function WeatherCorrelation() {
       {isExpanded && (
         <>
           {/* ─── Weather Summary Stats ──────────────────────────────── */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px bg-zinc-800/60">
-            <div className="bg-zinc-950/50 px-3 py-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-px bg-zinc-200/60 dark:bg-zinc-800/60">
+            <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-3 py-2">
               <div className="flex items-center gap-1.5 mb-1">
-                <Thermometer size={10} className="text-zinc-600" />
-                <span className="text-[9px] text-zinc-600 uppercase tracking-wider">
+                <Thermometer size={10} className="text-zinc-500 dark:text-zinc-600" />
+                <span className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
                   Avg Temp
                 </span>
               </div>
-              <div className="text-lg font-bold tabular-nums text-amber-400">
+              <div className="text-lg font-bold tabular-nums text-amber-600 dark:text-amber-400">
                 {summaryStats.avgTemp}°F
               </div>
             </div>
-            <div className="bg-zinc-950/50 px-3 py-2">
+            <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-3 py-2">
               <div className="flex items-center gap-1.5 mb-1">
-                <Wind size={10} className="text-zinc-600" />
-                <span className="text-[9px] text-zinc-600 uppercase tracking-wider">
+                <Wind size={10} className="text-zinc-500 dark:text-zinc-600" />
+                <span className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
                   Avg Wind
                 </span>
               </div>
-              <div className="text-lg font-bold tabular-nums text-blue-400">
+              <div className="text-lg font-bold tabular-nums text-blue-600 dark:text-blue-400">
                 {summaryStats.avgWind} mph
               </div>
             </div>
-            <div className="bg-zinc-950/50 px-3 py-2">
+            <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-3 py-2">
               <div className="flex items-center gap-1.5 mb-1">
-                <Droplets size={10} className="text-zinc-600" />
-                <span className="text-[9px] text-zinc-600 uppercase tracking-wider">
+                <Droplets size={10} className="text-zinc-500 dark:text-zinc-600" />
+                <span className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
                   Avg Humidity
                 </span>
               </div>
-              <div className="text-lg font-bold tabular-nums text-cyan-400">
+              <div className="text-lg font-bold tabular-nums text-cyan-600 dark:text-cyan-400">
                 {summaryStats.avgHumidity}%
               </div>
             </div>
-            <div className="bg-zinc-950/50 px-3 py-2">
+            <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-3 py-2">
               <div className="flex items-center gap-1.5 mb-1">
-                <Eye size={10} className="text-zinc-600" />
-                <span className="text-[9px] text-zinc-600 uppercase tracking-wider">
+                <Eye size={10} className="text-zinc-500 dark:text-zinc-600" />
+                <span className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
                   Avg Visibility
                 </span>
               </div>
-              <div className="text-lg font-bold tabular-nums text-emerald-400">
+              <div className="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
                 {summaryStats.avgVis} mi
               </div>
             </div>
-            <div className="bg-zinc-950/50 px-3 py-2">
+            <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-3 py-2">
               <div className="flex items-center gap-1.5 mb-1">
-                <CloudSun size={10} className="text-zinc-600" />
-                <span className="text-[9px] text-zinc-600 uppercase tracking-wider">
+                <CloudSun size={10} className="text-zinc-500 dark:text-zinc-600" />
+                <span className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
                   Period
                 </span>
               </div>
-              <div className="text-lg font-bold tabular-nums text-zinc-200">
+              <div className="text-lg font-bold tabular-nums text-zinc-800 dark:text-zinc-200">
                 {summaryStats.totalDays}
-                <span className="text-[10px] text-zinc-500 font-normal ml-1">
+                <span className="text-[10px] text-zinc-600 dark:text-zinc-500 font-normal ml-1">
                   days
                 </span>
               </div>
@@ -1364,12 +1364,12 @@ export function WeatherCorrelation() {
               {/* Wind Speed vs Noise Scatter */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Wind size={12} className="text-zinc-500" />
-                  <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                  <Wind size={12} className="text-zinc-500 dark:text-zinc-500" />
+                  <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                     Wind Speed vs Noise Level
                   </h4>
                 </div>
-                <div className="h-64 bg-zinc-950/30 border border-zinc-800/40 p-3">
+                <div className="h-64 bg-zinc-100/30 dark:bg-zinc-950/30 border border-zinc-200/40 dark:border-zinc-800/40 p-3">
                   <Scatter data={windNoiseChartData} options={windNoiseOptions} />
                 </div>
               </div>
@@ -1377,12 +1377,12 @@ export function WeatherCorrelation() {
               {/* Temperature vs Operations Scatter */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Thermometer size={12} className="text-zinc-500" />
-                  <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                  <Thermometer size={12} className="text-zinc-500 dark:text-zinc-500" />
+                  <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                     Temperature vs Operations
                   </h4>
                 </div>
-                <div className="h-64 bg-zinc-950/30 border border-zinc-800/40 p-3">
+                <div className="h-64 bg-zinc-100/30 dark:bg-zinc-950/30 border border-zinc-200/40 dark:border-zinc-800/40 p-3">
                   <Scatter data={tempOpsChartData} options={tempOpsOptions} />
                 </div>
               </div>
@@ -1393,12 +1393,12 @@ export function WeatherCorrelation() {
               {/* Operations by Weather Condition */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <CloudSun size={12} className="text-zinc-500" />
-                  <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                  <CloudSun size={12} className="text-zinc-500 dark:text-zinc-500" />
+                  <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                     Operations by Weather Condition
                   </h4>
                 </div>
-                <div className="h-64 bg-zinc-950/30 border border-zinc-800/40 p-3">
+                <div className="h-64 bg-zinc-100/30 dark:bg-zinc-950/30 border border-zinc-200/40 dark:border-zinc-800/40 p-3">
                   <Bar data={conditionBarData} options={conditionBarOptions} />
                 </div>
                 {/* Avg noise annotations */}
@@ -1412,10 +1412,10 @@ export function WeatherCorrelation() {
                         className="w-2 h-2"
                         style={{ backgroundColor: conditionConfig[cond].color }}
                       />
-                      <span className="text-zinc-500">
+                      <span className="text-zinc-600 dark:text-zinc-500">
                         {conditionConfig[cond].label}:
                       </span>
-                      <span className="text-zinc-400 tabular-nums font-medium">
+                      <span className="text-zinc-700 dark:text-zinc-400 tabular-nums font-medium">
                         {conditionBarData.avgNoises[i]} dB avg
                       </span>
                     </div>
@@ -1426,30 +1426,30 @@ export function WeatherCorrelation() {
               {/* Wind Rose */}
               <div>
                 <div className="flex items-center gap-2 mb-3">
-                  <Wind size={12} className="text-zinc-500" />
-                  <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                  <Wind size={12} className="text-zinc-500 dark:text-zinc-500" />
+                  <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                     Wind Rose — Operations by Direction
                   </h4>
                 </div>
-                <div className="bg-zinc-950/30 border border-zinc-800/40 p-4">
+                <div className="bg-zinc-100/30 dark:bg-zinc-950/30 border border-zinc-200/40 dark:border-zinc-800/40 p-4">
                   <WindRose sectors={windRoseSectors} />
                   {/* Legend */}
-                  <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-zinc-800/40">
+                  <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-zinc-200/40 dark:border-zinc-800/40">
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
-                      <span className="text-[9px] text-zinc-500">&lt;70 dB</span>
+                      <span className="text-[9px] text-zinc-600 dark:text-zinc-500">&lt;70 dB</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#eab308' }} />
-                      <span className="text-[9px] text-zinc-500">75-80 dB</span>
+                      <span className="text-[9px] text-zinc-600 dark:text-zinc-500">75-80 dB</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#f97316' }} />
-                      <span className="text-[9px] text-zinc-500">80-85 dB</span>
+                      <span className="text-[9px] text-zinc-600 dark:text-zinc-500">80-85 dB</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: '#ef4444' }} />
-                      <span className="text-[9px] text-zinc-500">&gt;85 dB</span>
+                      <span className="text-[9px] text-zinc-600 dark:text-zinc-500">&gt;85 dB</span>
                     </div>
                   </div>
                 </div>
@@ -1460,15 +1460,15 @@ export function WeatherCorrelation() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Lightbulb size={12} className="text-amber-500" />
-                <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                   Key Insights
                 </h4>
               </div>
-              <div className="bg-zinc-950/30 border border-zinc-800/40 p-4 space-y-2">
+              <div className="bg-zinc-100/30 dark:bg-zinc-950/30 border border-zinc-200/40 dark:border-zinc-800/40 p-4 space-y-2">
                 {insights.map((insight, i) => (
                   <div key={i} className="flex items-start gap-2.5">
                     <div className="mt-1 w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />
-                    <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    <p className="text-[11px] text-zinc-600 dark:text-zinc-400 leading-relaxed">
                       {insight}
                     </p>
                   </div>
@@ -1478,8 +1478,8 @@ export function WeatherCorrelation() {
           </div>
 
           {/* ─── Footer ────────────────────────────────────────────── */}
-          <div className="px-5 py-3 border-t border-zinc-800/60 flex items-center justify-between">
-            <div className="text-[10px] text-zinc-600 flex items-center gap-2">
+          <div className="px-5 py-3 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between">
+            <div className="text-[10px] text-zinc-500 dark:text-zinc-600 flex items-center gap-2">
               {isRealData ? (
                 <>
                   <Radio size={10} className="text-emerald-500" />
@@ -1496,11 +1496,11 @@ export function WeatherCorrelation() {
                 </>
               )}
             </div>
-            <div className="text-[9px] text-zinc-600 flex items-center gap-2">
+            <div className="text-[9px] text-zinc-500 dark:text-zinc-600 flex items-center gap-2">
               <span>Noise estimates from FAA certification profiles</span>
               {summaryStats.rawMetar && (
                 <span
-                  className="text-zinc-500 cursor-help border-b border-dotted border-zinc-600"
+                  className="text-zinc-600 dark:text-zinc-500 cursor-help border-b border-dotted border-zinc-500 dark:border-zinc-600"
                   title={summaryStats.rawMetar}
                 >
                   Raw METAR

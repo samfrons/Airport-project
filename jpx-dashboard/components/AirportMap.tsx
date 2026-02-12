@@ -5,6 +5,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Map, Route, BarChart3, Maximize2, Minimize2, Crosshair, X, Satellite, MapPin } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
+import { useThemeStore } from '@/store/themeStore';
 import { NoiseLayerControls } from './NoiseLayerControls';
 import { NoiseLegend } from './NoiseLegend';
 import { getAircraftNoiseProfile, getNoiseProfileColor } from '@/data/noise/aircraftNoiseProfiles';
@@ -147,6 +148,8 @@ export function AirportMap() {
     setSelectedFlight,
   } = useFlightStore();
 
+  const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
+
   useEffect(() => {
     selectedAirportRef.current = selectedAirport;
   }, [selectedAirport]);
@@ -163,9 +166,14 @@ export function AirportMap() {
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
 
+    // Determine initial style based on current theme
+    const initialStyle = resolvedTheme === 'light'
+      ? 'mapbox://styles/mapbox/light-v11'
+      : 'mapbox://styles/mapbox/dark-v11';
+
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/dark-v11',
+      style: initialStyle,
       center: KJPX_COORDS,
       zoom: 8,
     });
@@ -275,12 +283,18 @@ export function AirportMap() {
     }
   }, [isFullscreen]);
 
-  // Satellite / dark style toggle
+  // Satellite / light / dark style toggle based on theme
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
-    const style = isSatellite
-      ? 'mapbox://styles/mapbox/satellite-streets-v12'
-      : 'mapbox://styles/mapbox/dark-v11';
+
+    let style: string;
+    if (isSatellite) {
+      style = 'mapbox://styles/mapbox/satellite-streets-v12';
+    } else if (resolvedTheme === 'light') {
+      style = 'mapbox://styles/mapbox/light-v11';
+    } else {
+      style = 'mapbox://styles/mapbox/dark-v11';
+    }
 
     map.current.setStyle(style);
 
@@ -295,7 +309,7 @@ export function AirportMap() {
     return () => {
       map.current?.off('style.load', onStyleLoad);
     };
-  }, [isSatellite]);
+  }, [isSatellite, resolvedTheme]);
 
   // ─── Update layers ─────────────────────────────────────────────────
   useEffect(() => {
@@ -1422,7 +1436,7 @@ export function AirportMap() {
 
       {/* View Mode Toggle */}
       <div className="absolute top-4 left-4">
-        <div className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-0.5 flex gap-px">
+        <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-0.5 flex gap-px">
           {viewModes.map(({ mode, icon, label }) => (
             <button
               key={mode}
@@ -1433,7 +1447,7 @@ export function AirportMap() {
               className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-all ${
                 mapViewMode === mode
                   ? 'bg-blue-600 text-white'
-                  : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300'
+                  : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-700 dark:hover:text-zinc-300'
               }`}
               title={label}
             >
@@ -1448,10 +1462,10 @@ export function AirportMap() {
       <div className="absolute top-4 right-14 flex flex-col gap-px">
         <button
           onClick={() => setIsSatellite((v) => !v)}
-          className={`bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-2 transition-all ${
-            isSatellite ? 'text-blue-400 hover:text-blue-300' : 'text-zinc-500 hover:text-zinc-200'
-          } hover:bg-zinc-800`}
-          title={isSatellite ? 'Switch to dark map' : 'Switch to satellite'}
+          className={`bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-2 transition-all ${
+            isSatellite ? 'text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
+          } hover:bg-zinc-100 dark:hover:bg-zinc-800`}
+          title={isSatellite ? 'Switch to standard map' : 'Switch to satellite'}
         >
           {isSatellite ? (
             <MapPin size={14} strokeWidth={1.5} />
@@ -1461,14 +1475,14 @@ export function AirportMap() {
         </button>
         <button
           onClick={handleFitBounds}
-          className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-all"
+          className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
           title="Fit to all routes"
         >
           <Crosshair size={14} strokeWidth={1.5} />
         </button>
         <button
           onClick={() => setIsFullscreen((v) => !v)}
-          className="bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-2 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-all"
+          className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
           title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
         >
           {isFullscreen ? (
@@ -1505,8 +1519,8 @@ export function AirportMap() {
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-4 left-4 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800 p-3 min-w-[130px]">
-        <div className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.12em] mb-2">
+      <div className="absolute bottom-4 left-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-3 min-w-[130px]">
+        <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.12em] mb-2">
           Aircraft Type
         </div>
         <div className="flex flex-col gap-1.5">
@@ -1517,12 +1531,12 @@ export function AirportMap() {
                   className="w-2.5 h-[2px]"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-[11px] text-zinc-400">
+                <span className="text-[11px] text-zinc-600 dark:text-zinc-400">
                   {categoryLabels[category]}
                 </span>
               </div>
               {categoryCounts[category] != null && (
-                <span className="text-[11px] text-zinc-600 tabular-nums">
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-600 tabular-nums">
                   {categoryCounts[category]}
                 </span>
               )}
@@ -1530,7 +1544,7 @@ export function AirportMap() {
           ))}
         </div>
         {flights.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-zinc-800 text-[10px] text-zinc-600 tabular-nums">
+          <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800 text-[10px] text-zinc-500 dark:text-zinc-600 tabular-nums">
             {flights.length} ops
           </div>
         )}
@@ -1538,7 +1552,7 @@ export function AirportMap() {
 
       {/* Fullscreen hint */}
       {isFullscreen && (
-        <div className="absolute bottom-4 right-4 text-[10px] text-zinc-700 tracking-wide">
+        <div className="absolute bottom-4 right-4 text-[10px] text-zinc-500 dark:text-zinc-700 tracking-wide">
           ESC to exit
         </div>
       )}

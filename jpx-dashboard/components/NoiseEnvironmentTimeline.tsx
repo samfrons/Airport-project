@@ -235,12 +235,12 @@ function MiniStat({
   subValue?: string;
 }) {
   return (
-    <div className="bg-zinc-950/50 px-3 py-2">
-      <div className="text-[9px] text-zinc-600 uppercase tracking-wider">{label}</div>
-      <div className="text-lg font-bold tabular-nums" style={{ color: color ?? '#e4e4e7' }}>
+    <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-3 py-2">
+      <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">{label}</div>
+      <div className="text-lg font-bold tabular-nums" style={{ color: color ?? '#27272a' }}>
         {value}
       </div>
-      {subValue && <div className="text-[9px] text-zinc-600 mt-0.5">{subValue}</div>}
+      {subValue && <div className="text-[9px] text-zinc-500 dark:text-zinc-600 mt-0.5">{subValue}</div>}
     </div>
   );
 }
@@ -572,32 +572,32 @@ export function NoiseEnvironmentTimeline() {
   // ─── Render ───────────────────────────────────────────────────────
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
       {/* ─── Header ─────────────────────────────────────────────── */}
-      <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-purple-900/30 p-1.5">
-              <TrendingUp size={16} className="text-purple-400" strokeWidth={1.5} />
+            <div className="bg-purple-100 dark:bg-purple-900/30 p-1.5">
+              <TrendingUp size={16} className="text-purple-600 dark:text-purple-400" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                 Noise & Environment Impact Timeline
               </h3>
-              <p className="text-[10px] text-zinc-500 mt-0.5">
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
                 Explore aircraft noise and biodiversity impact trends over time
               </p>
             </div>
           </div>
 
           {/* View toggle */}
-          <div className="flex bg-zinc-800 p-0.5">
+          <div className="flex bg-zinc-200 dark:bg-zinc-800 p-0.5">
             <button
               onClick={() => setViewMode('trends')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition-colors ${
                 viewMode === 'trends'
-                  ? 'bg-zinc-700 text-zinc-100'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100'
+                  : 'text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
               }`}
             >
               <BarChart3 size={10} />
@@ -607,8 +607,8 @@ export function NoiseEnvironmentTimeline() {
               onClick={() => setViewMode('heatmap')}
               className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-medium transition-colors ${
                 viewMode === 'heatmap'
-                  ? 'bg-zinc-700 text-zinc-100'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100'
+                  : 'text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
               }`}
             >
               <Grid3X3 size={10} />
@@ -619,62 +619,62 @@ export function NoiseEnvironmentTimeline() {
       </div>
 
       {/* ─── Date Range Picker ──────────────────────────────────── */}
-      <div className="px-5 py-3 border-b border-zinc-800/60 flex flex-wrap items-center gap-3">
+      <div className="px-5 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60 flex flex-wrap items-center gap-3">
         {/* Navigation arrows */}
         <button
           onClick={() => shiftRange('prev')}
-          className="p-1.5 bg-zinc-800/60 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
+          className="p-1.5 bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
         >
           <ChevronLeft size={14} />
         </button>
         <button
           onClick={() => shiftRange('next')}
-          className="p-1.5 bg-zinc-800/60 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
+          className="p-1.5 bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
         >
           <ChevronRight size={14} />
         </button>
 
         {/* Presets */}
-        <div className="flex bg-zinc-950/60 p-0.5">
+        <div className="flex bg-zinc-100/60 dark:bg-zinc-950/60 p-0.5">
           {presets.map((p) => (
             <button
               key={p.label}
               onClick={() => applyPreset(p.days)}
-              className="px-3 py-1 text-[10px] font-medium text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+              className="px-3 py-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
             >
               {p.label}
             </button>
           ))}
         </div>
 
-        <div className="w-px h-5 bg-zinc-800" />
+        <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800" />
 
         {/* Date inputs */}
         <div className="flex items-center gap-2">
-          <CalendarDays size={12} className="text-zinc-600" />
+          <CalendarDays size={12} className="text-zinc-500 dark:text-zinc-600" />
           <input
             type="date"
             value={localStart}
             onChange={(e) => setLocalStart(e.target.value)}
-            className="px-2 py-1 bg-zinc-950 border border-zinc-800 text-zinc-300 text-[11px] font-medium focus:outline-none focus:border-purple-600 transition-colors"
+            className="px-2 py-1 bg-zinc-100 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-medium focus:outline-none focus:border-purple-600 transition-colors"
           />
-          <span className="text-zinc-600 text-[10px]">&ndash;</span>
+          <span className="text-zinc-500 dark:text-zinc-600 text-[10px]">&ndash;</span>
           <input
             type="date"
             value={localEnd}
             onChange={(e) => setLocalEnd(e.target.value)}
-            className="px-2 py-1 bg-zinc-950 border border-zinc-800 text-zinc-300 text-[11px] font-medium focus:outline-none focus:border-purple-600 transition-colors"
+            className="px-2 py-1 bg-zinc-100 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-medium focus:outline-none focus:border-purple-600 transition-colors"
           />
         </div>
 
         {/* Range summary */}
-        <span className="text-[10px] text-zinc-600 ml-auto">
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-600 ml-auto">
           {dayBuckets.length} days · {aggStats.totalOps} operations
         </span>
       </div>
 
       {/* ─── Aggregate Stats ────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-zinc-800/60">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-zinc-200/60 dark:bg-zinc-800/60">
         <MiniStat label="Total Ops" value={aggStats.totalOps} />
         <MiniStat label="Avg Noise" value={`${aggStats.avgNoise} dB`} color="#3b82f6" />
         <MiniStat label="Peak Noise" value={`${aggStats.peakNoise} dB`} color="#ef4444" />
@@ -707,8 +707,8 @@ export function NoiseEnvironmentTimeline() {
             {/* Operations by Aircraft Type */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Volume2 size={12} className="text-zinc-500" />
-                <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <Volume2 size={12} className="text-zinc-500 dark:text-zinc-500" />
+                <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                   Daily Operations by Aircraft Type
                 </h4>
               </div>
@@ -720,8 +720,8 @@ export function NoiseEnvironmentTimeline() {
             {/* Noise Levels Over Time */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Volume2 size={12} className="text-zinc-500" />
-                <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <Volume2 size={12} className="text-zinc-500 dark:text-zinc-500" />
+                <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                   Daily Noise Levels (dB)
                 </h4>
               </div>
@@ -733,8 +733,8 @@ export function NoiseEnvironmentTimeline() {
             {/* Violations by Severity */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <TreePine size={12} className="text-zinc-500" />
-                <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <TreePine size={12} className="text-zinc-500 dark:text-zinc-500" />
+                <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                   Daily Biodiversity Violations by Severity
                 </h4>
               </div>
@@ -746,8 +746,8 @@ export function NoiseEnvironmentTimeline() {
             {/* Protected Species & Habitats */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <TreePine size={12} className="text-zinc-500" />
-                <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <TreePine size={12} className="text-zinc-500 dark:text-zinc-500" />
+                <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                   Protected Species & Habitat Impact Over Time
                 </h4>
               </div>
@@ -763,8 +763,8 @@ export function NoiseEnvironmentTimeline() {
             {/* Operations Heatmap */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Grid3X3 size={12} className="text-zinc-500" />
-                <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <Grid3X3 size={12} className="text-zinc-500 dark:text-zinc-500" />
+                <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                   Operations Heatmap (Date x Hour)
                 </h4>
                 <div className="flex items-center gap-2 ml-auto">
@@ -774,7 +774,7 @@ export function NoiseEnvironmentTimeline() {
                     <div className="w-3 h-3" style={{ backgroundColor: 'rgba(245, 158, 11, 0.7)' }} />
                     <div className="w-3 h-3" style={{ backgroundColor: 'rgba(239, 68, 68, 0.8)' }} />
                   </div>
-                  <span className="text-[9px] text-zinc-600">Low → High</span>
+                  <span className="text-[9px] text-zinc-500 dark:text-zinc-600">Low → High</span>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -829,8 +829,8 @@ export function NoiseEnvironmentTimeline() {
             {/* Violations Heatmap */}
             <div className="mt-6">
               <div className="flex items-center gap-2 mb-3">
-                <TreePine size={12} className="text-zinc-500" />
-                <h4 className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                <TreePine size={12} className="text-zinc-500 dark:text-zinc-500" />
+                <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
                   Biodiversity Violations Heatmap (Date x Hour)
                 </h4>
                 <div className="flex items-center gap-2 ml-auto">
@@ -840,7 +840,7 @@ export function NoiseEnvironmentTimeline() {
                     <div className="w-3 h-3" style={{ backgroundColor: getImpactSeverityColor('high') }} />
                     <div className="w-3 h-3" style={{ backgroundColor: getImpactSeverityColor('critical') }} />
                   </div>
-                  <span className="text-[9px] text-zinc-600">None → Critical</span>
+                  <span className="text-[9px] text-zinc-500 dark:text-zinc-600">None → Critical</span>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -896,11 +896,11 @@ export function NoiseEnvironmentTimeline() {
       </div>
 
       {/* ─── Footer ─────────────────────────────────────────────── */}
-      <div className="px-5 py-3 border-t border-zinc-800/60 flex items-center justify-between">
-        <div className="text-[10px] text-zinc-600">
+      <div className="px-5 py-3 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between">
+        <div className="text-[10px] text-zinc-500 dark:text-zinc-600">
           Showing {formatShortDate(localStart)} – {formatShortDate(localEnd)}
         </div>
-        <div className="flex items-center gap-3 text-[9px] text-zinc-600">
+        <div className="flex items-center gap-3 text-[9px] text-zinc-500 dark:text-zinc-600">
           <span>Noise data derived from FAA noise certification profiles</span>
           <span>·</span>
           <span>Biodiversity thresholds based on peer-reviewed research</span>

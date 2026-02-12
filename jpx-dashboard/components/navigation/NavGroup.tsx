@@ -22,7 +22,7 @@ export function NavGroup({ group }: NavGroupProps) {
   // In collapsed mode (desktop only), show items directly without group headers
   if (!showLabels) {
     return (
-      <div className="py-1 border-b border-zinc-800/40">
+      <div className="py-1 border-b border-zinc-200/60 dark:border-zinc-800/40">
         {group.items.map((item) => (
           <NavItem
             key={item.id}
@@ -40,7 +40,7 @@ export function NavGroup({ group }: NavGroupProps) {
       <button
         onClick={() => toggleGroup(group.id)}
         aria-expanded={isGroupExpanded}
-        className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-medium text-zinc-500 uppercase tracking-widest hover:text-zinc-400 transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-medium text-zinc-500 uppercase tracking-widest hover:text-zinc-700 dark:hover:text-zinc-400 transition-colors"
       >
         <span>{group.label}</span>
         <ChevronDown

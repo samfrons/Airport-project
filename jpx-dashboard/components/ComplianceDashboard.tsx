@@ -273,7 +273,7 @@ function SubScoreBar({
         <span className="text-[11px] text-zinc-400">{label}</span>
         <span className="text-[9px] text-zinc-600 ml-auto">{weight}</span>
       </div>
-      <div className="flex-1 h-2 bg-zinc-800 overflow-hidden">
+      <div className="flex-1 h-2 bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
         <div
           className="h-full transition-all duration-500 ease-out"
           style={{ width: `${Math.min(score, 100)}%`, backgroundColor: color }}
@@ -864,10 +864,10 @@ export function ComplianceDashboard() {
 
   if (flights.length === 0) {
     return (
-      <div className="bg-zinc-900 border border-zinc-800 p-8 text-center">
-        <Shield size={24} className="text-zinc-600 mx-auto mb-3" strokeWidth={1.5} />
-        <p className="text-sm text-zinc-500">No flight data available for compliance analysis.</p>
-        <p className="text-[10px] text-zinc-600 mt-1">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 text-center">
+        <Shield size={24} className="text-zinc-500 dark:text-zinc-600 mx-auto mb-3" strokeWidth={1.5} />
+        <p className="text-sm text-zinc-600 dark:text-zinc-500">No flight data available for compliance analysis.</p>
+        <p className="text-[10px] text-zinc-500 dark:text-zinc-600 mt-1">
           Adjust the date range or wait for data to load.
         </p>
       </div>
@@ -879,23 +879,23 @@ export function ComplianceDashboard() {
       {/* ═══════════════════════════════════════════════════════════════════════
           SECTION 1: Compliance Score
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="bg-zinc-900 border border-zinc-800">
-        <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+        <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="bg-blue-900/30 p-1.5">
-                <Shield size={16} className="text-blue-400" strokeWidth={1.5} />
+              <div className="bg-blue-100 dark:bg-blue-900/30 p-1.5">
+                <Shield size={16} className="text-blue-600 dark:text-blue-400" strokeWidth={1.5} />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-zinc-100">Compliance Score</h3>
-                <p className="text-[10px] text-zinc-500 mt-0.5">
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Compliance Score</h3>
+                <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
                   Overall regulatory compliance for {dateRange.start} to {dateRange.end} -- {flights.length} flights analyzed
                 </p>
               </div>
             </div>
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/50 text-zinc-400 text-[10px] font-medium border border-zinc-700/40 hover:text-zinc-200 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 text-[10px] font-medium border border-zinc-300/40 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
             >
               <Download size={10} />
               Export Compliance Report
@@ -942,15 +942,15 @@ export function ComplianceDashboard() {
       {/* ═══════════════════════════════════════════════════════════════════════
           SECTION 2: Compliance Trend Chart
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="bg-zinc-900 border border-zinc-800">
-        <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+        <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-900/30 p-1.5">
-              <TrendingUp size={16} className="text-blue-400" strokeWidth={1.5} />
+            <div className="bg-blue-100 dark:bg-blue-900/30 p-1.5">
+              <TrendingUp size={16} className="text-blue-600 dark:text-blue-400" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">Compliance Trend</h3>
-              <p className="text-[10px] text-zinc-500 mt-0.5">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Compliance Trend</h3>
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
                 Daily compliance scores over the selected period -- toggle sub-scores in the legend
               </p>
             </div>
@@ -966,15 +966,15 @@ export function ComplianceDashboard() {
       {/* ═══════════════════════════════════════════════════════════════════════
           SECTION 3: Curfew Compliance
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="bg-zinc-900 border border-zinc-800">
-        <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+        <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
           <div className="flex items-center gap-3">
-            <div className="bg-amber-900/30 p-1.5">
-              <Clock size={16} className="text-amber-400" strokeWidth={1.5} />
+            <div className="bg-amber-100 dark:bg-amber-900/30 p-1.5">
+              <Clock size={16} className="text-amber-600 dark:text-amber-400" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">Curfew Compliance</h3>
-              <p className="text-[10px] text-zinc-500 mt-0.5">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Curfew Compliance</h3>
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
                 Voluntary curfew (8 PM - 8 AM ET) adherence -- {curfewViolators.length} violations detected
               </p>
             </div>
@@ -984,7 +984,7 @@ export function ComplianceDashboard() {
         <div className="p-5 grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Doughnut */}
           <div>
-            <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-3">
+            <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-3">
               Curfew Distribution
             </div>
             <div className="h-48">
@@ -994,11 +994,11 @@ export function ComplianceDashboard() {
 
           {/* Worst offenders bar */}
           <div>
-            <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-3">
+            <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-3">
               Worst Offending Operators
             </div>
             {curfewOperatorCounts.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-[11px] text-zinc-600">
+              <div className="h-48 flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-600">
                 No curfew violations
               </div>
             ) : (
@@ -1010,11 +1010,11 @@ export function ComplianceDashboard() {
 
           {/* Violators list */}
           <div>
-            <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-3">
+            <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-3">
               Curfew Violators
             </div>
             {curfewViolators.length === 0 ? (
-              <div className="h-48 flex items-center justify-center text-[11px] text-zinc-600">
+              <div className="h-48 flex items-center justify-center text-[11px] text-zinc-500 dark:text-zinc-600">
                 No curfew violations detected
               </div>
             ) : (
@@ -1022,23 +1022,23 @@ export function ComplianceDashboard() {
                 {curfewViolators.slice(0, 30).map((v, i) => (
                   <div
                     key={`${v.ident}-${v.date}-${v.hour}-${i}`}
-                    className="flex items-center justify-between px-2 py-1.5 bg-zinc-950/40 hover:bg-zinc-800/30 transition-colors"
+                    className="flex items-center justify-between px-2 py-1.5 bg-zinc-100/40 dark:bg-zinc-950/40 hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30 transition-colors"
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-1 h-5 bg-amber-500/60 flex-shrink-0" />
                       <div>
-                        <span className="text-[10px] text-zinc-300 font-medium">{v.ident}</span>
-                        <span className="text-[9px] text-zinc-600 ml-1.5">{v.aircraftType}</span>
+                        <span className="text-[10px] text-zinc-700 dark:text-zinc-300 font-medium">{v.ident}</span>
+                        <span className="text-[9px] text-zinc-500 dark:text-zinc-600 ml-1.5">{v.aircraftType}</span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="text-[9px] text-zinc-500 tabular-nums">{v.date}</span>
-                      <span className="text-[9px] text-amber-400 ml-1.5 tabular-nums">{v.hour}:00</span>
+                      <span className="text-[9px] text-zinc-600 dark:text-zinc-500 tabular-nums">{v.date}</span>
+                      <span className="text-[9px] text-amber-600 dark:text-amber-400 ml-1.5 tabular-nums">{v.hour}:00</span>
                     </div>
                   </div>
                 ))}
                 {curfewViolators.length > 30 && (
-                  <div className="text-center text-[9px] text-zinc-600 py-1">
+                  <div className="text-center text-[9px] text-zinc-500 dark:text-zinc-600 py-1">
                     +{curfewViolators.length - 30} more
                   </div>
                 )}
@@ -1051,15 +1051,15 @@ export function ComplianceDashboard() {
       {/* ═══════════════════════════════════════════════════════════════════════
           SECTION 4: Noise Compliance
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="bg-zinc-900 border border-zinc-800">
-        <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+        <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
           <div className="flex items-center gap-3">
-            <div className="bg-red-900/30 p-1.5">
-              <Volume2 size={16} className="text-red-400" strokeWidth={1.5} />
+            <div className="bg-red-100 dark:bg-red-900/30 p-1.5">
+              <Volume2 size={16} className="text-red-600 dark:text-red-400" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">Noise Compliance</h3>
-              <p className="text-[10px] text-zinc-500 mt-0.5">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Noise Compliance</h3>
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
                 Estimated noise distribution across all flights -- thresholds at 65, 75, and 85 dB
               </p>
             </div>
@@ -1069,7 +1069,7 @@ export function ComplianceDashboard() {
         <div className="p-5 grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Histogram */}
           <div className="lg:col-span-2">
-            <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-3">
+            <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-3">
               Noise Level Distribution
             </div>
             <div className="h-56">
@@ -1079,7 +1079,7 @@ export function ComplianceDashboard() {
 
           {/* Band percentages */}
           <div>
-            <div className="text-[9px] text-zinc-600 uppercase tracking-wider mb-3">
+            <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-3">
               Flights by Noise Band
             </div>
             <div className="space-y-1.5">
@@ -1088,11 +1088,11 @@ export function ComplianceDashboard() {
                 return (
                   <div
                     key={b.label}
-                    className="flex items-center justify-between px-2 py-1.5 bg-zinc-950/40"
+                    className="flex items-center justify-between px-2 py-1.5 bg-zinc-100/40 dark:bg-zinc-950/40"
                   >
-                    <span className="text-[10px] text-zinc-400">{b.label}</span>
+                    <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{b.label}</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 bg-zinc-800">
+                      <div className="w-16 h-1.5 bg-zinc-200 dark:bg-zinc-800">
                         <div
                           className="h-full"
                           style={{
@@ -1101,10 +1101,10 @@ export function ComplianceDashboard() {
                           }}
                         />
                       </div>
-                      <span className="text-[10px] tabular-nums font-medium text-zinc-300 w-8 text-right">
+                      <span className="text-[10px] tabular-nums font-medium text-zinc-700 dark:text-zinc-300 w-8 text-right">
                         {b.pct}%
                       </span>
-                      <span className="text-[9px] tabular-nums text-zinc-600 w-6 text-right">
+                      <span className="text-[9px] tabular-nums text-zinc-500 dark:text-zinc-600 w-6 text-right">
                         {b.count}
                       </span>
                     </div>
@@ -1119,15 +1119,15 @@ export function ComplianceDashboard() {
       {/* ═══════════════════════════════════════════════════════════════════════
           SECTION 5: Regulatory Summary Table
           ═══════════════════════════════════════════════════════════════════════ */}
-      <div className="bg-zinc-900 border border-zinc-800">
-        <div className="px-5 py-4 border-b border-zinc-800/60">
+      <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+        <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
           <div className="flex items-center gap-3">
-            <div className="bg-emerald-900/30 p-1.5">
-              <CheckCircle2 size={16} className="text-emerald-400" strokeWidth={1.5} />
+            <div className="bg-emerald-100 dark:bg-emerald-900/30 p-1.5">
+              <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">Regulatory Summary</h3>
-              <p className="text-[10px] text-zinc-500 mt-0.5">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Regulatory Summary</h3>
+              <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
                 Key compliance metrics with trend and status indicators
               </p>
             </div>
@@ -1137,17 +1137,17 @@ export function ComplianceDashboard() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-zinc-800/60">
-                <th className="px-5 py-3 text-left text-[9px] font-medium text-zinc-600 uppercase tracking-wider">
+              <tr className="border-b border-zinc-200/60 dark:border-zinc-800/60">
+                <th className="px-5 py-3 text-left text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
                   Metric
                 </th>
-                <th className="px-5 py-3 text-left text-[9px] font-medium text-zinc-600 uppercase tracking-wider">
+                <th className="px-5 py-3 text-left text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
                   Current Period
                 </th>
-                <th className="px-5 py-3 text-center text-[9px] font-medium text-zinc-600 uppercase tracking-wider">
+                <th className="px-5 py-3 text-center text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
                   Trend
                 </th>
-                <th className="px-5 py-3 text-center text-[9px] font-medium text-zinc-600 uppercase tracking-wider">
+                <th className="px-5 py-3 text-center text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -1156,12 +1156,12 @@ export function ComplianceDashboard() {
               {regulatoryRows.map((row) => (
                 <tr
                   key={row.metric}
-                  className="border-b border-zinc-800/30 hover:bg-zinc-800/20 transition-colors"
+                  className="border-b border-zinc-200/30 dark:border-zinc-800/30 hover:bg-zinc-100/20 dark:hover:bg-zinc-800/20 transition-colors"
                 >
-                  <td className="px-5 py-3 text-[11px] text-zinc-300 font-medium">
+                  <td className="px-5 py-3 text-[11px] text-zinc-700 dark:text-zinc-300 font-medium">
                     {row.metric}
                   </td>
-                  <td className="px-5 py-3 text-[11px] text-zinc-400 tabular-nums">
+                  <td className="px-5 py-3 text-[11px] text-zinc-600 dark:text-zinc-400 tabular-nums">
                     {row.value}
                   </td>
                   <td className="px-5 py-3 text-center">
@@ -1214,7 +1214,7 @@ export function ComplianceDashboard() {
               ))}
               {regulatoryRows.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-5 py-8 text-center text-[11px] text-zinc-600">
+                  <td colSpan={4} className="px-5 py-8 text-center text-[11px] text-zinc-500 dark:text-zinc-600">
                     No data available for regulatory analysis
                   </td>
                 </tr>
