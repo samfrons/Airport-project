@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   AlertTriangle,
   Table,
+  Plane,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -20,6 +21,7 @@ export interface NavItem {
   id: string;
   label: string;
   icon: LucideIcon;
+  href?: string; // External page link (optional)
 }
 
 export interface NavGroup {
@@ -43,6 +45,7 @@ export const navGroups: NavGroup[] = [
     label: 'Flights',
     items: [
       { id: 'map', label: 'Flight Routes', icon: Map },
+      { id: 'airport-diagram', label: 'Airport Diagram', icon: Plane, href: '/airport-diagram' },
       { id: 'breakdown', label: 'Aircraft Breakdown', icon: PieChart },
       { id: 'replay', label: 'Flight Replay', icon: PlayCircle },
       { id: 'flights', label: 'Flight Log', icon: Table },

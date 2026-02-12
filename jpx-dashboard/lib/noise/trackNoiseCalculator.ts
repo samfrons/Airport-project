@@ -3,14 +3,18 @@
  *
  * Physics-based noise estimation using:
  * - EASA certification data for source noise levels
+ * - FAA ROSAP measurements for helicopters (when available)
  * - FlightAware track data for actual altitude/position
  * - SAE-AIR-5662 lateral attenuation model
  * - Atmospheric absorption per ISO 9613-1
+ * - Weather adjustments for wind direction and temperature inversions
  *
  * References:
  * - EASA Certification Noise Levels: https://www.easa.europa.eu/en/domains/environment/easa-certification-noise-levels
+ * - FAA ROSAP: https://rosap.ntl.bts.gov/
  * - SAE-AIR-5662: Method for Predicting Lateral Attenuation of Airplane Noise
  * - ISO 9613-1: Acoustics - Attenuation of sound during propagation outdoors
+ * - ISO 9613-2: Attenuation of sound during propagation outdoors (weather effects)
  */
 
 import {
@@ -19,6 +23,14 @@ import {
   CATEGORY_AVERAGES,
   type EASANoiseProfile,
 } from '@/data/noise/easa/icaoToEasaMap';
+
+import {
+  calculateWeatherNoiseAdjustment,
+  type WindConditions,
+  type TemperatureProfile,
+  type WeatherNoiseAdjustment,
+  getDefaultWeatherConditions,
+} from './weatherAdjustments';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -41,7 +53,7 @@ export interface ObserverLocation {
 
 export interface NoiseEstimate {
   db: number;
-  source: 'EASA_CERTIFIED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED';
+  source: 'EASA_CERTIFIED' | 'FAA_MEASURED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED';
   confidence: 'high' | 'medium' | 'low';
   warning?: string;
   components?: {
@@ -49,9 +61,16 @@ export interface NoiseEstimate {
     geometricAttenuation: number;
     atmosphericAttenuation: number;
     lateralAttenuation: number;
+    weatherAdjustment: number;
     slantDistanceFt: number;
     horizontalDistanceFt: number;
   };
+  weatherEffect?: WeatherNoiseAdjustment;
+}
+
+export interface WeatherConditionsInput {
+  wind?: WindConditions;
+  inversion?: TemperatureProfile;
 }
 
 export interface FlightNoiseImpact {
@@ -304,6 +323,7 @@ function toDegrees(radians: number): number {
  * 2. Geometric spreading (inverse square law)
  * 3. Atmospheric absorption (~0.5 dB per 1000 ft)
  * 4. Lateral attenuation (SAE-AIR-5662)
+ * 5. Weather adjustments (wind direction, temperature inversions)
  *
  * @param sourceDb EASA certification dB (at 1000ft reference)
  * @param altitude_ft Aircraft altitude above ground
@@ -312,6 +332,7 @@ function toDegrees(radians: number): number {
  * @param aircraftLat Aircraft latitude
  * @param aircraftLon Aircraft longitude
  * @param heading Aircraft heading (optional, for lateral attenuation)
+ * @param weather Optional weather conditions for propagation adjustment
  * @returns Estimated ground-level dB with calculation components
  */
 export function calculateGroundNoise(
@@ -321,7 +342,8 @@ export function calculateGroundNoise(
   observerLon: number,
   aircraftLat: number,
   aircraftLon: number,
-  heading?: number
+  heading?: number,
+  weather?: WeatherConditionsInput
 ): {
   db: number;
   components: {
@@ -329,9 +351,11 @@ export function calculateGroundNoise(
     geometricAttenuation: number;
     atmosphericAttenuation: number;
     lateralAttenuation: number;
+    weatherAdjustment: number;
     slantDistanceFt: number;
     horizontalDistanceFt: number;
   };
+  weatherEffect?: WeatherNoiseAdjustment;
 } {
   // 1. Calculate horizontal distance
   const horizontalDistanceFt = calculateHorizontalDistanceFt(
@@ -363,8 +387,33 @@ export function calculateGroundNoise(
     lateralAttenuation = getLateralAttenuation(lateralAngle);
   }
 
+  // 6. Weather adjustment (wind direction and temperature inversions)
+  let weatherAdjustment = 0;
+  let weatherEffect: WeatherNoiseAdjustment | undefined;
+
+  if (weather?.wind || weather?.inversion) {
+    const defaultWeather = getDefaultWeatherConditions();
+    const wind = weather.wind || defaultWeather.wind;
+    const inversion = weather.inversion || defaultWeather.inversion;
+
+    // Calculate bearing from aircraft to observer for wind effect
+    const observerBearing = calculateBearing(
+      aircraftLat, aircraftLon, observerLat, observerLon
+    );
+
+    weatherEffect = calculateWeatherNoiseAdjustment(
+      wind,
+      inversion,
+      observerBearing,
+      altitude_ft
+    );
+
+    weatherAdjustment = weatherEffect.totalAdjustmentDb;
+  }
+
   // Calculate final ground-level noise
-  const groundDb = sourceDb - geometricAttenuation - atmosphericAttenuation - lateralAttenuation;
+  // Weather adjustment is ADDED because positive = louder
+  const groundDb = sourceDb - geometricAttenuation - atmosphericAttenuation - lateralAttenuation + weatherAdjustment;
 
   // Round to one decimal place
   const roundedDb = Math.round(groundDb * 10) / 10;
@@ -376,9 +425,11 @@ export function calculateGroundNoise(
       geometricAttenuation: Math.round(geometricAttenuation * 10) / 10,
       atmosphericAttenuation: Math.round(atmosphericAttenuation * 10) / 10,
       lateralAttenuation: Math.round(lateralAttenuation * 10) / 10,
+      weatherAdjustment: Math.round(weatherAdjustment * 10) / 10,
       slantDistanceFt: Math.round(slantDistanceFt),
       horizontalDistanceFt: Math.round(horizontalDistanceFt),
     },
+    weatherEffect,
   };
 }
 

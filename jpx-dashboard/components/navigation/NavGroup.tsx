@@ -29,6 +29,7 @@ export function NavGroup({ group }: NavGroupProps) {
             id={item.id}
             label={item.label}
             icon={item.icon}
+            href={item.href}
           />
         ))}
       </div>
@@ -62,6 +63,7 @@ export function NavGroup({ group }: NavGroupProps) {
             id={item.id}
             label={item.label}
             icon={item.icon}
+            href={item.href}
           />
         ))}
       </div>

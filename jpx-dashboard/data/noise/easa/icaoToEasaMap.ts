@@ -1,6 +1,13 @@
 // Auto-generated from EASA noise certification data
 // Generated: 2026-02-12T01:58:10.309052
 // Source: https://www.easa.europa.eu/en/domains/environment/easa-certification-noise-levels
+// Updated: 2026-02-12 with FAA ROSAP measurements
+
+import {
+  getFAAMeasurement,
+  hasFAAMeasurement,
+  type FAAHelicopterMeasurement,
+} from '../faa/helicopterMeasurements';
 
 export interface EASANoiseProfile {
   icaoType: string;
@@ -12,8 +19,9 @@ export interface EASANoiseProfile {
   approachEpnl: number | null;
   takeoffDb: number;      // LAmax at 1000ft reference
   approachDb: number;     // LAmax at 1000ft reference
-  dataSource: 'EASA_CERTIFIED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED';
+  dataSource: 'EASA_CERTIFIED' | 'FAA_MEASURED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED';
   confidence: 'high' | 'medium' | 'low';
+  faaReport?: string;     // FAA ROSAP report reference if available
 }
 
 // Category averages for unknown aircraft types (LAmax at 1000ft)
@@ -641,10 +649,42 @@ export const icaoToEasaMap: Record<string, EASANoiseProfile> = {
 
 /**
  * Get noise profile for an ICAO type code
- * Falls back to category averages for unknown types
+ * Prefers FAA measured data for helicopters when available
+ * Falls back to EASA certification data, then category averages
  */
 export function getEASANoiseProfile(icaoType: string): EASANoiseProfile {
-  const profile = icaoToEasaMap[icaoType?.toUpperCase()];
+  const normalizedType = icaoType?.toUpperCase();
+  const profile = icaoToEasaMap[normalizedType];
+
+  // Check for FAA measured data (higher accuracy for helicopters)
+  if (hasFAAMeasurement(normalizedType)) {
+    const faaMeasurement = getFAAMeasurement(normalizedType);
+    if (faaMeasurement && faaMeasurement.lamax1000ft) {
+      // Override with FAA measured values if available
+      const baseProfile = profile || {
+        icaoType: normalizedType,
+        easaManufacturer: faaMeasurement.manufacturer,
+        easaModel: faaMeasurement.model,
+        category: 'helicopter' as const,
+        lateralEpnl: null,
+        flyoverEpnl: faaMeasurement.flyoverEpndb,
+        approachEpnl: faaMeasurement.approachEpndb,
+        takeoffDb: faaMeasurement.lamax1000ft,
+        approachDb: faaMeasurement.lamax1000ft + 2, // Approach typically 2 dB higher
+        dataSource: 'FAA_MEASURED' as const,
+        confidence: 'high' as const,
+      };
+
+      return {
+        ...baseProfile,
+        takeoffDb: faaMeasurement.lamax1000ft,
+        approachDb: (faaMeasurement.lamax1000ft || 0) + 2,
+        dataSource: 'FAA_MEASURED',
+        confidence: 'high',
+        faaReport: faaMeasurement.faaReport,
+      };
+    }
+  }
 
   if (profile) {
     return profile;
@@ -664,6 +704,13 @@ export function getEASANoiseProfile(icaoType: string): EASANoiseProfile {
     dataSource: 'UNVERIFIED',
     confidence: 'low'
   };
+}
+
+/**
+ * Check if a profile has FAA measured data
+ */
+export function hasValidatedMeasurement(icaoType: string): boolean {
+  return hasFAAMeasurement(icaoType);
 }
 
 /**

@@ -5,9 +5,29 @@ __pycache__/
 *.pyo
 *.egg-info/
 
-# Environment / secrets
+# Environment / secrets - NEVER COMMIT THESE
 .env
+.env.*
+!.env.example
+!.env.*.example
 .env.local
+.env.development
+.env.production
+.env.staging
+*.local
+
+# Secret keys and tokens
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*secret*
+*token*
+!**/types/*token*
+!**/types/*secret*
+credentials.json
+service-account*.json
 
 # Data files (large, regenerable)
 # Note: jpx_flights.db is committed for Vercel deployment

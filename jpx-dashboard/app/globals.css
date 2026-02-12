@@ -27,6 +27,14 @@
   --nav-transition-duration: 300ms;
   --nav-transition-timing: ease-out;
   --hover-transition-duration: 150ms;
+
+  /* Airport Diagram colors */
+  --runway-surface: #374151;
+  --taxiway-surface: #d97706;
+  --runway-marking: #ffffff;
+  --status-open: #10b981;
+  --status-closed: #ef4444;
+  --diagram-bg: #e5e7eb;
 }
 
 /* Dark mode */
@@ -47,6 +55,14 @@
   --jet-color: #60a5fa;
   --fw-color: #34d399;
   --curfew-color: #f59e0b;
+
+  /* Airport Diagram colors (dark mode) */
+  --runway-surface: #1f2937;
+  --taxiway-surface: #f59e0b;
+  --runway-marking: #d1d5db;
+  --status-open: #10b981;
+  --status-closed: #ef4444;
+  --diagram-bg: #18181b;
 }
 
 /* ─── Base ────────────────────────────────────────────────────────── */
