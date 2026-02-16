@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { CalendarDays } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 
@@ -12,12 +13,45 @@ const quickRanges = [
 
 export function TimeFilter() {
   const { dateRange, setDateRange, fetchFlights, fetchSummary } = useFlightStore();
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitialMount = useRef(true);
+
+  // Auto-fetch when dateRange changes (debounced)
+  useEffect(() => {
+    // Skip the initial mount to avoid double-fetching on page load
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Clear any existing timeout
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    // Set a new timeout to fetch after 500ms of no changes
+    debounceRef.current = setTimeout(() => {
+      fetchFlights();
+      fetchSummary();
+    }, 500);
+
+    // Cleanup on unmount or before next effect run
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [dateRange, fetchFlights, fetchSummary]);
 
   const handleDateChange = (field: 'start' | 'end', value: string) => {
     setDateRange({ ...dateRange, [field]: value });
   };
 
   const handleApply = () => {
+    // Clear any pending debounce and fetch immediately
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
     fetchFlights();
     fetchSummary();
   };
@@ -31,11 +65,7 @@ export function TimeFilter() {
       start: start.toISOString().split('T')[0],
       end: end.toISOString().split('T')[0],
     });
-
-    setTimeout(() => {
-      fetchFlights();
-      fetchSummary();
-    }, 100);
+    // Note: useEffect will handle the fetch via debounce
   };
 
   return (
@@ -73,9 +103,10 @@ export function TimeFilter() {
         />
         <button
           onClick={handleApply}
-          className="px-4 py-1.5 bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500 transition-colors"
+          className="px-4 py-1.5 bg-zinc-200 dark:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-medium hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+          title="Refresh data immediately"
         >
-          Apply
+          Refresh
         </button>
       </div>
     </div>

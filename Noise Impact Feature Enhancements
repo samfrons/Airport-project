@@ -1,0 +1,317 @@
+ Noise Impact Feature Enhancements                                                                                                              
+                                                                                                                                                
+ Current State Summary                                                                                                                          
+                                                                                                                                                
+ The base noise estimation system is implemented with:                                                                                          
+ - 47 aircraft EASA certification profiles                                                                                                      
+ - Physics-based calculations (slant distance, atmospheric absorption, lateral attenuation)                                                     
+ - Mock sensors (8 locations) and complaints (150 records)                                                                                      
+ - FlightDetailsSidebar with confidence indicators                                                                                              
+                                                                                                                                                
+ User Priorities                                                                                                                                
+                                                                                                                                                
+ 1. Weather-adjusted noise - Wind direction & temperature inversion effects                                                                     
+ 2. Published sensor/measurement data - Validate estimates against real measurements                                                            
+ 3. PlaneNoise integration - If partnership possible                                                                                            
+ 4. Open-source sensors - Prepare for future sensor deployment                                                                                  
+                                                                                                                                                
+ ---                                                                                                                                            
+ Category A: Weather-Adjusted Noise Propagation (HIGH PRIORITY)                                                                                 
+                                                                                                                                                
+ A1. Temperature Inversion Detection                                                                                                            
+                                                                                                                                                
+ Problem: Temperature inversions trap sound waves, amplifying noise by +3-10 dB - currently not modeled.                                        
+                                                                                                                                                
+ Data Source: NWS Radiosonde Data (free, twice daily)                                                                                           
+ - URL: https://weather.gov/upperair/                                                                                                           
+ - Provides: Vertical temperature profiles from 92 US stations                                                                                  
+ - Integration: Check for inversions when calculating ground noise                                                                              
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ // When inversion detected (temp increases with altitude):                                                                                     
+ // Add 3-6 dB to ground-level estimates                                                                                                        
+ const inversionAmplification = detectInversion(tempProfile) ? 5 : 0;                                                                           
+                                                                                                                                                
+ A2. Wind Direction Noise Propagation                                                                                                           
+                                                                                                                                                
+ Problem: Downwind locations receive +3-6 dB more noise than upwind.                                                                            
+                                                                                                                                                
+ Data Source: NOAA NWS API (already integrated for weather display)                                                                             
+ - URL: https://weather.gov/documentation/services-web-api                                                                                      
+ - Provides: Wind speed, direction, gusts                                                                                                       
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ - Calculate observer angle relative to wind direction                                                                                          
+ - Apply wind attenuation factor (downwind: +4 dB, crosswind: 0, upwind: -2 dB)                                                                 
+ - Show wind arrow on map indicating noise propagation direction                                                                                
+                                                                                                                                                
+ A3. Atmospheric Conditions Dashboard Widget                                                                                                    
+                                                                                                                                                
+ Enhancement: Show "Noise Propagation Conditions" indicator                                                                                     
+ - Green: Normal conditions                                                                                                                     
+ - Yellow: Moderate amplification (light inversion or high humidity)                                                                            
+ - Red: High amplification (strong inversion + downwind)                                                                                        
+                                                                                                                                                
+ ---                                                                                                                                            
+ Category B: Published Measurement Data Validation (HIGH PRIORITY)                                                                              
+                                                                                                                                                
+ B1. FAA Helicopter Noise Measurements (ROSAP)                                                                                                  
+                                                                                                                                                
+ Data Source: FAA Technical Reports with actual measured noise                                                                                  
+ - Bell 206-L Report: https://rosap.ntl.bts.gov/view/dot/9797                                                                                   
+ - Sikorsky S-76, A-109, UH-60A included                                                                                                        
+ - Actual measurements: Bell 206-L: Takeoff 85.9 EPNdB, Approach 90.3 EPNdB, Flyover 85.8 EPNdB                                                 
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ - Download PDF reports and extract measurement tables                                                                                          
+ - Cross-reference with EASA profiles for validation                                                                                            
+ - Add measured values to icaoToEasaMap.ts as secondary source                                                                                  
+ - Show "FAA Measured" vs "EASA Certified" comparison                                                                                           
+                                                                                                                                                
+ B2. California Airport Quarterly Reports                                                                                                       
+                                                                                                                                                
+ Data Source: Published CNEL measurements from comparable airports                                                                              
+ - Oakland (OAK): https://flyquietoak.com (14 sensors, quarterly reports)                                                                       
+ - San Jose (SJC): https://www.flysanjose.com/noise                                                                                             
+ - San Diego (SAN): https://www.san.org/noise                                                                                                   
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ - Use published sensor readings to validate physics model                                                                                      
+ - Compare calculated vs measured dB at known distances                                                                                         
+ - Build "model accuracy" confidence metric                                                                                                     
+                                                                                                                                                
+ B3. BTS National Transportation Noise Map                                                                                                      
+                                                                                                                                                
+ Data Source: DOT modeled aviation noise (free WMS API)                                                                                         
+ - URL: https://maps.dot.gov/BTS/NationalTransportationNoiseMap/                                                                                
+ - Provides: DNL contours for all US airports via GIS web services                                                                              
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ - Overlay BTS modeled contours on KJPX map                                                                                                     
+ - Compare dashboard calculations to federal model                                                                                              
+ - Show "BTS DNL Estimate" layer toggle                                                                                                         
+                                                                                                                                                
+ B4. PlaneNoise Portal (Partnership Required)                                                                                                   
+                                                                                                                                                
+ Data Source: Official KJPX complaint portal                                                                                                    
+ - URL: https://planenoise.com/khto/                                                                                                            
+ - Provides: 47,000+ complaints/year, timestamps, flight correlations                                                                           
+                                                                                                                                                
+ Implementation (if partnership achieved):                                                                                                      
+ - Replace mock complaints with real PlaneNoise data                                                                                            
+ - Enable complaint-to-flight correlation                                                                                                       
+ - Show "X complaints within 5 minutes of this flight"                                                                                          
+                                                                                                                                                
+ ---                                                                                                                                            
+ Category C: Open-Source Noise Sensors (Future-Ready)                                                                                           
+                                                                                                                                                
+ C1. Sensor.Community DNMS Integration                                                                                                          
+                                                                                                                                                
+ Platform: Open-source DIY noise sensor network                                                                                                 
+ - URL: https://sensor.community/en/sensors/dnms/                                                                                               
+ - Network: 14,000+ sensors in 70+ countries                                                                                                    
+ - API: https://api.sensor.community (free, JSON)                                                                                               
+ - Components: NodeMCU ESP8266, Teensy 4.0, ICS-43434 microphone (~$50/sensor)                                                                  
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ - Design Supabase schema for real sensor data                                                                                                  
+ - Build API integration for Sensor.Community DNMS                                                                                              
+ - Create "sensor onboarding" workflow for community deployment                                                                                 
+ - Enable real-time dB overlay on map when sensors exist                                                                                        
+                                                                                                                                                
+ C2. Sensor Deployment Preparation                                                                                                              
+                                                                                                                                                
+ Goal: Prepare dashboard for eventual real sensor network                                                                                       
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ - Replace mock sensor data with "pending deployment" state                                                                                     
+ - Design sensor calibration workflow                                                                                                           
+ - Create sensor health monitoring dashboard                                                                                                    
+ - Build alert system for noise threshold exceedances                                                                                           
+                                                                                                                                                
+ ---                                                                                                                                            
+ Category D: Free/Alternative Flight Data (Cost Reduction)                                                                                      
+                                                                                                                                                
+ D1. OpenSky Network Integration                                                                                                                
+                                                                                                                                                
+ Problem: FlightAware costs ~$30-45/month for full track data.                                                                                  
+                                                                                                                                                
+ Data Source: OpenSky Network (free for research)                                                                                               
+ - URL: https://opensky-network.org/data/api                                                                                                    
+ - Provides: ADS-B data, flight tracks, 8000 credits/day                                                                                        
+ - Limitation: 10-second update interval (vs FlightAware 5-second)                                                                              
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ - Use OpenSky for historical analysis (free)                                                                                                   
+ - Keep FlightAware for real-time display                                                                                                       
+ - Cross-validate track data between sources                                                                                                    
+                                                                                                                                                
+ D2. FAA Registry Bulk Download                                                                                                                 
+                                                                                                                                                
+ Problem: Per-query owner lookups cost money.                                                                                                   
+                                                                                                                                                
+ Data Source: FAA Aircraft Registry (free, daily updates)                                                                                       
+ - URL: https://www.faa.gov/licenses_certificates/aircraft_certification/aircraft_registry/releasable_aircraft_download                         
+ - Provides: Complete N-number database in CSV                                                                                                  
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ - Download monthly FAA registry (~70MB CSV)                                                                                                    
+ - Store in Supabase aircraft_registry table                                                                                                    
+ - Eliminate per-query FlightAware owner API calls                                                                                              
+                                                                                                                                                
+ ---                                                                                                                                            
+ Category E: Community Exposure Metrics (Regulatory Compliance)                                                                                 
+                                                                                                                                                
+ E1. DNL (Day-Night Average Level) Calculation                                                                                                  
+                                                                                                                                                
+ Problem: No aggregate community noise metrics for regulatory compliance.                                                                       
+                                                                                                                                                
+ Standard: FAA uses DNL 65 dB as significant impact threshold.                                                                                  
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ // DNL = 10 * log10(1/24 * Σ(10^(Li/10) * ti))                                                                                                 
+ // Night events (10pm-7am) get +10 dB penalty                                                                                                  
+ function calculateDNL(events: NoiseEvent[]): number {                                                                                          
+   // Sum energy-averaged exposure over 24 hours                                                                                                
+   // Apply 10 dB night penalty                                                                                                                 
+ }                                                                                                                                              
+                                                                                                                                                
+ E2. Sleep Disruption Analysis                                                                                                                  
+                                                                                                                                                
+ Standard: WHO recommends <40 dB LAmax for undisturbed sleep.                                                                                   
+                                                                                                                                                
+ Implementation:                                                                                                                                
+ - Flag curfew-period flights with estimated ground dB > 40                                                                                     
+ - Calculate "sleep disruption events" per location per night                                                                                   
+ - Show sleep impact in residential observer reports                                                                                            
+                                                                                                                                                
+ E3. School/Hospital Impact Assessment                                                                                                          
+                                                                                                                                                
+ Enhancement: Add protected location markers                                                                                                    
+ - Schools: 7am-3pm sensitivity                                                                                                                 
+ - Hospitals: 24-hour sensitivity                                                                                                               
+ - Show "Protected facilities within 1 mile of flight path"                                                                                     
+                                                                                                                                                
+ ---                                                                                                                                            
+ Category F: Advanced Analytics (Future)                                                                                                        
+                                                                                                                                                
+ F1. Operator Noise Ranking                                                                                                                     
+                                                                                                                                                
+ Analysis: Rank operators by cumulative noise impact                                                                                            
+ - Total dB-seconds per operator                                                                                                                
+ - Average altitude per operator                                                                                                                
+ - Curfew violation count                                                                                                                       
+                                                                                                                                                
+ F2. Historical Trend Analysis                                                                                                                  
+                                                                                                                                                
+ Analysis: Track noise impact over time                                                                                                         
+ - Daily/weekly/monthly noise exposure charts                                                                                                   
+ - Year-over-year comparisons                                                                                                                   
+ - Identify quietest/loudest days                                                                                                               
+                                                                                                                                                
+ F3. "What-If" Scenario Modeling                                                                                                                
+                                                                                                                                                
+ Feature: Allow users to simulate impact changes                                                                                                
+ - "What if helicopters flew 500ft higher?"                                                                                                     
+ - "What if curfew started at 7pm instead of 8pm?"                                                                                              
+                                                                                                                                                
+ ---                                                                                                                                            
+ Recommended Implementation Order                                                                                                               
+                                                                                                                                                
+ Phase 1: Weather Integration (High Priority)                                                                                                   
+                                                                                                                                                
+ 1. Wind direction noise adjustment - Use existing weather API, add ±4 dB factor                                                                
+ 2. Wind direction map visualization - Arrow showing noise propagation direction                                                                
+ 3. Temperature inversion detection - NWS radiosonde API integration                                                                            
+ 4. Noise Conditions Widget - Dashboard indicator (green/yellow/red)                                                                            
+                                                                                                                                                
+ Phase 2: Measurement Validation (High Priority)                                                                                                
+                                                                                                                                                
+ 5. FAA ROSAP helicopter data import - Add measured values for Bell 206, S-76, A-109                                                            
+ 6. BTS Noise Map overlay - WMS integration for DNL contours                                                                                    
+ 7. Model accuracy reporting - Compare calculated vs published measurements                                                                     
+                                                                                                                                                
+ Phase 3: Sensor Preparation                                                                                                                    
+                                                                                                                                                
+ 8. Sensor.Community API integration - Ready for real sensor data                                                                               
+ 9. Sensor schema design - Database tables for real readings                                                                                    
+ 10. FAA registry bulk import - Eliminate per-query costs                                                                                       
+                                                                                                                                                
+ Phase 4: Partnership/Advanced                                                                                                                  
+                                                                                                                                                
+ 11. PlaneNoise integration - If Town partnership achieved                                                                                      
+ 12. DNL/Leq calculations - Regulatory compliance metrics                                                                                       
+ 13. Operator noise ranking - Analytics dashboard                                                                                               
+                                                                                                                                                
+ ---                                                                                                                                            
+ Files to Create/Modify                                                                                                                         
+ ┌────────────────────────────────────────────┬──────────────────────────────────────────┐                                                      
+ │                    File                    │               Enhancement                │                                                      
+ ├────────────────────────────────────────────┼──────────────────────────────────────────┤                                                      
+ │ lib/noise/weatherAdjustments.ts            │ Wind direction & inversion noise factors │                                                      
+ ├────────────────────────────────────────────┼──────────────────────────────────────────┤                                                      
+ │ lib/noise/communityMetrics.ts              │ DNL, Leq calculations                    │                                                      
+ ├────────────────────────────────────────────┼──────────────────────────────────────────┤                                                      
+ │ app/api/weather/inversion/route.ts         │ NWS radiosonde API                       │                                                      
+ ├────────────────────────────────────────────┼──────────────────────────────────────────┤                                                      
+ │ scripts/import_faa_measurements.py         │ ROSAP helicopter noise data              │                                                      
+ ├────────────────────────────────────────────┼──────────────────────────────────────────┤                                                      
+ │ scripts/import_faa_registry.py             │ Bulk registry import                     │                                                      
+ ├────────────────────────────────────────────┼──────────────────────────────────────────┤                                                      
+ │ components/noise/NoiseConditionsWidget.tsx │ Propagation conditions indicator         │                                                      
+ ├────────────────────────────────────────────┼──────────────────────────────────────────┤                                                      
+ │ components/noise/WindDirectionLayer.tsx    │ Map wind arrow overlay                   │                                                      
+ ├────────────────────────────────────────────┼──────────────────────────────────────────┤                                                      
+ │ components/AirportMap.tsx                  │ Add BTS noise contour layer              │                                                      
+ ├────────────────────────────────────────────┼──────────────────────────────────────────┤                                                      
+ │ data/noise/faa/helicopterMeasurements.json │ FAA measured values                      │                                                      
+ ├────────────────────────────────────────────┼──────────────────────────────────────────┤                                                      
+ │ supabase/migrations/add_sensor_tables.sql  │ Real sensor schema                       │                                                      
+ └────────────────────────────────────────────┴──────────────────────────────────────────┘                                                      
+ ---                                                                                                                                            
+ Data Sources Summary                                                                                                                           
+ ┌─────────────────────┬─────────────┬──────────┬────────────────────────────────────────────┐                                                  
+ │       Source        │    Cost     │ Priority │                    Data                    │                                                  
+ ├─────────────────────┼─────────────┼──────────┼────────────────────────────────────────────┤                                                  
+ │ NOAA Weather API    │ Free        │ High     │ Wind direction for noise propagation       │                                                  
+ ├─────────────────────┼─────────────┼──────────┼────────────────────────────────────────────┤                                                  
+ │ NWS Radiosondes     │ Free        │ High     │ Temperature inversion detection            │                                                  
+ ├─────────────────────┼─────────────┼──────────┼────────────────────────────────────────────┤                                                  
+ │ FAA ROSAP Reports   │ Free        │ High     │ Measured helicopter noise (Bell 206, S-76) │                                                  
+ ├─────────────────────┼─────────────┼──────────┼────────────────────────────────────────────┤                                                  
+ │ BTS Noise Map       │ Free        │ High     │ Federal DNL contours via WMS               │                                                  
+ ├─────────────────────┼─────────────┼──────────┼────────────────────────────────────────────┤                                                  
+ │ FAA Registry Bulk   │ Free        │ Medium   │ Aircraft ownership (eliminate API costs)   │                                                  
+ ├─────────────────────┼─────────────┼──────────┼────────────────────────────────────────────┤                                                  
+ │ Sensor.Community    │ Free        │ Medium   │ Open-source sensor network API             │                                                  
+ ├─────────────────────┼─────────────┼──────────┼────────────────────────────────────────────┤                                                  
+ │ California Title 21 │ Free        │ Medium   │ Comparable airport sensor data             │                                                  
+ ├─────────────────────┼─────────────┼──────────┼────────────────────────────────────────────┤                                                  
+ │ PlaneNoise          │ Partnership │ Critical │ Official KJPX complaint data               │                                                  
+ ├─────────────────────┼─────────────┼──────────┼────────────────────────────────────────────┤                                                  
+ │ OpenSky Network     │ Free        │ Low      │ Alternative flight tracks                  │                                                  
+ └─────────────────────┴─────────────┴──────────┴────────────────────────────────────────────┘                                                  
+ ---                                                                                                                                            
+ Verification Plan                                                                                                                              
+                                                                                                                                                
+ 1. Weather adjustments: Compare noise estimates with/without wind factor on same flights                                                       
+ 2. Inversion detection: Verify radiosonde API returns valid temperature profiles                                                               
+ 3. FAA measurements: Cross-check Bell 206, S-76 values match ROSAP reports                                                                     
+ 4. BTS overlay: Confirm WMS layer renders correctly on map                                                                                     
+ 5. Model accuracy: Calculate RMSE between dashboard estimates and FAA measurements                                                             
+                                                                                                                                                
+ ---                                                                                                                                            
+ Quick Reference: Key URLs                                                                                                                      
+ ┌─────────────────────┬──────────────────────────────────────────────────────────┐                                                             
+ │      Resource       │                           URL                            │                                                             
+ ├─────────────────────┼──────────────────────────────────────────────────────────┤                                                             
+ │ NWS Upper Air       │ https://weather.gov/upperair/                            │                                                             
+ ├─────────────────────┼──────────────────────────────────────────────────────────┤                                                             
+ │ FAA Bell 206 Report │ https://rosap.ntl.bts.gov/view/dot/9797                  │                                                             
+ ├─────────────────────┼──────────────────────────────────────────────────────────┤                                                             
+ │ BTS Noise Map       │ https://maps.dot.gov/BTS/NationalTransportationNoiseMap/ │                                                             
+ ├─────────────────────┼──────────────────────────────────────────────────────────┤                                                             
+ │ Sensor.Community    │ https://sensor.community/en/sensors/dnms/                │                                                             
+ ├─────────────────────┼──────────────────────────────────────────────────────────┤                                                             
+ │ PlaneNoise KJPX     │ https://planenoise.com/khto/                             │                                                             
+ └─────────────────────┴──────────────────────────────────────────────────────────┘       

@@ -5,9 +5,10 @@ import { useAirportDiagramStore } from '@/store/airportDiagramStore';
 
 interface TaxiwayElementProps {
   taxiway: Taxiway;
+  showLabel?: boolean;
 }
 
-export function TaxiwayElement({ taxiway }: TaxiwayElementProps) {
+export function TaxiwayElement({ taxiway, showLabel = true }: TaxiwayElementProps) {
   const { selection, setSelection, showTooltip, hideTooltip } =
     useAirportDiagramStore();
 
@@ -95,28 +96,30 @@ export function TaxiwayElement({ taxiway }: TaxiwayElementProps) {
         />
       ))}
 
-      {/* Taxiway label */}
-      <g className="pointer-events-none">
-        <circle
-          cx={labelX}
-          cy={labelY - 18}
-          r="12"
-          fill="var(--taxiway-surface)"
-          stroke="var(--bg-surface)"
-          strokeWidth="2"
-        />
-        <text
-          x={labelX}
-          y={labelY - 14}
-          textAnchor="middle"
-          fill="var(--text-primary)"
-          fontSize="9"
-          fontWeight="700"
-          fontFamily="Inter, sans-serif"
-        >
-          {taxiway.name.replace('TW', '')}
-        </text>
-      </g>
+      {/* Taxiway label (only if showLabel is true) */}
+      {showLabel && (
+        <g className="pointer-events-none">
+          <circle
+            cx={labelX}
+            cy={labelY - 18}
+            r="12"
+            fill="var(--taxiway-surface)"
+            stroke="var(--bg-surface)"
+            strokeWidth="2"
+          />
+          <text
+            x={labelX}
+            y={labelY - 14}
+            textAnchor="middle"
+            fill="var(--text-primary)"
+            fontSize="9"
+            fontWeight="700"
+            fontFamily="Inter, sans-serif"
+          >
+            {taxiway.name.replace('TW', '')}
+          </text>
+        </g>
+      )}
 
       {/* Closed X marker */}
       {isClosed && (
