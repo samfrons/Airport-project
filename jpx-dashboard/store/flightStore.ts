@@ -69,6 +69,7 @@ interface FlightState {
   airports: Airport[];
   loading: boolean;
   error: string | null;
+  lastUpdated: string | null;
   mapViewMode: MapViewMode;
   dateRange: DateRange;
   selectedCategory: string | null;
@@ -92,8 +93,10 @@ interface FlightState {
 
   // Threshold management state
   thresholds: BiodiversityThreshold[];
+  _thresholdsHydrated: boolean;
 
   // Actions
+  hydrateThresholds: () => void;
   setFlights: (flights: Flight[]) => void;
   setSummary: (summary: DailySummary[]) => void;
   setAirports: (airports: Airport[]) => void;
@@ -176,6 +179,7 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   airports: [],
   loading: false,
   error: null,
+  lastUpdated: null,
   mapViewMode: 'routes',
   dateRange: {
     start: formatDate(weekAgo),
@@ -200,8 +204,19 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   // Biodiversity layer state
   biodiversitySettings: defaultBiodiversitySettings,
 
-  // Threshold management state
-  thresholds: loadThresholdsFromStorage(),
+  // Threshold management state - SSR-safe default, hydrate on client
+  thresholds: defaultThresholds,
+  _thresholdsHydrated: false,
+
+  // Hydrate thresholds from localStorage - call this in useEffect on client
+  hydrateThresholds: () => {
+    if (typeof window === 'undefined' || get()._thresholdsHydrated) return;
+    const stored = loadThresholdsFromStorage();
+    set({
+      thresholds: stored,
+      _thresholdsHydrated: true,
+    });
+  },
 
   setFlights: (flights) => set({ flights }),
   setSummary: (summary) => set({ summary }),
@@ -231,7 +246,11 @@ export const useFlightStore = create<FlightState>((set, get) => ({
       if (!response.ok) throw new Error('Failed to fetch flights');
 
       const data = await response.json();
-      set({ flights: data.flights, airports: data.airports || [] });
+      set({
+        flights: data.flights,
+        airports: data.airports || [],
+        lastUpdated: new Date().toISOString(),
+      });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Unknown error' });
     } finally {

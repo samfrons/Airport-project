@@ -34,13 +34,14 @@ export function CurfewChart() {
       return `${hour}${suffix}`;
     });
 
+    // Curfew hours: 9 PM (21) to 7 AM (6) per Pilot's Pledge
     const backgroundColor = labels.map((_, i) => {
-      const isCurfew = i >= 20 || i < 8;
+      const isCurfew = i >= 21 || i < 7;
       return isCurfew ? 'rgba(245, 158, 11, 0.7)' : 'rgba(37, 99, 235, 0.6)';
     });
 
     const hoverBackgroundColor = labels.map((_, i) => {
-      const isCurfew = i >= 20 || i < 8;
+      const isCurfew = i >= 21 || i < 7;
       return isCurfew ? 'rgba(245, 158, 11, 0.9)' : 'rgba(37, 99, 235, 0.85)';
     });
 
@@ -85,7 +86,7 @@ export function CurfewChart() {
             return `${hour}:00 ${suffix} ET`;
           },
           label: (ctx: any) => {
-            const isCurfew = ctx.dataIndex >= 20 || ctx.dataIndex < 8;
+            const isCurfew = ctx.dataIndex >= 21 || ctx.dataIndex < 7;
             return `${ctx.raw} ops${isCurfew ? '  (curfew)' : ''}`;
           },
         },
@@ -116,7 +117,14 @@ export function CurfewChart() {
     },
   };
 
-  const curfewTotal = flights.filter(f => f.is_curfew_period).length;
+  // Curfew violations: 9 PM - 7 AM (hours 21-6)
+  const curfewTotal = useMemo(() => {
+    return flights.filter(f => {
+      const hour = f.operation_hour_et;
+      return hour >= 21 || hour < 7;
+    }).length;
+  }, [flights]);
+
   const pct = flights.length > 0 ? ((curfewTotal / flights.length) * 100).toFixed(1) : '0';
 
   return (
@@ -129,7 +137,7 @@ export function CurfewChart() {
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 bg-amber-500" />
-          <span className="text-[11px] text-zinc-500">Curfew 8p-8a</span>
+          <span className="text-[11px] text-zinc-500">Curfew 9p–7a</span>
         </div>
       </div>
 

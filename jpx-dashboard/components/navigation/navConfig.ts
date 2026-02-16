@@ -1,19 +1,11 @@
 import {
-  BarChart3,
-  Map,
+  LayoutDashboard,
   Clock,
-  PieChart,
-  Users,
-  Cloud,
-  TreePine,
-  FileText,
-  SlidersHorizontal,
-  Bell,
-  PlayCircle,
-  ShieldCheck,
-  AlertTriangle,
-  Table,
   Plane,
+  ShieldAlert,
+  Map,
+  Volume2,
+  MessageSquare,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -24,70 +16,29 @@ export interface NavItem {
   href?: string; // External page link (optional)
 }
 
+// Flat navigation structure - 7 items per feedback requirements
+export const navItems: NavItem[] = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'operations', label: 'Operations', icon: Clock },
+  { id: 'aircraft-operators', label: 'Aircraft & Operators', icon: Plane },
+  { id: 'curfew-compliance', label: 'Curfew Compliance', icon: ShieldAlert },
+  { id: 'flight-map', label: 'Flight Map', icon: Map },
+  { id: 'noise-impact', label: 'Noise & Impact', icon: Volume2 },
+  { id: 'complaints', label: 'Complaints', icon: MessageSquare },
+];
+
+// All section IDs for intersection observer
+export const allSectionIds = navItems.map((item) => item.id);
+
+// Legacy export for backwards compatibility during transition
 export interface NavGroup {
   id: string;
   label: string;
   items: NavItem[];
 }
 
-export const navGroups: NavGroup[] = [
-  {
-    id: 'analytics',
-    label: 'Analytics',
-    items: [
-      { id: 'stats', label: 'Statistics', icon: BarChart3 },
-      { id: 'timeline', label: 'Timeline', icon: Clock },
-      { id: 'curfew', label: 'Hourly Distribution', icon: Clock },
-    ],
-  },
-  {
-    id: 'flights',
-    label: 'Flights',
-    items: [
-      { id: 'map', label: 'Flight Routes', icon: Map },
-      { id: 'airport-diagram', label: 'Airport Diagram', icon: Plane, href: '/airport-diagram' },
-      { id: 'breakdown', label: 'Aircraft Breakdown', icon: PieChart },
-      { id: 'replay', label: 'Flight Replay', icon: PlayCircle },
-      { id: 'flights', label: 'Flight Log', icon: Table },
-    ],
-  },
-  {
-    id: 'operators',
-    label: 'Operators',
-    items: [
-      { id: 'scorecards', label: 'Operator Scorecards', icon: Users },
-      { id: 'compliance', label: 'Compliance', icon: ShieldCheck },
-      { id: 'violations', label: 'Violations', icon: AlertTriangle },
-    ],
-  },
-  {
-    id: 'environment',
-    label: 'Environment',
-    items: [
-      { id: 'weather', label: 'Weather Correlation', icon: Cloud },
-      { id: 'biodiversity', label: 'Biodiversity', icon: TreePine },
-      { id: 'complaints', label: 'Noise Reports', icon: FileText },
-    ],
-  },
-  {
-    id: 'settings',
-    label: 'Settings',
-    items: [
-      { id: 'thresholds', label: 'Thresholds', icon: SlidersHorizontal },
-      { id: 'alerts', label: 'Alerts', icon: Bell },
-    ],
-  },
-];
+// Empty groups - kept for type compatibility, SideNav now uses navItems directly
+export const navGroups: NavGroup[] = [];
 
-// Flat list of all section IDs for intersection observer
-export const allSectionIds = navGroups.flatMap((group) =>
-  group.items.map((item) => item.id)
-);
-
-// Map section ID to its parent group ID
+// Map section ID to its parent group ID (empty for flat nav)
 export const sectionToGroup: Record<string, string> = {};
-navGroups.forEach((group) => {
-  group.items.forEach((item) => {
-    sectionToGroup[item.id] = group.id;
-  });
-});

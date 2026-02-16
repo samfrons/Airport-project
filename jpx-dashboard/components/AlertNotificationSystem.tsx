@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import {
   Bell,
   BellOff,
@@ -147,6 +147,9 @@ const SEVERITY_ORDER: Record<ImpactSeverity, number> = {
   critical: 4,
 };
 
+// SSR-safe timestamp for default rules (stable across server/client)
+const DEFAULT_CREATED_AT = '2025-01-01T00:00:00.000Z';
+
 const DEFAULT_RULES: AlertRule[] = [
   {
     id: 'rule-curfew-default',
@@ -156,7 +159,7 @@ const DEFAULT_RULES: AlertRule[] = [
     params: {},
     priority: 'warning',
     enabled: true,
-    createdAt: new Date().toISOString(),
+    createdAt: DEFAULT_CREATED_AT,
   },
   {
     id: 'rule-noise-default',
@@ -166,7 +169,7 @@ const DEFAULT_RULES: AlertRule[] = [
     params: { minDb: 85 } as NoiseThresholdParams,
     priority: 'critical',
     enabled: true,
-    createdAt: new Date().toISOString(),
+    createdAt: DEFAULT_CREATED_AT,
   },
   {
     id: 'rule-species-default',
@@ -176,7 +179,7 @@ const DEFAULT_RULES: AlertRule[] = [
     params: { minSeverity: 'high' } as SpeciesImpactParams,
     priority: 'warning',
     enabled: true,
-    createdAt: new Date().toISOString(),
+    createdAt: DEFAULT_CREATED_AT,
   },
   {
     id: 'rule-volume-default',
@@ -186,7 +189,7 @@ const DEFAULT_RULES: AlertRule[] = [
     params: { maxFlightsPerHour: 8 } as HighVolumeParams,
     priority: 'info',
     enabled: true,
-    createdAt: new Date().toISOString(),
+    createdAt: DEFAULT_CREATED_AT,
   },
   {
     id: 'rule-repeat-default',
@@ -196,7 +199,7 @@ const DEFAULT_RULES: AlertRule[] = [
     params: { minViolations: 3, periodDays: 7 } as RepeatOffenderParams,
     priority: 'critical',
     enabled: true,
-    createdAt: new Date().toISOString(),
+    createdAt: DEFAULT_CREATED_AT,
   },
 ];
 
@@ -616,13 +619,24 @@ function AlertCard({
     }
   })();
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setExpanded(!expanded);
+    }
+  };
+
   return (
     <div
       className={`border ${config.border} ${alert.acknowledged ? 'opacity-50' : ''} transition-opacity bg-zinc-100/40 dark:bg-zinc-950/40`}
     >
-      <button
+      {/* Changed from button to div with role="button" to avoid nested interactive elements */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30 transition-colors"
+        onKeyDown={handleKeyDown}
+        className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-200/30 dark:hover:bg-zinc-800/30 transition-colors cursor-pointer"
       >
         <div className="flex items-center gap-3">
           <div className={`p-1 ${config.iconBg} flex-shrink-0`}>
@@ -689,7 +703,7 @@ function AlertCard({
             <ChevronRight size={10} className="text-zinc-500 dark:text-zinc-600" />
           )}
         </div>
-      </button>
+      </div>
 
       {expanded && (
         <div className="px-3 pb-3 border-t border-zinc-200/40 dark:border-zinc-800/40 pt-2">
@@ -1066,11 +1080,18 @@ export function AlertNotificationSystem() {
   const flights = useFlightStore((s) => s.flights);
   const thresholds = useFlightStore((s) => s.thresholds);
 
-  // Alert rules state (persisted to localStorage)
-  const [rules, setRules] = useState<AlertRule[]>(() => loadRulesFromStorage());
-  const [acknowledgedIds, setAcknowledgedIds] = useState<Set<string>>(
-    () => loadAcknowledgedFromStorage(),
-  );
+  // Alert rules state - SSR-safe defaults, hydrated on client mount
+  const [rules, setRules] = useState<AlertRule[]>(DEFAULT_RULES);
+  const [acknowledgedIds, setAcknowledgedIds] = useState<Set<string>>(new Set());
+  const hasHydrated = useRef(false);
+
+  // Hydrate from localStorage on client mount
+  useEffect(() => {
+    if (hasHydrated.current) return;
+    hasHydrated.current = true;
+    setRules(loadRulesFromStorage());
+    setAcknowledgedIds(loadAcknowledgedFromStorage());
+  }, []);
 
   // UI state
   const [bellExpanded, setBellExpanded] = useState(false);

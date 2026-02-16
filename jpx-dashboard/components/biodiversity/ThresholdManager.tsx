@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Plus,
   Trash2,
@@ -210,6 +210,11 @@ export function ThresholdManager() {
   const deleteThreshold = useFlightStore((s) => s.deleteThreshold);
   const toggleThreshold = useFlightStore((s) => s.toggleThreshold);
   const resetThresholds = useFlightStore((s) => s.resetThresholds);
+
+  // Hydrate thresholds from localStorage on client mount
+  useEffect(() => {
+    useFlightStore.getState().hydrateThresholds();
+  }, []);
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

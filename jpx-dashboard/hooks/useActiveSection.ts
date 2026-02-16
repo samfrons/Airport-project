@@ -2,11 +2,10 @@
 
 import { useEffect, useRef } from 'react';
 import { useNavStore } from '@/store/navStore';
-import { allSectionIds, sectionToGroup } from '@/components/navigation/navConfig';
+import { allSectionIds } from '@/components/navigation/navConfig';
 
 export function useActiveSection() {
   const setActiveSection = useNavStore((state) => state.setActiveSection);
-  const expandGroup = useNavStore((state) => state.expandGroup);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const visibleSections = useRef<Set<string>>(new Set());
 
@@ -34,12 +33,6 @@ export function useActiveSection() {
       if (orderedVisibleSections.length > 0) {
         const activeId = orderedVisibleSections[0];
         setActiveSection(activeId);
-
-        // Auto-expand parent group
-        const groupId = sectionToGroup[activeId];
-        if (groupId) {
-          expandGroup(groupId);
-        }
       }
     };
 
@@ -59,5 +52,5 @@ export function useActiveSection() {
     return () => {
       observerRef.current?.disconnect();
     };
-  }, [setActiveSection, expandGroup]);
+  }, [setActiveSection]);
 }
