@@ -69,6 +69,7 @@ interface FlightState {
   airports: Airport[];
   loading: boolean;
   error: string | null;
+  lastUpdated: string | null;
   mapViewMode: MapViewMode;
   dateRange: DateRange;
   selectedCategory: string | null;
@@ -176,6 +177,7 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   airports: [],
   loading: false,
   error: null,
+  lastUpdated: null,
   mapViewMode: 'routes',
   dateRange: {
     start: formatDate(weekAgo),
@@ -231,7 +233,11 @@ export const useFlightStore = create<FlightState>((set, get) => ({
       if (!response.ok) throw new Error('Failed to fetch flights');
 
       const data = await response.json();
-      set({ flights: data.flights, airports: data.airports || [] });
+      set({
+        flights: data.flights,
+        airports: data.airports || [],
+        lastUpdated: new Date().toISOString(),
+      });
     } catch (err) {
       set({ error: err instanceof Error ? err.message : 'Unknown error' });
     } finally {

@@ -1,9 +1,9 @@
 'use client';
 
-import { Menu, X, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Menu, X, PanelLeftClose, PanelLeft, ExternalLink, Plane } from 'lucide-react';
+import Link from 'next/link';
 import { useNavStore } from '@/store/navStore';
-import { navGroups } from './navConfig';
-import { NavGroup } from './NavGroup';
+import { navItems } from './navConfig';
 import { QuickActions } from './QuickActions';
 import { useActiveSection } from '@/hooks/useActiveSection';
 import { useKeyboardNav } from '@/hooks/useKeyboardNav';
@@ -14,12 +14,21 @@ export function SideNav() {
   const toggleExpanded = useNavStore((state) => state.toggleExpanded);
   const toggleMobileOpen = useNavStore((state) => state.toggleMobileOpen);
   const setMobileOpen = useNavStore((state) => state.setMobileOpen);
+  const activeSection = useNavStore((state) => state.activeSection);
 
   // Initialize hooks
   useActiveSection();
   useKeyboardNav();
 
   const showLabels = isExpanded || isMobileOpen;
+
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    setMobileOpen(false);
+  };
 
   return (
     <>
@@ -83,11 +92,48 @@ export function SideNav() {
         {/* Quick Actions */}
         <QuickActions />
 
-        {/* Navigation Groups */}
+        {/* Flat Navigation Items */}
         <div className="flex-1 overflow-y-auto py-2">
-          {navGroups.map((group) => (
-            <NavGroup key={group.id} group={group} />
-          ))}
+          {navItems.map((item) => {
+            const isActive = activeSection === item.id;
+            const Icon = item.icon;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => scrollTo(item.id)}
+                aria-current={isActive ? 'true' : undefined}
+                className={`
+                  w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors duration-150
+                  ${isActive
+                    ? 'bg-blue-600/15 text-blue-600 dark:text-blue-400 border-l-2 border-blue-500 -ml-[2px]'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 border-l-2 border-transparent -ml-[2px]'
+                  }
+                `}
+                title={!showLabels ? item.label : undefined}
+              >
+                <Icon size={16} className={`shrink-0 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
+                {showLabels && <span className="truncate">{item.label}</span>}
+              </button>
+            );
+          })}
+
+          {/* Airport Diagram - External Link */}
+          <div className="mt-2 pt-2 border-t border-zinc-200/60 dark:border-zinc-800/40">
+            <Link
+              href="/airport-diagram"
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-500 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/60 transition-colors duration-150"
+              title={!showLabels ? 'Airport Diagram' : undefined}
+            >
+              <Plane size={16} className="shrink-0" />
+              {showLabels && (
+                <>
+                  <span className="truncate">Airport Diagram</span>
+                  <ExternalLink size={12} className="shrink-0 ml-auto text-zinc-400 dark:text-zinc-600" />
+                </>
+              )}
+            </Link>
+          </div>
         </div>
 
         {/* Keyboard shortcuts hint (expanded only, desktop only) */}

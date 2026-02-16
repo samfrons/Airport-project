@@ -1,21 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
-import { TowerControl, RefreshCw, Radio, LogOut } from 'lucide-react';
+import { TowerControl, RefreshCw, LogOut, ExternalLink } from 'lucide-react';
 import { AirportMap } from '@/components/AirportMap';
 import { StatsCards } from '@/components/StatsCards';
-import { FlightTable } from '@/components/FlightTable';
 import { CurfewChart } from '@/components/CurfewChart';
 import { TimeFilter } from '@/components/TimeFilter';
 import { AircraftBreakdownPanel, FlightDetailsSidebar } from '@/components/noise';
-import { BiodiversityPanel, BiodiversityViolationsPanel, ThresholdManager } from '@/components/biodiversity';
 import { NoiseEnvironmentTimeline } from '@/components/NoiseEnvironmentTimeline';
 import { OperatorScorecard } from '@/components/OperatorScorecard';
-import { ComplaintForm } from '@/components/ComplaintForm';
-import { WeatherCorrelation } from '@/components/WeatherCorrelation';
 import { FlightPathReplay } from '@/components/FlightPathReplay';
-import { AlertNotificationSystem } from '@/components/AlertNotificationSystem';
 import { ComplianceDashboard } from '@/components/ComplianceDashboard';
+import { CurfewViolatorsTable } from '@/components/CurfewViolatorsTable';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   ErrorBoundary,
@@ -23,7 +19,6 @@ import {
   MapSkeleton,
   ChartSkeleton,
   PanelSkeleton,
-  TableSkeleton,
 } from '@/components/LoadingSkeleton';
 import { SideNav, ScrollToTop } from '@/components/navigation';
 import { useAuth } from '@/components/AuthProvider';
@@ -32,7 +27,7 @@ import { useNavStore } from '@/store/navStore';
 
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
-  const { loading, error, fetchFlights, fetchSummary, loadNoiseData, selectedFlight, setSelectedFlight } = useFlightStore();
+  const { loading, error, fetchFlights, fetchSummary, loadNoiseData, selectedFlight, setSelectedFlight, lastUpdated } = useFlightStore();
   const isNavExpanded = useNavStore((state) => state.isExpanded);
 
   useEffect(() => {
@@ -44,6 +39,19 @@ export default function DashboardPage() {
   const handleRefresh = () => {
     fetchFlights();
     fetchSummary();
+  };
+
+  // Format last updated for header
+  const formatLastUpdated = () => {
+    if (!lastUpdated) return null;
+    const date = new Date(lastUpdated);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
   };
 
   return (
@@ -86,12 +94,13 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden sm:flex items-center gap-1.5 text-zinc-600 dark:text-zinc-600">
-                <Radio size={12} />
-                <span className="text-[10px] uppercase tracking-widest font-medium">
-                  Live Data
-                </span>
-              </div>
+              {formatLastUpdated() && (
+                <div className="hidden sm:flex items-center gap-1.5 text-zinc-500 dark:text-zinc-600">
+                  <span className="text-[10px] uppercase tracking-widest font-medium">
+                    Updated {formatLastUpdated()}
+                  </span>
+                </div>
+              )}
               <ThemeToggle />
               <button
                 onClick={handleRefresh}
@@ -136,153 +145,123 @@ export default function DashboardPage() {
         {/* Time Range */}
         <TimeFilter />
 
-        {/* Stats */}
-        <div id="stats">
-        <ErrorBoundary sectionName="Statistics" fallback={<StatsCardsSkeleton />}>
-          <StatsCards />
-        </ErrorBoundary>
-        </div>
-
-        {/* Interactive Map */}
-        <section id="map">
+        {/* ─── 1. Overview ──────────────────────────────────────────── */}
+        <section id="overview">
           <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Flight Routes</h2>
+            <h2 className="overline">Overview</h2>
+          </div>
+          <ErrorBoundary sectionName="Overview" fallback={<StatsCardsSkeleton />}>
+            <StatsCards />
+          </ErrorBoundary>
+        </section>
+
+        {/* ─── 2. Operations ────────────────────────────────────────── */}
+        <section id="operations">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Operations</h2>
+          </div>
+          <div className="space-y-6">
+            <ErrorBoundary sectionName="Timeline" fallback={<ChartSkeleton />}>
+              <NoiseEnvironmentTimeline />
+            </ErrorBoundary>
+            <ErrorBoundary sectionName="Hourly Distribution" fallback={<ChartSkeleton />}>
+              <CurfewChart />
+            </ErrorBoundary>
+          </div>
+        </section>
+
+        {/* ─── 3. Aircraft & Operators ──────────────────────────────── */}
+        <section id="aircraft-operators">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Aircraft & Operators</h2>
+          </div>
+          <div className="space-y-6">
+            <ErrorBoundary sectionName="Aircraft Breakdown" fallback={<PanelSkeleton />}>
+              <AircraftBreakdownPanel />
+            </ErrorBoundary>
+            <ErrorBoundary sectionName="Operator Scorecards" fallback={<PanelSkeleton />}>
+              <OperatorScorecard />
+            </ErrorBoundary>
+          </div>
+        </section>
+
+        {/* ─── 4. Curfew Compliance ─────────────────────────────────── */}
+        <section id="curfew-compliance">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Curfew Compliance</h2>
+            <span className="text-[10px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wide">
+              9 PM – 7 AM ET
+            </span>
+          </div>
+          <div className="space-y-6">
+            <ErrorBoundary sectionName="Compliance Dashboard" fallback={<ChartSkeleton />}>
+              <ComplianceDashboard />
+            </ErrorBoundary>
+            <ErrorBoundary sectionName="Curfew Violators" fallback={<PanelSkeleton />}>
+              <CurfewViolatorsTable />
+            </ErrorBoundary>
+          </div>
+        </section>
+
+        {/* ─── 5. Flight Map ────────────────────────────────────────── */}
+        <section id="flight-map">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="overline">Flight Map</h2>
           </div>
           <ErrorBoundary sectionName="Flight Map" fallback={<MapSkeleton />}>
             <div className="bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 h-[480px] lg:h-[580px]">
               <AirportMap />
             </div>
           </ErrorBoundary>
-        </section>
-
-        {/* Noise & Environment Impact Timeline */}
-        <section id="timeline">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Noise & Environment Impact Timeline</h2>
+          {/* Flight Replay - Secondary action within Flight Map */}
+          <div className="mt-4">
+            <ErrorBoundary sectionName="Flight Replay" fallback={<PanelSkeleton />}>
+              <FlightPathReplay />
+            </ErrorBoundary>
           </div>
-          <ErrorBoundary sectionName="Timeline" fallback={<ChartSkeleton />}>
-            <NoiseEnvironmentTimeline />
-          </ErrorBoundary>
         </section>
 
-        {/* Aircraft Noise Breakdown */}
-        <section id="breakdown">
+        {/* ─── 6. Noise & Impact ────────────────────────────────────── */}
+        <section id="noise-impact">
           <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Aircraft Type Breakdown</h2>
+            <h2 className="overline">Noise & Impact</h2>
           </div>
-          <ErrorBoundary sectionName="Aircraft Breakdown" fallback={<PanelSkeleton />}>
-            <AircraftBreakdownPanel />
-          </ErrorBoundary>
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6">
+            <div className="text-center py-8">
+              <p className="text-sm text-zinc-500 dark:text-zinc-500 mb-2">
+                Noise monitoring data will appear here when sensors are installed.
+              </p>
+              <p className="text-xs text-zinc-400 dark:text-zinc-600">
+                Contact the Wainscott CAC for updates on monitoring deployment.
+              </p>
+            </div>
+          </div>
         </section>
 
-        {/* Operator Scorecards */}
-        <section id="scorecards">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Operator Scorecards</h2>
-          </div>
-          <ErrorBoundary sectionName="Operator Scorecards" fallback={<PanelSkeleton />}>
-            <OperatorScorecard />
-          </ErrorBoundary>
-        </section>
-
-        {/* Weather Correlation */}
-        <section id="weather">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Weather Correlation</h2>
-          </div>
-          <ErrorBoundary sectionName="Weather" fallback={<ChartSkeleton />}>
-            <WeatherCorrelation />
-          </ErrorBoundary>
-        </section>
-
-        {/* Flight Path Replay */}
-        <section id="replay">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Flight Activity Replay</h2>
-          </div>
-          <ErrorBoundary sectionName="Flight Replay" fallback={<PanelSkeleton />}>
-            <FlightPathReplay />
-          </ErrorBoundary>
-        </section>
-
-        {/* Alerts & Notifications */}
-        <section id="alerts">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Alerts & Notifications</h2>
-          </div>
-          <ErrorBoundary sectionName="Alerts" fallback={<PanelSkeleton />}>
-            <AlertNotificationSystem />
-          </ErrorBoundary>
-        </section>
-
-        {/* Compliance Dashboard */}
-        <section id="compliance">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Compliance Dashboard</h2>
-          </div>
-          <ErrorBoundary sectionName="Compliance" fallback={<ChartSkeleton />}>
-            <ComplianceDashboard />
-          </ErrorBoundary>
-        </section>
-
-        {/* Threshold Administration */}
-        <section id="thresholds">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Threshold Administration</h2>
-          </div>
-          <ErrorBoundary sectionName="Threshold Manager" fallback={<PanelSkeleton />}>
-            <ThresholdManager />
-          </ErrorBoundary>
-        </section>
-
-        {/* Biodiversity Threshold Violations */}
-        <section id="violations">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Biodiversity Threshold Violations</h2>
-          </div>
-          <ErrorBoundary sectionName="Violations" fallback={<PanelSkeleton />}>
-            <BiodiversityViolationsPanel />
-          </ErrorBoundary>
-        </section>
-
-        {/* Biodiversity & Wildlife Impact */}
-        <section id="biodiversity">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Biodiversity & Wildlife Impact</h2>
-          </div>
-          <ErrorBoundary sectionName="Biodiversity" fallback={<PanelSkeleton />}>
-            <BiodiversityPanel />
-          </ErrorBoundary>
-        </section>
-
-        {/* Community Noise Reports */}
+        {/* ─── 7. Complaints ────────────────────────────────────────── */}
         <section id="complaints">
           <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Community Noise Reports</h2>
+            <h2 className="overline">Complaints</h2>
           </div>
-          <ErrorBoundary sectionName="Noise Reports" fallback={<PanelSkeleton />}>
-            <ComplaintForm />
-          </ErrorBoundary>
-        </section>
-
-        {/* Curfew Chart */}
-        <section id="curfew">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Hourly Distribution</h2>
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6">
+            <div className="text-center py-4">
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-4">
+                Report noise concerns to East Hampton Town
+              </p>
+              <a
+                href="https://planenoise.com/khto/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 transition-colors"
+              >
+                File a Complaint
+                <ExternalLink size={14} />
+              </a>
+              <p className="text-xs text-zinc-500 dark:text-zinc-600 mt-4">
+                Opens planenoise.com in a new tab
+              </p>
+            </div>
           </div>
-          <ErrorBoundary sectionName="Curfew Chart" fallback={<ChartSkeleton />}>
-            <CurfewChart />
-          </ErrorBoundary>
-        </section>
-
-        {/* Flight Table */}
-        <section id="flights">
-          <div className="flex items-baseline justify-between mb-3">
-            <h2 className="overline">Flight Log</h2>
-          </div>
-          <ErrorBoundary sectionName="Flight Table" fallback={<TableSkeleton />}>
-            <FlightTable />
-          </ErrorBoundary>
         </section>
       </main>
 
