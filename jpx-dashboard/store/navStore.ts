@@ -2,13 +2,18 @@ import { create } from 'zustand';
 
 const NAV_STORAGE_KEY = 'jpx-nav-state';
 
+// SSR-safe default values
+const DEFAULT_EXPANDED_GROUPS = ['analytics', 'flights'];
+
 interface NavState {
   isExpanded: boolean;
   isMobileOpen: boolean;
   expandedGroups: Set<string>;
   activeSection: string | null;
+  _hydrated: boolean;
 
   // Actions
+  hydrate: () => void;
   toggleExpanded: () => void;
   setExpanded: (expanded: boolean) => void;
   toggleMobileOpen: () => void;
@@ -18,10 +23,10 @@ interface NavState {
   setActiveSection: (sectionId: string | null) => void;
 }
 
-// Load persisted state from localStorage
+// Load persisted state from localStorage - only called during hydration
 function loadPersistedState(): { isExpanded: boolean; expandedGroups: string[] } {
   if (typeof window === 'undefined') {
-    return { isExpanded: true, expandedGroups: ['analytics', 'flights'] };
+    return { isExpanded: true, expandedGroups: DEFAULT_EXPANDED_GROUPS };
   }
   try {
     const stored = localStorage.getItem(NAV_STORAGE_KEY);
@@ -29,13 +34,13 @@ function loadPersistedState(): { isExpanded: boolean; expandedGroups: string[] }
       const parsed = JSON.parse(stored);
       return {
         isExpanded: parsed.isExpanded ?? true,
-        expandedGroups: parsed.expandedGroups ?? ['analytics', 'flights'],
+        expandedGroups: parsed.expandedGroups ?? DEFAULT_EXPANDED_GROUPS,
       };
     }
   } catch {
     // Corrupted data — fall back to defaults
   }
-  return { isExpanded: true, expandedGroups: ['analytics', 'flights'] };
+  return { isExpanded: true, expandedGroups: DEFAULT_EXPANDED_GROUPS };
 }
 
 // Save state to localStorage
@@ -54,13 +59,24 @@ function persistState(isExpanded: boolean, expandedGroups: Set<string>) {
   }
 }
 
-const initialState = loadPersistedState();
-
 export const useNavStore = create<NavState>((set, get) => ({
-  isExpanded: initialState.isExpanded,
+  // SSR-safe initial values - hydrate() loads localStorage on client
+  isExpanded: true,
   isMobileOpen: false,
-  expandedGroups: new Set(initialState.expandedGroups),
+  expandedGroups: new Set(DEFAULT_EXPANDED_GROUPS),
   activeSection: null,
+  _hydrated: false,
+
+  // Hydration action - call this in useEffect on client
+  hydrate: () => {
+    if (typeof window === 'undefined' || get()._hydrated) return;
+    const stored = loadPersistedState();
+    set({
+      isExpanded: stored.isExpanded,
+      expandedGroups: new Set(stored.expandedGroups),
+      _hydrated: true,
+    });
+  },
 
   toggleExpanded: () => {
     const newExpanded = !get().isExpanded;

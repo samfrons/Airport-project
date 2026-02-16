@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Menu, X, PanelLeftClose, PanelLeft, ExternalLink, Plane } from 'lucide-react';
 import Link from 'next/link';
 import { useNavStore } from '@/store/navStore';
@@ -15,6 +16,11 @@ export function SideNav() {
   const toggleMobileOpen = useNavStore((state) => state.toggleMobileOpen);
   const setMobileOpen = useNavStore((state) => state.setMobileOpen);
   const activeSection = useNavStore((state) => state.activeSection);
+
+  // Hydrate nav state from localStorage on client mount
+  useEffect(() => {
+    useNavStore.getState().hydrate();
+  }, []);
 
   // Initialize hooks
   useActiveSection();
