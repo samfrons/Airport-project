@@ -16,9 +16,6 @@ import {
   formatAltitude,
   getDbLevelColor,
 } from './noise/NoiseCalculator';
-import { biodiversityImpactZones, generateZoneCircle } from '@/data/biodiversity/impactZones';
-import { habitatAreas } from '@/data/biodiversity/speciesImpacts';
-import { getImpactSeverityColor } from '@/types/biodiversity';
 import type { MapViewMode, Flight } from '@/types/flight';
 
 // KJPX Airport coordinates
@@ -104,24 +101,6 @@ const NOISE_LAYERS = [
 ];
 const NOISE_SOURCES = ['noise-sensors-data', 'aircraft-corridors-data', 'aircraft-db-points-data', 'complaints-data'];
 
-// Biodiversity visualization layers
-const BIODIVERSITY_LAYERS = [
-  'bio-zone-critical-fill',
-  'bio-zone-critical-outline',
-  'bio-zone-high-fill',
-  'bio-zone-high-outline',
-  'bio-zone-moderate-fill',
-  'bio-zone-moderate-outline',
-  'bio-zone-low-fill',
-  'bio-zone-low-outline',
-  'bio-zone-minimal-fill',
-  'bio-zone-minimal-outline',
-  'bio-zone-labels',
-  'bio-habitat-markers',
-  'bio-habitat-labels',
-  'bio-habitat-pulse',
-];
-const BIODIVERSITY_SOURCES = ['bio-zones-data', 'bio-zone-labels-data', 'bio-habitat-data'];
 
 export function AirportMap() {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -143,7 +122,6 @@ export function AirportMap() {
     noiseSettings,
     noiseSensors,
     noiseComplaints,
-    biodiversitySettings,
     selectedFlight,
     setSelectedFlight,
   } = useFlightStore();
@@ -339,21 +317,6 @@ export function AirportMap() {
     }
   }, [noiseSettings, noiseSensors, noiseComplaints, flights, airports, mapLoaded]);
 
-  // ─── Update biodiversity layers ─────────────────────────────────
-  useEffect(() => {
-    if (!map.current || !mapLoaded) return;
-    clearBiodiversityLayers();
-
-    if (biodiversitySettings.visible) {
-      if (biodiversitySettings.showImpactZones) {
-        renderBiodiversityZones();
-      }
-      if (biodiversitySettings.showHabitatAreas) {
-        renderHabitatAreas();
-      }
-    }
-  }, [biodiversitySettings, mapLoaded]);
-
   function clearManagedLayers() {
     if (!map.current) return;
     MANAGED_LAYERS.forEach((id) => {
@@ -371,268 +334,6 @@ export function AirportMap() {
     });
     NOISE_SOURCES.forEach((id) => {
       if (map.current!.getSource(id)) map.current!.removeSource(id);
-    });
-  }
-
-  function clearBiodiversityLayers() {
-    if (!map.current) return;
-    BIODIVERSITY_LAYERS.forEach((id) => {
-      if (map.current!.getLayer(id)) map.current!.removeLayer(id);
-    });
-    BIODIVERSITY_SOURCES.forEach((id) => {
-      if (map.current!.getSource(id)) map.current!.removeSource(id);
-    });
-  }
-
-  // ─── Biodiversity Impact Zones Layer ─────────────────────────────
-  function renderBiodiversityZones() {
-    if (!map.current) return;
-
-    // Generate concentric zone polygons (render outermost first for layering)
-    const zoneFeatures = [...biodiversityImpactZones]
-      .reverse()
-      .map((zone) => {
-        const coords = generateZoneCircle(KJPX_COORDS, zone.radiusMeters);
-        return {
-          type: 'Feature' as const,
-          geometry: { type: 'Polygon' as const, coordinates: [coords] },
-          properties: {
-            id: zone.id,
-            label: zone.label,
-            severity: zone.severity,
-            color: zone.color,
-            fillOpacity: zone.fillOpacity,
-            radiusKm: (zone.radiusMeters / 1000).toFixed(1),
-            dbRange: `${zone.estimatedDbRange[0]}-${zone.estimatedDbRange[1]} dB`,
-            speciesDecline: zone.speciesRichnessDecline,
-            abundanceDecline: zone.birdAbundanceDecline,
-            description: zone.description,
-          },
-        };
-      });
-
-    // Label points at the edge of each zone
-    const labelFeatures = biodiversityImpactZones.map((zone) => {
-      const metersPerDegLng = 111320 * Math.cos((KJPX_COORDS[1] * Math.PI) / 180);
-      const offsetLng = zone.radiusMeters / metersPerDegLng;
-      return {
-        type: 'Feature' as const,
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [KJPX_COORDS[0] + offsetLng * 0.7, KJPX_COORDS[1] + (zone.radiusMeters / 110574) * 0.7],
-        },
-        properties: {
-          label: zone.label.replace(' Impact Zone', ''),
-          dbRange: `${zone.estimatedDbRange[0]}-${zone.estimatedDbRange[1]} dB`,
-          decline: `-${zone.speciesRichnessDecline}% species`,
-          severity: zone.severity,
-        },
-      };
-    });
-
-    map.current.addSource('bio-zones-data', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: zoneFeatures },
-    });
-
-    map.current.addSource('bio-zone-labels-data', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: labelFeatures },
-    });
-
-    // Add fill + outline for each zone individually to control layering
-    const zones = [...biodiversityImpactZones].reverse();
-    zones.forEach((zone) => {
-      const fillId = `bio-zone-${zone.severity}-fill`;
-      const outlineId = `bio-zone-${zone.severity}-outline`;
-
-      map.current!.addLayer({
-        id: fillId,
-        type: 'fill',
-        source: 'bio-zones-data',
-        filter: ['==', ['get', 'severity'], zone.severity],
-        paint: {
-          'fill-color': zone.color,
-          'fill-opacity': zone.fillOpacity * biodiversitySettings.opacity,
-        },
-      });
-
-      map.current!.addLayer({
-        id: outlineId,
-        type: 'line',
-        source: 'bio-zones-data',
-        filter: ['==', ['get', 'severity'], zone.severity],
-        paint: {
-          'line-color': zone.color,
-          'line-width': 1.5,
-          'line-opacity': 0.4 * biodiversitySettings.opacity,
-          'line-dasharray': [4, 3],
-        },
-      });
-    });
-
-    // Zone labels
-    map.current.addLayer({
-      id: 'bio-zone-labels',
-      type: 'symbol',
-      source: 'bio-zone-labels-data',
-      layout: {
-        'text-field': ['concat', ['get', 'label'], '\n', ['get', 'dbRange'], '\n', ['get', 'decline']],
-        'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
-        'text-size': 9,
-        'text-allow-overlap': false,
-        'text-line-height': 1.3,
-        'text-anchor': 'center',
-      },
-      paint: {
-        'text-color': '#d4d4d8',
-        'text-halo-color': '#000000',
-        'text-halo-width': 1.5,
-        'text-opacity': 0.8 * biodiversitySettings.opacity,
-      },
-    });
-
-    // Hover handler for zones
-    zones.forEach((zone) => {
-      const fillId = `bio-zone-${zone.severity}-fill`;
-      map.current!.on('mouseenter', fillId, (e) => {
-        if (!map.current || !e.features?.[0]) return;
-        map.current.getCanvas().style.cursor = 'pointer';
-        const props = e.features[0].properties;
-
-        popup.current
-          ?.setLngLat(e.lngLat)
-          .setHTML(
-            `<div class="popup-content">
-              <div class="popup-title" style="color: ${zone.color}">${props?.label ?? ''}</div>
-              <div class="popup-detail">${props?.dbRange ?? ''}</div>
-              <div class="popup-divider"></div>
-              <div class="popup-detail">Species richness: <span style="color: #ef4444">-${props?.speciesDecline ?? 0}%</span></div>
-              <div class="popup-detail">Bird abundance: <span style="color: #ef4444">-${props?.abundanceDecline ?? 0}%</span></div>
-              <div class="popup-detail" style="margin-top: 4px; max-width: 240px; font-size: 9px; line-height: 1.4; color: #a1a1aa;">${props?.description ?? ''}</div>
-            </div>`
-          )
-          .addTo(map.current);
-      });
-
-      map.current!.on('mouseleave', fillId, () => {
-        if (!map.current) return;
-        map.current.getCanvas().style.cursor = '';
-        popup.current?.remove();
-      });
-    });
-  }
-
-  // ─── Habitat Areas Layer ───────────────────────────────────────
-  function renderHabitatAreas() {
-    if (!map.current) return;
-
-    const habitatFeatures = habitatAreas.map((h) => ({
-      type: 'Feature' as const,
-      geometry: {
-        type: 'Point' as const,
-        coordinates: h.coordinates,
-      },
-      properties: {
-        id: h.id,
-        name: h.name,
-        type: h.type,
-        noiseExposure: h.estimatedNoiseExposure,
-        severity: h.impactSeverity,
-        color: getImpactSeverityColor(h.impactSeverity),
-        description: h.description,
-        keySpecies: h.keySpecies.join(', '),
-        radiusMeters: h.radiusMeters,
-      },
-    }));
-
-    map.current.addSource('bio-habitat-data', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: habitatFeatures },
-    });
-
-    // Pulse ring showing habitat area extent
-    map.current.addLayer({
-      id: 'bio-habitat-pulse',
-      type: 'circle',
-      source: 'bio-habitat-data',
-      paint: {
-        'circle-radius': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          8, ['/', ['get', 'radiusMeters'], 300],
-          12, ['/', ['get', 'radiusMeters'], 60],
-          14, ['/', ['get', 'radiusMeters'], 20],
-        ],
-        'circle-color': ['get', 'color'],
-        'circle-opacity': 0.12 * biodiversitySettings.opacity,
-        'circle-stroke-width': 0,
-      },
-    });
-
-    // Habitat marker points
-    map.current.addLayer({
-      id: 'bio-habitat-markers',
-      type: 'circle',
-      source: 'bio-habitat-data',
-      paint: {
-        'circle-radius': 6,
-        'circle-color': ['get', 'color'],
-        'circle-opacity': 0.9 * biodiversitySettings.opacity,
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff',
-        'circle-stroke-opacity': 0.7,
-      },
-    });
-
-    // Habitat labels
-    map.current.addLayer({
-      id: 'bio-habitat-labels',
-      type: 'symbol',
-      source: 'bio-habitat-data',
-      layout: {
-        'text-field': ['concat', ['get', 'name'], '\n', ['to-string', ['get', 'noiseExposure']], ' dB'],
-        'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
-        'text-size': 9,
-        'text-offset': [0, 1.6],
-        'text-allow-overlap': false,
-        'text-line-height': 1.2,
-      },
-      paint: {
-        'text-color': '#d4d4d8',
-        'text-halo-color': '#000000',
-        'text-halo-width': 1.2,
-        'text-opacity': 0.85 * biodiversitySettings.opacity,
-      },
-    });
-
-    // Hover handlers for habitat areas
-    map.current.on('mouseenter', 'bio-habitat-markers', (e) => {
-      if (!map.current || !e.features?.[0]) return;
-      map.current.getCanvas().style.cursor = 'pointer';
-      const props = e.features[0].properties;
-      const coords = (e.features[0].geometry as GeoJSON.Point).coordinates.slice() as [number, number];
-
-      popup.current
-        ?.setLngLat(coords)
-        .setHTML(
-          `<div class="popup-content">
-            <div class="popup-title" style="color: ${props?.color ?? '#10b981'}">${props?.name ?? ''}</div>
-            <div class="popup-subtitle" style="text-transform: capitalize">${props?.type ?? ''} habitat</div>
-            <div class="popup-divider"></div>
-            <div class="popup-detail">Noise exposure: <span style="color: ${props?.color ?? '#ef4444'}">${props?.noiseExposure ?? 0} dB</span></div>
-            <div class="popup-detail" style="margin-top: 2px; font-size: 9px; color: #a1a1aa;">${props?.description ?? ''}</div>
-            <div style="margin-top: 4px; font-size: 9px; color: #71717a;">Key species: ${props?.keySpecies ?? ''}</div>
-          </div>`
-        )
-        .addTo(map.current);
-    });
-
-    map.current.on('mouseleave', 'bio-habitat-markers', () => {
-      if (!map.current) return;
-      map.current.getCanvas().style.cursor = '';
-      popup.current?.remove();
     });
   }
 

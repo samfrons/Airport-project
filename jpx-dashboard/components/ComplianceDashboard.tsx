@@ -24,18 +24,14 @@ import {
   AlertTriangle,
   Clock,
   Volume2,
-  Bird,
   TrendingUp,
   TrendingDown,
   Minus,
-  BarChart3,
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
-import { evaluateAllFlights, generateViolationSummary } from '@/lib/biodiversityViolationEngine';
 import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
+import { CURFEW } from '@/lib/constants/curfew';
 import type { Flight } from '@/types/flight';
-import type { BiodiversityViolation, ViolationSummary } from '@/types/biodiversityThresholds';
-import type { ImpactSeverity } from '@/types/biodiversity';
 
 // ─── Chart.js Registration ──────────────────────────────────────────────────
 
@@ -56,20 +52,14 @@ ChartJS.register(
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface ComplianceScores {
-  overall: number;
   curfew: number;
   noise: number;
-  species: number;
-  volume: number;
 }
 
 interface DailyCompliance {
   date: string;
-  overall: number;
   curfew: number;
   noise: number;
-  species: number;
-  volume: number;
 }
 
 interface CurfewViolator {
@@ -91,7 +81,6 @@ interface RegulatoryRow {
 
 const NOISE_THRESHOLD_DB = 85;
 const PASSING_SCORE = 80;
-const MAX_HOURLY_FLIGHTS = 10;
 
 const CHART_TOOLTIP_STYLE = {
   backgroundColor: '#18181b',
@@ -145,44 +134,22 @@ function groupFlightsByDate(flights: Flight[]): Map<string, Flight[]> {
   return map;
 }
 
-function computeDayScores(dayFlights: Flight[], dayViolations: BiodiversityViolation[]): ComplianceScores {
+function computeDayScores(dayFlights: Flight[]): ComplianceScores {
   if (dayFlights.length === 0) {
-    return { overall: 100, curfew: 100, noise: 100, species: 100, volume: 100 };
+    return { curfew: 100, noise: 100 };
   }
 
   // Curfew: % not in curfew
-  const nonCurfew = dayFlights.filter((f) => !f.is_curfew_period).length;
+  const nonCurfew = dayFlights.filter((f) => !CURFEW.isCurfewHour(f.operation_hour_et)).length;
   const curfew = (nonCurfew / dayFlights.length) * 100;
 
   // Noise: % below 85dB
   const belowNoise = dayFlights.filter((f) => getNoiseDb(f) < NOISE_THRESHOLD_DB).length;
   const noise = (belowNoise / dayFlights.length) * 100;
 
-  // Species: % with no critical/high severity violations
-  const criticalHighFlightIds = new Set(
-    dayViolations
-      .filter((v) => v.overallSeverity === 'critical' || v.overallSeverity === 'high')
-      .map((v) => v.flightId),
-  );
-  const speciesCompliant = dayFlights.filter((f) => !criticalHighFlightIds.has(f.fa_flight_id)).length;
-  const species = (speciesCompliant / dayFlights.length) * 100;
-
-  // Volume: check if all hours have < MAX_HOURLY_FLIGHTS
-  const hourCounts = new Map<number, number>();
-  for (const f of dayFlights) {
-    hourCounts.set(f.operation_hour_et, (hourCounts.get(f.operation_hour_et) || 0) + 1);
-  }
-  const allHoursCompliant = Array.from(hourCounts.values()).every((c) => c < MAX_HOURLY_FLIGHTS);
-  const volume = allHoursCompliant ? 100 : 0;
-
-  const overall = curfew * 0.3 + noise * 0.3 + species * 0.25 + volume * 0.15;
-
   return {
-    overall: Math.round(overall * 10) / 10,
     curfew: Math.round(curfew * 10) / 10,
     noise: Math.round(noise * 10) / 10,
-    species: Math.round(species * 10) / 10,
-    volume: Math.round(volume * 10) / 10,
   };
 }
 
@@ -211,77 +178,36 @@ function downloadCsv(filename: string, rows: string[][]): void {
 
 // ─── Sub-Components ─────────────────────────────────────────────────────────
 
-function ScoreGauge({ score, size = 160 }: { score: number; size?: number }) {
-  const color = getScoreColor(score);
-  const radius = (size - 16) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (score / 100) * circumference;
-  const center = size / 2;
-
-  return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        {/* Background ring */}
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke="#27272a"
-          strokeWidth={8}
-        />
-        {/* Score ring */}
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={8}
-          strokeLinecap="butt"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          style={{ transition: 'stroke-dashoffset 0.6s ease-out' }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold tabular-nums" style={{ color }}>
-          {Math.round(score)}
-        </span>
-        <span className="text-[10px] text-zinc-500 mt-0.5">{getScoreLabel(score)}</span>
-      </div>
-    </div>
-  );
-}
-
-function SubScoreBar({
+function ScoreBar({
   label,
   score,
-  weight,
   icon,
 }: {
   label: string;
   score: number;
-  weight: string;
   icon: React.ReactNode;
 }) {
   const color = getScoreColor(score);
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2 w-40 flex-shrink-0">
+    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-5">
+      <div className="flex items-center gap-3 mb-3">
         {icon}
-        <span className="text-[11px] text-zinc-400">{label}</span>
-        <span className="text-[9px] text-zinc-600 ml-auto">{weight}</span>
+        <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{label}</span>
       </div>
-      <div className="flex-1 h-2 bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
-        <div
-          className="h-full transition-all duration-500 ease-out"
-          style={{ width: `${Math.min(score, 100)}%`, backgroundColor: color }}
-        />
+      <div className="flex items-center gap-4">
+        <div className="flex-1 h-3 bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
+          <div
+            className="h-full transition-all duration-500 ease-out"
+            style={{ width: `${Math.min(score, 100)}%`, backgroundColor: color }}
+          />
+        </div>
+        <span className="text-lg font-bold tabular-nums" style={{ color }}>
+          {Math.round(score)}%
+        </span>
       </div>
-      <span className="text-[11px] font-semibold tabular-nums w-10 text-right" style={{ color }}>
-        {Math.round(score)}%
-      </span>
+      <div className="text-[10px] text-zinc-500 dark:text-zinc-600 mt-2">
+        {getScoreLabel(score)}
+      </div>
     </div>
   );
 }
@@ -291,49 +217,29 @@ function SubScoreBar({
 export function ComplianceDashboard() {
   const flights = useFlightStore((s) => s.flights);
   const dateRange = useFlightStore((s) => s.dateRange);
-  const thresholds = useFlightStore((s) => s.thresholds);
-
-  // ─── Core computations ──────────────────────────────────────────────────
-
-  const violations = useMemo(() => evaluateAllFlights(flights, thresholds), [flights, thresholds]);
-  const summary = useMemo(() => generateViolationSummary(violations), [violations]);
 
   const flightsByDate = useMemo(() => groupFlightsByDate(flights), [flights]);
-
-  const violationsByDate = useMemo(() => {
-    const map = new Map<string, BiodiversityViolation[]>();
-    for (const v of violations) {
-      const existing = map.get(v.operationDate);
-      if (existing) {
-        existing.push(v);
-      } else {
-        map.set(v.operationDate, [v]);
-      }
-    }
-    return map;
-  }, [violations]);
 
   // ─── Compliance scores ──────────────────────────────────────────────────
 
   const scores = useMemo<ComplianceScores>(() => {
-    return computeDayScores(flights, violations);
-  }, [flights, violations]);
+    return computeDayScores(flights);
+  }, [flights]);
 
   const dailyCompliance = useMemo<DailyCompliance[]>(() => {
     const dates = Array.from(flightsByDate.keys()).sort();
     return dates.map((date) => {
       const dayFlights = flightsByDate.get(date) || [];
-      const dayViolations = violationsByDate.get(date) || [];
-      const dayScores = computeDayScores(dayFlights, dayViolations);
+      const dayScores = computeDayScores(dayFlights);
       return { date, ...dayScores };
     });
-  }, [flightsByDate, violationsByDate]);
+  }, [flightsByDate]);
 
   // ─── Curfew violators ──────────────────────────────────────────────────
 
   const curfewViolators = useMemo<CurfewViolator[]>(() => {
     return flights
-      .filter((f) => f.is_curfew_period)
+      .filter((f) => CURFEW.isCurfewHour(f.operation_hour_et))
       .map((f) => ({
         operator: f.operator || 'Private',
         ident: f.ident,
@@ -383,14 +289,9 @@ export function ComplianceDashboard() {
     const totalFlights = flights.length;
     if (totalFlights === 0) return [];
 
-    const curfewRate = ((flights.filter((f) => !f.is_curfew_period).length / totalFlights) * 100);
+    const curfewViolationCount = curfewViolators.length;
+    const curfewRate = ((totalFlights - curfewViolationCount) / totalFlights) * 100;
     const noiseExceedances = flights.filter((f) => getNoiseDb(f) >= NOISE_THRESHOLD_DB).length;
-    const critHighViolations = violations.filter(
-      (v) => v.overallSeverity === 'critical' || v.overallSeverity === 'high',
-    );
-    const speciesEvents = summary.protectedSpeciesViolations;
-    const habitatEvents = summary.habitatViolations;
-    const repeatOffenders = summary.topOffenders.filter((o) => o.violationCount >= 3).length;
 
     // Compute trend from first half vs second half of date range
     const dates = Array.from(flightsByDate.keys()).sort();
@@ -400,15 +301,18 @@ export function ComplianceDashboard() {
 
     const firstHalfCurfew = firstHalfDates.reduce((sum, d) => {
       const df = flightsByDate.get(d) || [];
-      return sum + df.filter((f) => f.is_curfew_period).length;
+      return sum + df.filter((f) => CURFEW.isCurfewHour(f.operation_hour_et)).length;
     }, 0);
     const secondHalfCurfew = secondHalfDates.reduce((sum, d) => {
       const df = flightsByDate.get(d) || [];
-      return sum + df.filter((f) => f.is_curfew_period).length;
+      return sum + df.filter((f) => CURFEW.isCurfewHour(f.operation_hour_et)).length;
     }, 0);
 
     const curfewTrend: 'up' | 'down' | 'flat' =
       secondHalfCurfew < firstHalfCurfew ? 'down' : secondHalfCurfew > firstHalfCurfew ? 'up' : 'flat';
+
+    // Count repeat offenders (operators with 3+ curfew violations)
+    const repeatOffenders = curfewOperatorCounts.filter(([, count]) => count >= 3).length;
 
     return [
       {
@@ -418,31 +322,19 @@ export function ComplianceDashboard() {
         status: curfewRate >= 95 ? 'pass' : curfewRate >= 85 ? 'warn' : 'fail',
       },
       {
-        metric: 'Noise Exceedance Count',
+        metric: 'Noise Exceedance Count (Est. ≥85 dB)',
         value: `${noiseExceedances} flights`,
         trend: noiseExceedances === 0 ? 'flat' : 'up',
         status: noiseExceedances === 0 ? 'pass' : noiseExceedances <= 5 ? 'warn' : 'fail',
       },
       {
-        metric: 'Protected Species Events',
-        value: `${speciesEvents} events`,
-        trend: speciesEvents === 0 ? 'flat' : 'up',
-        status: speciesEvents === 0 ? 'pass' : speciesEvents <= 3 ? 'warn' : 'fail',
-      },
-      {
-        metric: 'Habitat Violations',
-        value: `${habitatEvents} incidents`,
-        trend: habitatEvents === 0 ? 'flat' : 'up',
-        status: habitatEvents === 0 ? 'pass' : habitatEvents <= 5 ? 'warn' : 'fail',
-      },
-      {
-        metric: 'Repeat Offenders',
+        metric: 'Repeat Offenders (3+ violations)',
         value: `${repeatOffenders} operators`,
         trend: repeatOffenders === 0 ? 'flat' : 'up',
         status: repeatOffenders === 0 ? 'pass' : repeatOffenders <= 2 ? 'warn' : 'fail',
       },
     ];
-  }, [flights, violations, summary, flightsByDate]);
+  }, [flights, curfewViolators, curfewOperatorCounts, flightsByDate]);
 
   // ─── Export handler ─────────────────────────────────────────────────────
 
@@ -454,11 +346,8 @@ export function ComplianceDashboard() {
     ];
 
     const scoreRows = [
-      ['Overall Compliance Score', `${Math.round(scores.overall)}`, ''],
       ['Curfew Compliance', `${Math.round(scores.curfew)}%`, ''],
-      ['Noise Compliance', `${Math.round(scores.noise)}%`, ''],
-      ['Species Protection', `${Math.round(scores.species)}%`, ''],
-      ['Volume Compliance', `${Math.round(scores.volume)}%`, ''],
+      ['Noise Compliance (Est.)', `${Math.round(scores.noise)}%`, ''],
       ['', '', ''],
       ['--- Regulatory Summary ---', '', ''],
     ];
@@ -502,10 +391,10 @@ export function ComplianceDashboard() {
       labels,
       datasets: [
         {
-          label: 'Overall',
-          data: dailyCompliance.map((d) => d.overall),
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.08)',
+          label: 'Curfew',
+          data: dailyCompliance.map((d) => d.curfew),
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245, 158, 11, 0.08)',
           borderWidth: 2,
           pointRadius: 3,
           pointHoverRadius: 5,
@@ -514,56 +403,16 @@ export function ComplianceDashboard() {
           order: 1,
         },
         {
-          label: 'Curfew',
-          data: dailyCompliance.map((d) => d.curfew),
-          borderColor: '#f59e0b',
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          tension: 0.3,
-          borderDash: [4, 2],
-          hidden: true,
-          fill: false,
-          order: 2,
-        },
-        {
-          label: 'Noise',
+          label: 'Noise (Est.)',
           data: dailyCompliance.map((d) => d.noise),
           borderColor: '#ef4444',
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
-          pointRadius: 0,
+          backgroundColor: 'rgba(239, 68, 68, 0.08)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
           tension: 0.3,
-          borderDash: [4, 2],
-          hidden: true,
           fill: false,
-          order: 3,
-        },
-        {
-          label: 'Species',
-          data: dailyCompliance.map((d) => d.species),
-          borderColor: '#22c55e',
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          tension: 0.3,
-          borderDash: [4, 2],
-          hidden: true,
-          fill: false,
-          order: 4,
-        },
-        {
-          label: 'Volume',
-          data: dailyCompliance.map((d) => d.volume),
-          borderColor: '#a855f7',
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          tension: 0.3,
-          borderDash: [4, 2],
-          hidden: true,
-          fill: false,
-          order: 5,
+          order: 2,
         },
       ],
     };
@@ -642,7 +491,7 @@ export function ComplianceDashboard() {
   // ─── Chart data: Curfew Doughnut ────────────────────────────────────────
 
   const curfewDoughnutData = useMemo(() => {
-    const curfewCount = flights.filter((f) => f.is_curfew_period).length;
+    const curfewCount = curfewViolators.length;
     const nonCurfewCount = flights.length - curfewCount;
     return {
       labels: ['Outside Curfew', 'During Curfew'],
@@ -656,7 +505,7 @@ export function ComplianceDashboard() {
         },
       ],
     };
-  }, [flights]);
+  }, [flights, curfewViolators]);
 
   const curfewDoughnutOptions = useMemo(
     () => ({
@@ -877,7 +726,7 @@ export function ComplianceDashboard() {
   return (
     <div className="space-y-6">
       {/* ═══════════════════════════════════════════════════════════════════════
-          SECTION 1: Compliance Score
+          SECTION 1: Compliance Scores (Separate metrics, not combined)
           ═══════════════════════════════════════════════════════════════════════ */}
       <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
         <div className="px-5 py-4 border-b border-zinc-200/60 dark:border-zinc-800/60">
@@ -887,9 +736,9 @@ export function ComplianceDashboard() {
                 <Shield size={16} className="text-blue-600 dark:text-blue-400" strokeWidth={1.5} />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Compliance Score</h3>
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Compliance Metrics</h3>
                 <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
-                  Overall regulatory compliance for {dateRange.start} to {dateRange.end} -- {flights.length} flights analyzed
+                  {dateRange.start} to {dateRange.end} — {flights.length} flights analyzed
                 </p>
               </div>
             </div>
@@ -898,43 +747,29 @@ export function ComplianceDashboard() {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-400 text-[10px] font-medium border border-zinc-300/40 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
             >
               <Download size={10} />
-              Export Compliance Report
+              Export Report
             </button>
           </div>
         </div>
 
-        <div className="p-6 flex flex-col lg:flex-row items-center gap-8">
-          {/* Gauge */}
-          <div className="flex-shrink-0">
-            <ScoreGauge score={scores.overall} size={160} />
-          </div>
+        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ScoreBar
+            label="Curfew Compliance"
+            score={scores.curfew}
+            icon={<Clock size={16} className="text-amber-500" />}
+          />
+          <ScoreBar
+            label="Noise Compliance (Est.)"
+            score={scores.noise}
+            icon={<Volume2 size={16} className="text-red-500" />}
+          />
+        </div>
 
-          {/* Sub-scores */}
-          <div className="flex-1 w-full space-y-3">
-            <SubScoreBar
-              label="Curfew Compliance"
-              score={scores.curfew}
-              weight="30%"
-              icon={<Clock size={12} className="text-amber-400 flex-shrink-0" />}
-            />
-            <SubScoreBar
-              label="Noise Compliance"
-              score={scores.noise}
-              weight="30%"
-              icon={<Volume2 size={12} className="text-red-400 flex-shrink-0" />}
-            />
-            <SubScoreBar
-              label="Species Protection"
-              score={scores.species}
-              weight="25%"
-              icon={<Bird size={12} className="text-emerald-400 flex-shrink-0" />}
-            />
-            <SubScoreBar
-              label="Volume Compliance"
-              score={scores.volume}
-              weight="15%"
-              icon={<BarChart3 size={12} className="text-purple-400 flex-shrink-0" />}
-            />
+        <div className="px-5 pb-4">
+          <div className="text-[10px] text-zinc-500 dark:text-zinc-600 bg-zinc-100/50 dark:bg-zinc-800/50 p-3 border border-zinc-200/50 dark:border-zinc-700/50">
+            <strong>Note:</strong> Noise values are estimates based on aircraft type certification data.
+            Actual ground-level noise varies with altitude, distance, and atmospheric conditions.
+            No physical noise monitors are currently installed at KJPX.
           </div>
         </div>
       </div>
@@ -951,7 +786,7 @@ export function ComplianceDashboard() {
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Compliance Trend</h3>
               <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
-                Daily compliance scores over the selected period -- toggle sub-scores in the legend
+                Daily compliance scores over the selected period
               </p>
             </div>
           </div>
@@ -975,7 +810,7 @@ export function ComplianceDashboard() {
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Curfew Compliance</h3>
               <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
-                Voluntary curfew (8 PM - 8 AM ET) adherence -- {curfewViolators.length} violations detected
+                Voluntary curfew (9 PM – 7 AM ET) adherence — {curfewViolators.length} violations detected
               </p>
             </div>
           </div>
@@ -1058,9 +893,9 @@ export function ComplianceDashboard() {
               <Volume2 size={16} className="text-red-600 dark:text-red-400" strokeWidth={1.5} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Noise Compliance</h3>
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Noise Compliance (Estimated)</h3>
               <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
-                Estimated noise distribution across all flights -- thresholds at 65, 75, and 85 dB
+                Estimated noise distribution across all flights — thresholds at 65, 75, and 85 dB
               </p>
             </div>
           </div>
@@ -1070,7 +905,7 @@ export function ComplianceDashboard() {
           {/* Histogram */}
           <div className="lg:col-span-2">
             <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-3">
-              Noise Level Distribution
+              Est. Noise Level Distribution
             </div>
             <div className="h-56">
               <Bar data={noiseHistData} options={noiseHistOptions} />
@@ -1080,11 +915,11 @@ export function ComplianceDashboard() {
           {/* Band percentages */}
           <div>
             <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-3">
-              Flights by Noise Band
+              Flights by Est. Noise Band
             </div>
             <div className="space-y-1.5">
               {noiseBandPcts.map((b) => {
-                const isHigh = parseFloat(b.pct) > 0 && b.label.includes('85') || b.label.includes('90');
+                const isHigh = parseFloat(b.pct) > 0 && (b.label.includes('85') || b.label.includes('90'));
                 return (
                   <div
                     key={b.label}

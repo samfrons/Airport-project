@@ -1,3 +1,9 @@
-export { biodiversityImpactZones, generateZoneCircle, getImpactZoneAtDistance, KJPX_COORDS } from './impactZones';
-export { speciesImpacts, researchFindings, habitatAreas, ecologicalIndicators } from './speciesImpacts';
-export { biodiversityThresholds } from './thresholds';
+/**
+ * Biodiversity Data - Disabled Stub Index
+ *
+ * The biodiversity feature has been removed from the dashboard.
+ */
+
+export * from './thresholds';
+export * from './impactZones';
+export * from './speciesImpacts';

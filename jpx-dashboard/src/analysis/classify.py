@@ -162,9 +162,9 @@ def utc_to_eastern(iso_utc: str) -> datetime:
 def is_curfew_hour(hour_et: int) -> bool:
     """
     Check if an Eastern Time hour falls in the voluntary curfew window.
-    Curfew: 8:00 PM (20:00) to 8:00 AM (08:00) Eastern.
+    Curfew: 9:00 PM (21:00) to 7:00 AM (07:00) Eastern.
     """
-    return hour_et >= 20 or hour_et < 8
+    return hour_et >= 21 or hour_et < 7
 
 
 def is_weekend(date_str: str) -> bool:

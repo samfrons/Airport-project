@@ -32,11 +32,12 @@ const categoryLabels: Record<string, string> = {
   unknown: '—',
 };
 
+// Note: Colors match AIRCRAFT_COLORS from lib/constants/colors.ts
 const categoryDotColors: Record<string, string> = {
-  helicopter: 'bg-red-400',
-  jet: 'bg-blue-400',
-  fixed_wing: 'bg-emerald-400',
-  unknown: 'bg-zinc-500',
+  helicopter: 'bg-orange-500',  // orange-500: #f97316
+  jet: 'bg-blue-500',           // blue-500: #3b82f6
+  fixed_wing: 'bg-teal-500',    // teal-500: #14b8a6
+  unknown: 'bg-zinc-500',       // zinc-500: #71717a
 };
 
 const severityLabels: Record<string, string> = {

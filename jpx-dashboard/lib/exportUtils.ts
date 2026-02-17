@@ -30,7 +30,11 @@ function toCsvRow(values: (string | number | boolean | null | undefined)[]): str
 
 // ─── Flight Export ──────────────────────────────────────────────────────────
 
-export function exportFlightsCsv(flights: Flight[], dateRange?: { start: string; end: string }) {
+export function exportFlightsCsv(
+  flights: Flight[],
+  dateRange?: { start: string; end: string },
+  filenameSuffix?: string,
+) {
   const header = [
     'Date', 'Hour (ET)', 'Ident', 'Registration', 'Operator',
     'Aircraft Type', 'Category', 'Direction',
@@ -56,8 +60,9 @@ export function exportFlightsCsv(flights: Flight[], dateRange?: { start: string;
   ]));
 
   const csv = [toCsvRow(header), ...rows].join('\n');
-  const suffix = dateRange ? `_${dateRange.start}_${dateRange.end}` : '';
-  downloadCsv(csv, `jpx_flights${suffix}.csv`);
+  const dateSuffix = dateRange ? `_${dateRange.start}_${dateRange.end}` : '';
+  const typeSuffix = filenameSuffix ? `_${filenameSuffix}` : '';
+  downloadCsv(csv, `jpx_flights${typeSuffix}${dateSuffix}.csv`);
 }
 
 // ─── Violations Export ──────────────────────────────────────────────────────

@@ -13,6 +13,7 @@ import {
 import { evaluateFlight } from '@/lib/biodiversityViolationEngine';
 import { getImpactSeverityColor } from '@/types/biodiversity';
 import { NoiseConfidenceBadge, NoiseSourceIndicator } from './NoiseConfidenceBadge';
+import { formatEstimatedNoise, NOISE_ESTIMATE_DISCLAIMER } from './EstimatedNoiseDisplay';
 import type { Flight } from '@/types/flight';
 
 // Extended Flight type with EASA noise profile data
@@ -232,10 +233,10 @@ export function FlightDetailsSidebar({ flight, onClose }: FlightDetailsSidebarPr
                     />
                   </div>
                   <span
-                    className="text-[10px] font-medium w-12 text-right tabular-nums"
+                    className="text-[10px] font-medium w-14 text-right tabular-nums"
                     style={{ color: getDbLevelColor(db) }}
                   >
-                    {Math.round(db)} dB
+                    {formatEstimatedNoise(Math.round(db), 'short')}
                   </span>
                 </div>
               );
@@ -244,7 +245,7 @@ export function FlightDetailsSidebar({ flight, onClose }: FlightDetailsSidebarPr
           <div className="mt-2 flex justify-between text-[10px]">
             <span className="text-zinc-500 dark:text-zinc-600">Takeoff</span>
             <span className="text-zinc-600 dark:text-zinc-400">
-              {profile.takeoffDb} dB @ 1,000'
+              {formatEstimatedNoise(profile.takeoffDb)} @ 1,000'
               {dataSource === 'EASA_CERTIFIED' && (
                 <span className="ml-1 text-green-500 text-[8px]">EASA</span>
               )}
@@ -253,7 +254,7 @@ export function FlightDetailsSidebar({ flight, onClose }: FlightDetailsSidebarPr
           <div className="flex justify-between text-[10px]">
             <span className="text-zinc-500 dark:text-zinc-600">Approach</span>
             <span className="text-zinc-600 dark:text-zinc-400">
-              {profile.approachDb} dB @ 1,000'
+              {formatEstimatedNoise(profile.approachDb)} @ 1,000'
               {dataSource === 'EASA_CERTIFIED' && (
                 <span className="ml-1 text-green-500 text-[8px]">EASA</span>
               )}
@@ -406,10 +407,13 @@ export function FlightDetailsSidebar({ flight, onClose }: FlightDetailsSidebarPr
         )}
 
         {/* Data Source Footer */}
-        <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
           <div className="flex items-center justify-between text-[9px] text-zinc-400 dark:text-zinc-600">
             <span>Noise Data Source</span>
             <NoiseSourceIndicator source={dataSource} confidence={confidence} />
+          </div>
+          <div className="text-[8px] text-zinc-400 dark:text-zinc-600 leading-relaxed">
+            {NOISE_ESTIMATE_DISCLAIMER}
           </div>
         </div>
       </div>

@@ -314,7 +314,7 @@ export function OperatorRankingTable({
       {/* Legend */}
       <div className="p-3 border-t border-gray-700 text-xs text-gray-400 flex gap-4">
         <span>Loud: &gt;85 dB at ground</span>
-        <span>Curfew: 8 PM - 8 AM violations</span>
+        <span>Curfew: 9 PM – 7 AM violations</span>
         <span>Score: 0-100 (higher = more impact)</span>
       </div>
     </div>

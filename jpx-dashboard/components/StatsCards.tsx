@@ -1,11 +1,16 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { PlaneLanding, PlaneTakeoff, Gauge, ShieldAlert, Volume2 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
+import { DetailPanel } from './DetailPanel';
+import { CURFEW } from '@/lib/constants/curfew';
+
+type PanelType = 'all' | 'helicopter' | 'curfew' | 'noise' | null;
 
 export function StatsCards() {
-  const { flights } = useFlightStore();
+  const { flights, dateRange } = useFlightStore();
+  const [activePanel, setActivePanel] = useState<PanelType>(null);
 
   const totalFlights = flights.length;
   const arrivals = flights.filter(f => f.direction === 'arrival').length;
@@ -16,11 +21,18 @@ export function StatsCards() {
 
   // Curfew violations: flights during 9 PM - 7 AM (hours 21-6)
   const curfewViolations = useMemo(() => {
-    return flights.filter(f => {
-      const hour = f.operation_hour_et;
-      return hour >= 21 || hour < 7;
-    }).length;
+    return flights.filter(f => CURFEW.isCurfewHour(f.operation_hour_et)).length;
   }, [flights]);
+
+  // Filtered flight lists for detail panels
+  const helicopterFlights = useMemo(() =>
+    flights.filter(f => f.aircraft_category === 'helicopter'), [flights]);
+
+  const curfewFlights = useMemo(() =>
+    flights.filter(f => CURFEW.isCurfewHour(f.operation_hour_et)), [flights]);
+
+  const noiseFlights = useMemo(() =>
+    flights.filter(f => f.aircraft_category === 'helicopter' || f.aircraft_category === 'jet'), [flights]);
 
   // Noise Index: helicopters + Stage 2 jets (louder aircraft)
   // For now, counting all helicopters as inherently noisy
@@ -29,9 +41,13 @@ export function StatsCards() {
   }, [helicopters]);
 
   return (
+    <>
     <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-zinc-200 dark:bg-zinc-800">
       {/* Total Operations */}
-      <div className="bg-white dark:bg-zinc-900 p-6">
+      <button
+        onClick={() => setActivePanel('all')}
+        className="bg-white dark:bg-zinc-900 p-6 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer"
+      >
         <div className="flex items-start justify-between">
           <div>
             <p className="overline">Total Operations</p>
@@ -51,32 +67,36 @@ export function StatsCards() {
             <span className="text-xs text-zinc-500 dark:text-zinc-600">dep</span>
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Helicopter Operations */}
-      <div className={`bg-white dark:bg-zinc-900 p-6 ${helicopters > 0 ? 'border-l-2 border-l-red-500' : ''}`}>
+      <button
+        onClick={() => setActivePanel('helicopter')}
+        className={`bg-white dark:bg-zinc-900 p-6 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer ${helicopters > 0 ? 'border-l-2 border-l-orange-500' : ''}`}
+      >
         <div className="flex items-start justify-between">
           <div>
             <p className="overline">Helicopter Operations</p>
             <p className="stat-number mt-2">{helicopters}</p>
           </div>
         </div>
-        <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800 flex gap-5">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400" />
-            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 tabular-nums">{jets}</span>
-            <span className="text-xs text-zinc-500 dark:text-zinc-600">jet</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-emerald-500 dark:bg-emerald-400" />
-            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 tabular-nums">{fixedWing}</span>
-            <span className="text-xs text-zinc-500 dark:text-zinc-600">prop</span>
+        <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-baseline justify-between">
+            <span className="text-xs text-zinc-500 dark:text-zinc-600">of all operations</span>
+            <span className={`text-sm font-semibold tabular-nums ${
+              helicopters > 0 ? 'text-orange-500 dark:text-orange-400' : 'text-zinc-500'
+            }`}>
+              {totalFlights > 0 ? Math.round((helicopters / totalFlights) * 100) : 0}%
+            </span>
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Curfew Violations */}
-      <div className={`bg-white dark:bg-zinc-900 p-6 ${curfewViolations > 0 ? 'border-l-2 border-l-amber-500' : ''}`}>
+      <button
+        onClick={() => setActivePanel('curfew')}
+        className={`bg-white dark:bg-zinc-900 p-6 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer ${curfewViolations > 0 ? 'border-l-2 border-l-amber-500' : ''}`}
+      >
         <div className="flex items-start justify-between">
           <div>
             <p className="overline">Curfew Violations</p>
@@ -90,7 +110,7 @@ export function StatsCards() {
         </div>
         <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-zinc-500 dark:text-zinc-600">9 PM – 7 AM ET</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-600">{CURFEW.DISPLAY_STRING}</span>
             <span className={`text-sm font-semibold tabular-nums ${
               curfewViolations > 0 ? 'text-amber-500 dark:text-amber-400' : 'text-emerald-500 dark:text-emerald-400'
             }`}>
@@ -98,10 +118,13 @@ export function StatsCards() {
             </span>
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Noise Index */}
-      <div className={`bg-white dark:bg-zinc-900 p-6 ${noiseIndex > 0 ? 'border-l-2 border-l-orange-500' : ''}`}>
+      <button
+        onClick={() => setActivePanel('noise')}
+        className={`bg-white dark:bg-zinc-900 p-6 text-left hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors cursor-pointer ${noiseIndex > 0 ? 'border-l-2 border-l-orange-500' : ''}`}
+      >
         <div className="flex items-start justify-between">
           <div>
             <p className="overline">Noise Index</p>
@@ -123,7 +146,46 @@ export function StatsCards() {
             </span>
           </div>
         </div>
-      </div>
+      </button>
     </div>
+
+    {/* Detail Panels */}
+    <DetailPanel
+      isOpen={activePanel === 'all'}
+      onClose={() => setActivePanel(null)}
+      title="All Operations"
+      subtitle={`${totalFlights} total flights · ${arrivals} arrivals · ${departures} departures`}
+      flights={flights}
+      dateRange={dateRange}
+      type="all"
+    />
+    <DetailPanel
+      isOpen={activePanel === 'helicopter'}
+      onClose={() => setActivePanel(null)}
+      title="Helicopter Operations"
+      subtitle={`${helicopters} helicopter flights · ${totalFlights > 0 ? Math.round((helicopters / totalFlights) * 100) : 0}% of total`}
+      flights={helicopterFlights}
+      dateRange={dateRange}
+      type="helicopter"
+    />
+    <DetailPanel
+      isOpen={activePanel === 'curfew'}
+      onClose={() => setActivePanel(null)}
+      title="Curfew Violations"
+      subtitle={`${curfewViolations} flights during ${CURFEW.DISPLAY_STRING}`}
+      flights={curfewFlights}
+      dateRange={dateRange}
+      type="curfew"
+    />
+    <DetailPanel
+      isOpen={activePanel === 'noise'}
+      onClose={() => setActivePanel(null)}
+      title="High-Noise Operations"
+      subtitle={`${noiseFlights.length} helicopters and jets`}
+      flights={noiseFlights}
+      dateRange={dateRange}
+      type="noise"
+    />
+    </>
   );
 }

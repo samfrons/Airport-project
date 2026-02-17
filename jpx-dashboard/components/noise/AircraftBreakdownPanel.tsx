@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Plane } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plane, Info } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
 import { getDbLevelColor } from './NoiseCalculator';
+import { formatEstimatedNoise, NOISE_ESTIMATE_DISCLAIMER } from './EstimatedNoiseDisplay';
 
 interface AircraftTypeStats {
   aircraftType: string;
@@ -140,7 +141,7 @@ export function AircraftBreakdownPanel() {
                   className="text-[11px] font-medium tabular-nums"
                   style={{ color: getDbLevelColor(cat.avgDb) }}
                 >
-                  {Math.round(cat.avgDb)} dB
+                  {formatEstimatedNoise(Math.round(cat.avgDb), 'short')}
                 </span>
               </div>
             </button>
@@ -168,10 +169,10 @@ export function AircraftBreakdownPanel() {
                         {type.count}
                       </span>
                       <span
-                        className="text-[10px] font-medium w-12 text-right tabular-nums"
+                        className="text-[10px] font-medium w-14 text-right tabular-nums"
                         style={{ color: getDbLevelColor(type.avgDb) }}
                       >
-                        {Math.round(type.avgDb)} dB
+                        {formatEstimatedNoise(Math.round(type.avgDb), 'short')}
                       </span>
                     </div>
                   );
@@ -186,6 +187,14 @@ export function AircraftBreakdownPanel() {
       <div className="mt-3 pt-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-between text-[10px]">
         <span className="text-zinc-500 dark:text-zinc-600">Total Operations</span>
         <span className="text-zinc-600 dark:text-zinc-400 tabular-nums">{flights.length}</span>
+      </div>
+
+      {/* Noise Disclaimer */}
+      <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-start gap-1.5">
+        <Info size={10} className="text-zinc-400 mt-0.5 flex-shrink-0" />
+        <span className="text-[8px] text-zinc-400 dark:text-zinc-600 leading-relaxed">
+          {NOISE_ESTIMATE_DISCLAIMER}
+        </span>
       </div>
     </div>
   );

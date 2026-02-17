@@ -154,7 +154,7 @@ const DEFAULT_RULES: AlertRule[] = [
   {
     id: 'rule-curfew-default',
     name: 'Curfew Period Flight',
-    description: 'Alerts on any flight operating during the voluntary curfew period (8 PM - 8 AM ET).',
+    description: 'Alerts on any flight operating during the voluntary curfew period (9 PM – 7 AM ET).',
     triggerType: 'curfew_violation',
     params: {},
     priority: 'warning',
@@ -936,7 +936,7 @@ function RuleFormModal({
             <div className="px-3 py-2.5 bg-zinc-100/40 dark:bg-zinc-800/40 border border-zinc-300/40 dark:border-zinc-700/40">
               <p className="text-[10px] text-zinc-600 dark:text-zinc-500 leading-relaxed">
                 No additional parameters needed. This rule triggers on any flight operating during
-                the voluntary curfew period (8 PM - 8 AM ET).
+                the voluntary curfew period (9 PM – 7 AM ET).
               </p>
             </div>
           )}

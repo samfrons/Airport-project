@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,19 +15,18 @@ import {
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import {
-  CalendarDays,
   Volume2,
   TreePine,
   TrendingUp,
   BarChart3,
   Grid3X3,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 import { evaluateFlight } from '@/lib/biodiversityViolationEngine';
 import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
 import { getImpactSeverityColor } from '@/types/biodiversity';
+import { formatEstimatedNoise } from '@/components/noise/EstimatedNoiseDisplay';
+import { AIRCRAFT_COLORS } from '@/lib/constants/colors';
 import type { ImpactSeverity } from '@/types/biodiversity';
 import type { Flight } from '@/types/flight';
 import type { BiodiversityThreshold, BiodiversityViolation } from '@/types/biodiversityThresholds';
@@ -190,15 +189,6 @@ function buildHourCells(
   return { cells, dates };
 }
 
-// ─── Preset Ranges ──────────────────────────────────────────────────────────
-
-const presets = [
-  { label: '7d', days: 7 },
-  { label: '14d', days: 14 },
-  { label: '30d', days: 30 },
-  { label: '90d', days: 90 },
-];
-
 // ─── Chart styling ──────────────────────────────────────────────────────────
 
 const chartFont = { family: 'Inter, system-ui, sans-serif' };
@@ -250,41 +240,9 @@ function MiniStat({
 export function NoiseEnvironmentTimeline() {
   const flights = useFlightStore((s) => s.flights);
   const thresholds = useFlightStore((s) => s.thresholds);
-  const globalDateRange = useFlightStore((s) => s.dateRange);
+  const dateRange = useFlightStore((s) => s.dateRange);
 
   const [viewMode, setViewMode] = useState<ViewMode>('trends');
-  const [localStart, setLocalStart] = useState(globalDateRange.start);
-  const [localEnd, setLocalEnd] = useState(globalDateRange.end);
-
-  // Range used for computation
-  const dateRange = useMemo(
-    () => ({ start: localStart, end: localEnd }),
-    [localStart, localEnd],
-  );
-
-  // Preset range setter
-  const applyPreset = useCallback((days: number) => {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - days);
-    setLocalStart(start.toISOString().split('T')[0]);
-    setLocalEnd(end.toISOString().split('T')[0]);
-  }, []);
-
-  // Shift range forward/backward
-  const shiftRange = useCallback(
-    (direction: 'prev' | 'next') => {
-      const s = new Date(localStart + 'T12:00:00');
-      const e = new Date(localEnd + 'T12:00:00');
-      const span = e.getTime() - s.getTime();
-      const shift = direction === 'next' ? span : -span;
-      const ns = new Date(s.getTime() + shift);
-      const ne = new Date(e.getTime() + shift);
-      setLocalStart(ns.toISOString().split('T')[0]);
-      setLocalEnd(ne.toISOString().split('T')[0]);
-    },
-    [localStart, localEnd],
-  );
 
   // ─── Computed Data ──────────────────────────────────────────────────
 
@@ -326,19 +284,19 @@ export function NoiseEnvironmentTimeline() {
         {
           label: 'Helicopter',
           data: dayBuckets.map((d) => d.helicopters),
-          backgroundColor: 'rgba(239, 68, 68, 0.7)',
+          backgroundColor: AIRCRAFT_COLORS.helicopter.primary + 'b3', // 70% opacity
           stack: 'ops',
         },
         {
           label: 'Jet',
           data: dayBuckets.map((d) => d.jets),
-          backgroundColor: 'rgba(59, 130, 246, 0.7)',
+          backgroundColor: AIRCRAFT_COLORS.jet.primary + 'b3', // 70% opacity
           stack: 'ops',
         },
         {
           label: 'Fixed Wing',
           data: dayBuckets.map((d) => d.fixedWing),
-          backgroundColor: 'rgba(16, 185, 129, 0.7)',
+          backgroundColor: AIRCRAFT_COLORS.fixed_wing.primary + 'b3', // 70% opacity
           stack: 'ops',
         },
       ],
@@ -351,7 +309,7 @@ export function NoiseEnvironmentTimeline() {
       labels,
       datasets: [
         {
-          label: 'Peak dB',
+          label: 'Peak (Est.)',
           data: dayBuckets.map((d) => d.peakNoise || null),
           borderColor: 'rgba(239, 68, 68, 0.8)',
           backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -362,7 +320,7 @@ export function NoiseEnvironmentTimeline() {
           borderWidth: 1.5,
         },
         {
-          label: 'Avg dB',
+          label: 'Avg (Est.)',
           data: dayBuckets.map((d) => d.avgNoise || null),
           borderColor: 'rgba(59, 130, 246, 0.8)',
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -618,57 +576,9 @@ export function NoiseEnvironmentTimeline() {
         </div>
       </div>
 
-      {/* ─── Date Range Picker ──────────────────────────────────── */}
-      <div className="px-5 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60 flex flex-wrap items-center gap-3">
-        {/* Navigation arrows */}
-        <button
-          onClick={() => shiftRange('prev')}
-          className="p-1.5 bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
-        >
-          <ChevronLeft size={14} />
-        </button>
-        <button
-          onClick={() => shiftRange('next')}
-          className="p-1.5 bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
-        >
-          <ChevronRight size={14} />
-        </button>
-
-        {/* Presets */}
-        <div className="flex bg-zinc-100/60 dark:bg-zinc-950/60 p-0.5">
-          {presets.map((p) => (
-            <button
-              key={p.label}
-              onClick={() => applyPreset(p.days)}
-              className="px-3 py-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800" />
-
-        {/* Date inputs */}
-        <div className="flex items-center gap-2">
-          <CalendarDays size={12} className="text-zinc-500 dark:text-zinc-600" />
-          <input
-            type="date"
-            value={localStart}
-            onChange={(e) => setLocalStart(e.target.value)}
-            className="px-2 py-1 bg-zinc-100 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-medium focus:outline-none focus:border-purple-600 transition-colors"
-          />
-          <span className="text-zinc-500 dark:text-zinc-600 text-[10px]">&ndash;</span>
-          <input
-            type="date"
-            value={localEnd}
-            onChange={(e) => setLocalEnd(e.target.value)}
-            className="px-2 py-1 bg-zinc-100 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-medium focus:outline-none focus:border-purple-600 transition-colors"
-          />
-        </div>
-
-        {/* Range summary */}
-        <span className="text-[10px] text-zinc-500 dark:text-zinc-600 ml-auto">
+      {/* ─── Date Range Summary ──────────────────────────────────── */}
+      <div className="px-5 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60 flex items-center">
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-600">
           {dayBuckets.length} days · {aggStats.totalOps} operations
         </span>
       </div>
@@ -676,8 +586,8 @@ export function NoiseEnvironmentTimeline() {
       {/* ─── Aggregate Stats ────────────────────────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-zinc-200/60 dark:bg-zinc-800/60">
         <MiniStat label="Total Ops" value={aggStats.totalOps} />
-        <MiniStat label="Avg Noise" value={`${aggStats.avgNoise} dB`} color="#3b82f6" />
-        <MiniStat label="Peak Noise" value={`${aggStats.peakNoise} dB`} color="#ef4444" />
+        <MiniStat label="Avg Noise (Est.)" value={formatEstimatedNoise(aggStats.avgNoise, 'short')} color="#3b82f6" />
+        <MiniStat label="Peak Noise (Est.)" value={formatEstimatedNoise(aggStats.peakNoise, 'short')} color="#ef4444" />
         <MiniStat
           label="Violations"
           value={aggStats.totalViolations}
@@ -722,7 +632,7 @@ export function NoiseEnvironmentTimeline() {
               <div className="flex items-center gap-2 mb-3">
                 <Volume2 size={12} className="text-zinc-500 dark:text-zinc-500" />
                 <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                  Daily Noise Levels (dB)
+                  Daily Noise Levels (Est. dB)
                 </h4>
               </div>
               <div className="h-48">
@@ -898,7 +808,7 @@ export function NoiseEnvironmentTimeline() {
       {/* ─── Footer ─────────────────────────────────────────────── */}
       <div className="px-5 py-3 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between">
         <div className="text-[10px] text-zinc-500 dark:text-zinc-600">
-          Showing {formatShortDate(localStart)} – {formatShortDate(localEnd)}
+          Showing {formatShortDate(dateRange.start)} – {formatShortDate(dateRange.end)}
         </div>
         <div className="flex items-center gap-3 text-[9px] text-zinc-500 dark:text-zinc-600">
           <span>Noise data derived from FAA noise certification profiles</span>

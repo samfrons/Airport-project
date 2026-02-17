@@ -120,7 +120,7 @@ export const aircraftNoiseProfiles: Record<string, AircraftNoiseProfile> = {
   },
   PC12: {
     aircraftType: 'PC12',
-    category: 'jet',
+    category: 'fixed_wing', // Pilatus PC-12 is a turboprop, not a jet
     noiseCategory: 'moderate',
     takeoffDb: 78,
     approachDb: 75,

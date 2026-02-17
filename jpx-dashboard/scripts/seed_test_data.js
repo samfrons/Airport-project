@@ -74,8 +74,8 @@ const FLEET = [
   { type: 'C525', category: 'jet', registrations: ['N525CJ', 'N526MA'], operator: null, operatorIata: null, weight: 2 },
   // Embraer Phenom 300
   { type: 'E55P', category: 'jet', registrations: ['N300EP', 'N301PH'], operator: 'Flexjet', operatorIata: 'LXJ', weight: 3 },
-  // Pilatus PC-12 (turboprop, typed as jet in profiles)
-  { type: 'PC12', category: 'jet', registrations: ['N12PC', 'N912PL', 'N812PT'], operator: 'Surf Air', operatorIata: 'URF', weight: 4 },
+  // Pilatus PC-12 (turboprop, NOT a jet)
+  { type: 'PC12', category: 'fixed_wing', registrations: ['N12PC', 'N912PL', 'N812PT'], operator: 'Surf Air', operatorIata: 'URF', weight: 4 },
   // Learjet 45
   { type: 'LJ45', category: 'jet', registrations: ['N45LJ', 'N145LR'], operator: null, operatorIata: null, weight: 1 },
   // Dassault Falcon 50
@@ -200,7 +200,8 @@ function isWeekend(dateStr) {
 }
 
 function isCurfew(hour) {
-  return (hour >= 20 || hour <= 7) ? 1 : 0;
+  // Curfew: 9 PM (21) through 6:59 AM (< 7)
+  return (hour >= 21 || hour < 7) ? 1 : 0;
 }
 
 /** Build an ISO 8601 timestamp for a given date + ET hour */

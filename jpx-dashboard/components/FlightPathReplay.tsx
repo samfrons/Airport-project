@@ -32,9 +32,11 @@ type PlaybackSpeed = (typeof SPEED_OPTIONS)[number];
 /** Interval in ms for a single "minute" tick at 1x speed. */
 const BASE_TICK_MS = 100;
 
-/** Curfew: 8 PM (20) through 7 AM (< 8). */
+import { CURFEW } from '@/lib/constants/curfew';
+
+/** Curfew: 9 PM (21) through 6:59 AM (< 7). */
 function isCurfewHour(hour: number): boolean {
-  return hour >= 20 || hour < 8;
+  return CURFEW.isCurfewHour(hour);
 }
 
 /** Category color mapping (matches design spec). */
@@ -477,7 +479,7 @@ export function FlightPathReplay() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-0.5 bg-amber-500/30" />
-              <span className="text-[9px] text-zinc-600">Curfew 8p&ndash;8a</span>
+              <span className="text-[9px] text-zinc-600">Curfew 9p–7a</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-blue-500/30" />
