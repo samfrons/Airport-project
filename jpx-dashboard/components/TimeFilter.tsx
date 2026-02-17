@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
-import { CalendarDays, Clock } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { CalendarDays, Clock, RefreshCw } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 
 const quickRanges = [
@@ -42,8 +42,9 @@ function getDaysAgo(days: number) {
 }
 
 export function TimeFilter() {
-  const { dateRange, setDateRange, fetchFlights, fetchSummary, lastUpdated } = useFlightStore();
+  const { dateRange, setDateRange, fetchFlights, fetchSummary, lastUpdated, loading } = useFlightStore();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const [dateError, setDateError] = useState<string | null>(null);
 
   // Auto-refresh when date range changes (debounced)
   const triggerRefresh = useCallback(() => {
@@ -65,13 +66,26 @@ export function TimeFilter() {
     };
   }, []);
 
+  // Check if a quick range button matches the current date range
+  const isActiveRange = (getRange: () => { start: string; end: string }) => {
+    const range = getRange();
+    return range.start === dateRange.start && range.end === dateRange.end;
+  };
+
   const handleDateChange = (field: 'start' | 'end', value: string) => {
-    setDateRange({ ...dateRange, [field]: value });
+    const newRange = { ...dateRange, [field]: value };
+    if (newRange.end < newRange.start) {
+      setDateError('End date must be after start date');
+      return;
+    }
+    setDateError(null);
+    setDateRange(newRange);
     triggerRefresh();
   };
 
   const setQuickRange = (getRange: () => { start: string; end: string }) => {
     const range = getRange();
+    setDateError(null);
     setDateRange(range);
     triggerRefresh();
   };
@@ -97,7 +111,11 @@ export function TimeFilter() {
           <button
             key={range.label}
             onClick={() => setQuickRange(range.getRange)}
-            className="px-3.5 py-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className={`px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              isActiveRange(range.getRange)
+                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+            }`}
           >
             {range.label}
           </button>
@@ -122,10 +140,23 @@ export function TimeFilter() {
           onChange={e => handleDateChange('end', e.target.value)}
           className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
         />
+        {dateError && (
+          <span className="text-red-600 text-[10px] font-medium">{dateError}</span>
+        )}
       </div>
 
-      {/* Last Updated Timestamp */}
-      {formatLastUpdated() && (
+      {/* Loading Indicator / Last Updated Timestamp */}
+      {loading ? (
+        <>
+          <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800 hidden sm:block" />
+          <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-500">
+            <RefreshCw size={12} className="animate-spin" />
+            <span className="text-[10px] uppercase tracking-wide">
+              Loading...
+            </span>
+          </div>
+        </>
+      ) : formatLastUpdated() && (
         <>
           <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800 hidden sm:block" />
           <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-600">

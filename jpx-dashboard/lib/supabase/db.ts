@@ -59,12 +59,15 @@ export async function getFlights(options: {
 }): Promise<Flight[]> {
   const supabase = await createClient();
 
+  // Note: Supabase has a default 1000-row limit per query.
+  // We set a higher limit to ensure date filters return complete results.
   let query = supabase
     .from('flights')
-    .select('*')
+    .select('*', { count: 'exact' })
     .order('operation_date', { ascending: false })
     .order('actual_on', { ascending: false, nullsFirst: false })
-    .order('actual_off', { ascending: false, nullsFirst: false });
+    .order('actual_off', { ascending: false, nullsFirst: false })
+    .limit(50000);
 
   if (options.start) {
     query = query.gte('operation_date', options.start);
@@ -79,7 +82,11 @@ export async function getFlights(options: {
     query = query.eq('direction', options.direction);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
+
+  if (count !== null && count !== undefined) {
+    console.log(`[getFlights] Returned ${data?.length || 0} of ${count} total flights for date range`);
+  }
 
   if (error) {
     throw new Error(`Failed to fetch flights: ${error.message}`);
