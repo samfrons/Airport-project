@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { CalendarDays, Clock, RefreshCw } from 'lucide-react';
+import { CalendarDays, ChevronDown, Clock, RefreshCw, Check } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 
 const quickRanges = [
   { label: 'This Month', getRange: () => getMonthRange(0) },
   { label: 'Last Month', getRange: () => getMonthRange(-1) },
-  { label: '90 Days', getRange: () => getDaysAgo(90) },
+  { label: 'Last 90 Days', getRange: () => getDaysAgo(90) },
   { label: 'This Year', getRange: () => getYearRange(0) },
   { label: 'Last Year', getRange: () => getYearRange(-1) },
 ];
@@ -44,7 +44,10 @@ function getDaysAgo(days: number) {
 export function TimeFilter() {
   const { dateRange, setDateRange, fetchFlights, fetchSummary, lastUpdated, loading } = useFlightStore();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [dateError, setDateError] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCustom, setIsCustom] = useState(false);
 
   // Auto-refresh when date range changes (debounced)
   const triggerRefresh = useCallback(() => {
@@ -66,11 +69,30 @@ export function TimeFilter() {
     };
   }, []);
 
-  // Check if a quick range button matches the current date range
-  const isActiveRange = (getRange: () => { start: string; end: string }) => {
-    const range = getRange();
-    return range.start === dateRange.start && range.end === dateRange.end;
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Check if a quick range matches the current date range
+  const getActiveRangeLabel = (): string | null => {
+    for (const range of quickRanges) {
+      const r = range.getRange();
+      if (r.start === dateRange.start && r.end === dateRange.end) {
+        return range.label;
+      }
+    }
+    return null;
   };
+
+  const activeLabel = getActiveRangeLabel();
+  const displayLabel = isCustom || !activeLabel ? 'Custom Range' : activeLabel;
 
   const handleDateChange = (field: 'start' | 'end', value: string) => {
     const newRange = { ...dateRange, [field]: value };
@@ -87,7 +109,14 @@ export function TimeFilter() {
     const range = getRange();
     setDateError(null);
     setDateRange(range);
+    setIsCustom(false);
+    setIsOpen(false);
     triggerRefresh();
+  };
+
+  const selectCustomRange = () => {
+    setIsCustom(true);
+    setIsOpen(false);
   };
 
   // Format last updated timestamp
@@ -105,45 +134,85 @@ export function TimeFilter() {
 
   return (
     <div className="flex flex-wrap items-center gap-4">
-      {/* Quick Range Buttons */}
-      <div className="flex flex-wrap bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-0.5">
-        {quickRanges.map(range => (
-          <button
-            key={range.label}
-            onClick={() => setQuickRange(range.getRange)}
-            className={`px-3.5 py-1.5 text-xs font-medium transition-colors ${
-              isActiveRange(range.getRange)
-                ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
-                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-            }`}
-          >
-            {range.label}
-          </button>
-        ))}
-      </div>
+      {/* Dropdown */}
+      <div ref={dropdownRef} className="relative">
+        {/* Dropdown Trigger */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors min-w-[160px] justify-between"
+        >
+          <span>{displayLabel}</span>
+          <ChevronDown
+            size={14}
+            className={`text-zinc-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
 
-      <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800 hidden sm:block" />
-
-      {/* Custom Date Range */}
-      <div className="flex items-center gap-2">
-        <CalendarDays size={14} className="text-zinc-500 dark:text-zinc-600" strokeWidth={1.5} />
-        <input
-          type="date"
-          value={dateRange.start}
-          onChange={e => handleDateChange('start', e.target.value)}
-          className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
-        />
-        <span className="text-zinc-500 dark:text-zinc-600 text-xs">&ndash;</span>
-        <input
-          type="date"
-          value={dateRange.end}
-          onChange={e => handleDateChange('end', e.target.value)}
-          className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
-        />
-        {dateError && (
-          <span className="text-red-600 text-[10px] font-medium">{dateError}</span>
+        {/* Dropdown Menu */}
+        {isOpen && (
+          <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-lg z-50">
+            {quickRanges.map(range => {
+              const r = range.getRange();
+              const isActive = r.start === dateRange.start && r.end === dateRange.end && !isCustom;
+              return (
+                <button
+                  key={range.label}
+                  onClick={() => setQuickRange(range.getRange)}
+                  className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors ${
+                    isActive
+                      ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <span className="w-4">
+                    {isActive && <Check size={14} className="text-blue-600" />}
+                  </span>
+                  {range.label}
+                </button>
+              );
+            })}
+            {/* Divider */}
+            <div className="border-t border-zinc-200 dark:border-zinc-700 my-1" />
+            {/* Custom Range Option */}
+            <button
+              onClick={selectCustomRange}
+              className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors ${
+                isCustom
+                  ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800'
+              }`}
+            >
+              <span className="w-4">
+                {isCustom && <Check size={14} className="text-blue-600" />}
+              </span>
+              Custom Range...
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Custom Date Range (shown only when custom is selected) */}
+      {isCustom && (
+        <div className="flex items-center gap-2">
+          <CalendarDays size={14} className="text-zinc-500 dark:text-zinc-600" strokeWidth={1.5} />
+          <input
+            type="date"
+            value={dateRange.start}
+            onChange={e => handleDateChange('start', e.target.value)}
+            className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
+          />
+          <span className="text-zinc-500 dark:text-zinc-600 text-xs">&ndash;</span>
+          <input
+            type="date"
+            value={dateRange.end}
+            onChange={e => handleDateChange('end', e.target.value)}
+            className="px-3 py-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs font-medium focus:outline-none focus:border-blue-600 transition-colors"
+          />
+          {dateError && (
+            <span className="text-red-600 text-[10px] font-medium">{dateError}</span>
+          )}
+        </div>
+      )}
 
       {/* Loading Indicator / Last Updated Timestamp */}
       {loading ? (
