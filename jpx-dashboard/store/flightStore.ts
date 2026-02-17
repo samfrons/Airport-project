@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import type { Flight, DailySummary, Airport, MapViewMode, DateRange } from '@/types/flight';
-import type { NoiseLayerSettings, NoiseSensor, NoiseComplaint } from '@/types/noise';
+import type {
+  NoiseLayerSettings,
+  NoiseSensor,
+  NoiseComplaint,
+  Complaint,
+  ComplaintDailySummary,
+  ComplaintHotspot,
+  ComplaintStats,
+} from '@/types/noise';
 import type { BiodiversityThreshold } from '@/types/biodiversityThresholds';
 
 // Default noise layer settings
@@ -77,6 +85,13 @@ interface FlightState {
   noiseSensors: NoiseSensor[];
   noiseComplaints: NoiseComplaint[];
 
+  // Complaint data (PlaneNoise integration)
+  complaints: Complaint[];
+  complaintsSummary: ComplaintDailySummary[];
+  complaintHotspots: ComplaintHotspot[];
+  complaintStats: ComplaintStats | null;
+  complaintsLoading: boolean;
+
   // Thresholds (disabled stub - always empty)
   thresholds: BiodiversityThreshold[];
 
@@ -107,6 +122,12 @@ interface FlightState {
   setNoiseSensors: (sensors: NoiseSensor[]) => void;
   setNoiseComplaints: (complaints: NoiseComplaint[]) => void;
   loadNoiseData: () => Promise<void>;
+
+  // Complaint actions (PlaneNoise integration)
+  fetchComplaints: () => Promise<void>;
+  fetchComplaintsSummary: () => Promise<void>;
+  fetchComplaintHotspots: (minComplaints?: number) => Promise<void>;
+  setComplaints: (complaints: Complaint[]) => void;
 
 }
 
@@ -146,6 +167,13 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   noiseSettings: defaultNoiseSettings,
   noiseSensors: [],
   noiseComplaints: [],
+
+  // Complaint data (PlaneNoise integration)
+  complaints: [],
+  complaintsSummary: [],
+  complaintHotspots: [],
+  complaintStats: null,
+  complaintsLoading: false,
 
   // Thresholds (disabled stub - always empty)
   thresholds: [],
@@ -371,4 +399,79 @@ export const useFlightStore = create<FlightState>((set, get) => ({
       set({ flights: mockFlightsForNoise, airports: mockAirportsForNoise });
     }
   },
+
+  // ─── Complaint Actions (PlaneNoise Integration) ─────────────────────────────
+
+  fetchComplaints: async () => {
+    const { dateRange } = get();
+    set({ complaintsLoading: true, error: null });
+
+    try {
+      const params = new URLSearchParams({
+        start: dateRange.start,
+        end: dateRange.end,
+      });
+
+      const response = await fetch(`${API_BASE}/complaints?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch complaints');
+
+      const data = await response.json();
+      set({
+        complaints: data.complaints,
+      });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Unknown error' });
+    } finally {
+      set({ complaintsLoading: false });
+    }
+  },
+
+  fetchComplaintsSummary: async () => {
+    const { dateRange } = get();
+    set({ complaintsLoading: true, error: null });
+
+    try {
+      const params = new URLSearchParams({
+        start: dateRange.start,
+        end: dateRange.end,
+      });
+
+      const response = await fetch(`${API_BASE}/complaints/summary?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch complaint summary');
+
+      const data = await response.json();
+      set({
+        complaintsSummary: data.summary,
+        complaintStats: data.stats,
+      });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Unknown error' });
+    } finally {
+      set({ complaintsLoading: false });
+    }
+  },
+
+  fetchComplaintHotspots: async (minComplaints: number = 1) => {
+    set({ complaintsLoading: true, error: null });
+
+    try {
+      const params = new URLSearchParams({
+        min_complaints: minComplaints.toString(),
+      });
+
+      const response = await fetch(`${API_BASE}/complaints/hotspots?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch complaint hotspots');
+
+      const data = await response.json();
+      set({
+        complaintHotspots: data.hotspots,
+      });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : 'Unknown error' });
+    } finally {
+      set({ complaintsLoading: false });
+    }
+  },
+
+  setComplaints: (complaints) => set({ complaints }),
 }));

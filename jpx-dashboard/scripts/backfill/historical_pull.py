@@ -53,8 +53,8 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-# Airport code transition date
-KJPX_START_DATE = "2022-05-01"
+# Airport code transition date (KJPX data starts around May 20, 2022)
+KJPX_START_DATE = "2022-05-20"
 
 # State file for resume capability
 STATE_FILE = Path(__file__).parent / ".backfill_state.json"

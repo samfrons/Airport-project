@@ -100,9 +100,22 @@ class SupabaseWriter:
         # Prepare all records
         records = [self._prepare_flight_record(f) for f in flights]
 
+        # Deduplicate by fa_flight_id (keep first occurrence)
+        # This handles cases where a flight appears in both arrivals and departures
+        seen_ids = set()
+        unique_records = []
+        for record in records:
+            flight_id = record.get("fa_flight_id")
+            if flight_id and flight_id not in seen_ids:
+                seen_ids.add(flight_id)
+                unique_records.append(record)
+
+        if len(unique_records) < len(records):
+            log.debug(f"Deduplicated {len(records) - len(unique_records)} duplicate flight IDs")
+
         # Process in batches
-        for i in range(0, len(records), batch_size):
-            batch = records[i:i + batch_size]
+        for i in range(0, len(unique_records), batch_size):
+            batch = unique_records[i:i + batch_size]
 
             try:
                 response = self.client.table("flights").upsert(
@@ -116,7 +129,7 @@ class SupabaseWriter:
             except Exception as e:
                 log.error(f"Error in batch {i // batch_size + 1}: {e}")
 
-        log.info(f"Batch insert complete: {inserted}/{len(flights)} records")
+        log.info(f"Batch insert complete: {inserted}/{len(unique_records)} records")
         return inserted
 
     def upsert_daily_summary(self, date: str, summary: dict = None) -> bool:
@@ -285,6 +298,220 @@ class SupabaseWriter:
         except Exception as e:
             log.error(f"Error checking flight existence: {e}")
             return False
+
+
+    # ============================================================
+    # Complaint Operations
+    # ============================================================
+
+    def insert_complaint(self, complaint: dict) -> bool:
+        """
+        Insert a single complaint record.
+
+        Args:
+            complaint: Dict with complaint data (should have derived fields like
+                       is_curfew_period, geocoded coordinates, etc.)
+
+        Returns:
+            True if inserted, False if error
+        """
+        record = self._prepare_complaint_record(complaint)
+
+        try:
+            response = self.client.table("complaints").insert(record).execute()
+            return len(response.data) > 0
+        except Exception as e:
+            log.error(f"Error inserting complaint {complaint.get('source_id')}: {e}")
+            return False
+
+    def batch_insert_complaints(self, complaints: list, batch_size: int = 100) -> int:
+        """
+        Insert multiple complaints in batches.
+
+        Args:
+            complaints: List of complaint dicts
+            batch_size: Number of records per batch (default 100)
+
+        Returns:
+            Number of successfully inserted records
+        """
+        inserted = 0
+        records = [self._prepare_complaint_record(c) for c in complaints]
+
+        for i in range(0, len(records), batch_size):
+            batch = records[i:i + batch_size]
+
+            try:
+                response = self.client.table("complaints").insert(batch).execute()
+                inserted += len(response.data)
+                log.debug(f"Complaint batch {i // batch_size + 1}: inserted {len(response.data)} records")
+            except Exception as e:
+                log.error(f"Error in complaint batch {i // batch_size + 1}: {e}")
+
+        log.info(f"Complaint batch insert complete: {inserted}/{len(records)} records")
+        return inserted
+
+    def upsert_complaint_daily_summary(self, date: str, summary: dict) -> bool:
+        """
+        Update or insert complaint daily summary for a date.
+
+        Args:
+            date: Date string (YYYY-MM-DD)
+            summary: Summary dict with complaint counts
+
+        Returns:
+            True if successful
+        """
+        try:
+            summary["date"] = date
+            summary["created_at"] = datetime.now(timezone.utc).isoformat()
+
+            response = self.client.table("complaint_daily_summary").upsert(
+                summary,
+                on_conflict="date"
+            ).execute()
+
+            return len(response.data) > 0
+        except Exception as e:
+            log.error(f"Error upserting complaint summary for {date}: {e}")
+            return False
+
+    def upsert_complaint_hotspots(self, hotspots: list) -> int:
+        """
+        Upsert complaint hotspot records.
+
+        Args:
+            hotspots: List of hotspot dicts with street_name, municipality, etc.
+
+        Returns:
+            Number of successfully upserted records
+        """
+        upserted = 0
+
+        try:
+            response = self.client.table("complaint_hotspots").upsert(
+                hotspots,
+                on_conflict="street_name,municipality"
+            ).execute()
+            upserted = len(response.data)
+        except Exception as e:
+            log.error(f"Error upserting complaint hotspots: {e}")
+
+        return upserted
+
+    def _prepare_complaint_record(self, complaint: dict) -> dict:
+        """
+        Prepare a complaint dict for Supabase insertion.
+        Ensures proper types and field names.
+        """
+        fields = [
+            "source_id", "event_date", "event_time", "event_datetime_utc",
+            "event_hour_et", "is_curfew_period", "is_weekend",
+            "street_name", "municipality", "zip_code", "latitude", "longitude",
+            "airport", "complaint_types", "aircraft_type", "aircraft_description",
+            "flight_direction", "comments",
+            "matched_flight_id", "matched_confidence", "matched_registration", "matched_operator",
+            "submission_date",
+        ]
+
+        record = {k: complaint.get(k) for k in fields if k in complaint}
+
+        # Ensure booleans
+        if "is_curfew_period" in record:
+            record["is_curfew_period"] = bool(record["is_curfew_period"])
+        if "is_weekend" in record:
+            record["is_weekend"] = bool(record["is_weekend"])
+
+        return record
+
+    def get_complaints(
+        self,
+        start: str = None,
+        end: str = None,
+        municipality: str = None,
+        aircraft_type: str = None,
+        limit: int = 1000
+    ) -> list:
+        """
+        Query complaints with optional filters.
+
+        Args:
+            start: Start date (YYYY-MM-DD)
+            end: End date (YYYY-MM-DD)
+            municipality: Filter by municipality
+            aircraft_type: Filter by aircraft type
+            limit: Max records to return
+
+        Returns:
+            List of complaint dicts
+        """
+        try:
+            query = self.client.table("complaints").select("*")
+
+            if start:
+                query = query.gte("event_date", start)
+            if end:
+                query = query.lte("event_date", end)
+            if municipality:
+                query = query.eq("municipality", municipality)
+            if aircraft_type:
+                query = query.eq("aircraft_type", aircraft_type)
+
+            query = query.order("event_date", desc=True).limit(limit)
+            response = query.execute()
+
+            return response.data
+        except Exception as e:
+            log.error(f"Error querying complaints: {e}")
+            return []
+
+    def get_complaint_summary(self, start: str = None, end: str = None) -> list:
+        """
+        Get complaint daily summaries for a date range.
+
+        Args:
+            start: Start date (YYYY-MM-DD)
+            end: End date (YYYY-MM-DD)
+
+        Returns:
+            List of summary dicts
+        """
+        try:
+            query = self.client.table("complaint_daily_summary").select("*")
+
+            if start:
+                query = query.gte("date", start)
+            if end:
+                query = query.lte("date", end)
+
+            query = query.order("date", desc=True)
+            response = query.execute()
+
+            return response.data
+        except Exception as e:
+            log.error(f"Error querying complaint summary: {e}")
+            return []
+
+    def get_complaint_hotspots(self, min_complaints: int = 1) -> list:
+        """
+        Get complaint hotspots with at least min_complaints.
+
+        Args:
+            min_complaints: Minimum complaint count to include
+
+        Returns:
+            List of hotspot dicts
+        """
+        try:
+            query = self.client.table("complaint_hotspots").select("*")
+            query = query.gte("total_complaints", min_complaints)
+            query = query.order("total_complaints", desc=True)
+            response = query.execute()
+
+            return response.data
+        except Exception as e:
+            log.error(f"Error querying complaint hotspots: {e}")
+            return []
 
 
 # Convenience function for one-off operations

@@ -1,5 +1,9 @@
 import { createClient } from './server';
 
+// ─── Mock Data Flag ──────────────────────────────────────────────────────────
+// Set to true to use mock data for preview, false for production
+const USE_MOCK_COMPLAINTS_FALLBACK = true;
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export interface Flight {
@@ -164,6 +168,270 @@ export async function getFlightCount(): Promise<number> {
   }
 
   return count || 0;
+}
+
+// ─── Airport Coordinates (for mapping) ──────────────────────────────────────
+
+// ─── Complaint Types ────────────────────────────────────────────────────────
+
+export interface Complaint {
+  id: number;
+  source_id: string | null;
+  event_date: string;
+  event_time: string | null;
+  event_datetime_utc: string | null;
+  event_hour_et: number | null;
+  is_curfew_period: boolean;
+  is_weekend: boolean;
+  street_name: string | null;
+  municipality: string | null;
+  zip_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  airport: string;
+  complaint_types: string | null;
+  aircraft_type: string | null;
+  aircraft_description: string | null;
+  flight_direction: string | null;
+  comments: string | null;
+  matched_flight_id: string | null;
+  matched_confidence: string | null;
+  matched_registration: string | null;
+  matched_operator: string | null;
+  submission_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ComplaintDailySummary {
+  date: string;
+  total_complaints: number;
+  helicopter_complaints: number;
+  jet_complaints: number;
+  prop_complaints: number;
+  seaplane_complaints: number;
+  unknown_complaints: number;
+  curfew_complaints: number;
+  excessive_noise: number;
+  low_altitude: number;
+  too_early_late: number;
+  sleep_disturbance: number;
+  unique_streets: number;
+  unique_municipalities: number;
+  created_at: string;
+}
+
+export interface ComplaintHotspot {
+  street_name: string;
+  municipality: string;
+  latitude: number | null;
+  longitude: number | null;
+  total_complaints: number;
+  helicopter_complaints: number;
+  curfew_complaints: number;
+  date_first: string | null;
+  date_last: string | null;
+}
+
+// ─── Complaint Query Functions ──────────────────────────────────────────────
+
+export async function getComplaints(options: {
+  start?: string;
+  end?: string;
+  municipality?: string;
+  aircraftType?: string;
+  limit?: number;
+}): Promise<Complaint[]> {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from('complaints')
+    .select('*')
+    .order('event_date', { ascending: false })
+    .order('event_time', { ascending: false, nullsFirst: false });
+
+  if (options.start) {
+    query = query.gte('event_date', options.start);
+  }
+  if (options.end) {
+    query = query.lte('event_date', options.end);
+  }
+  if (options.municipality) {
+    query = query.eq('municipality', options.municipality);
+  }
+  if (options.aircraftType) {
+    query = query.eq('aircraft_type', options.aircraftType);
+  }
+  if (options.limit) {
+    query = query.limit(options.limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.warn(`Supabase complaints query failed: ${error.message}`);
+  }
+
+  // If no data and fallback is enabled, return mock data
+  if (USE_MOCK_COMPLAINTS_FALLBACK && (!data || data.length === 0)) {
+    const { getMockComplaints } = await import('@/data/noise/mockComplaintsDb');
+    let mockData = getMockComplaints();
+
+    // Apply filters to mock data
+    if (options.start) {
+      mockData = mockData.filter(c => c.event_date >= options.start!);
+    }
+    if (options.end) {
+      mockData = mockData.filter(c => c.event_date <= options.end!);
+    }
+    if (options.municipality) {
+      mockData = mockData.filter(c => c.municipality === options.municipality);
+    }
+    if (options.aircraftType) {
+      mockData = mockData.filter(c => c.aircraft_type === options.aircraftType);
+    }
+    if (options.limit) {
+      mockData = mockData.slice(0, options.limit);
+    }
+
+    return mockData;
+  }
+
+  return data || [];
+}
+
+export async function getComplaintSummary(options: {
+  start?: string;
+  end?: string;
+}): Promise<ComplaintDailySummary[]> {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from('complaint_daily_summary')
+    .select('*')
+    .order('date', { ascending: false });
+
+  if (options.start) {
+    query = query.gte('date', options.start);
+  }
+  if (options.end) {
+    query = query.lte('date', options.end);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.warn(`Supabase complaint summary query failed: ${error.message}`);
+  }
+
+  // If no data and fallback is enabled, return mock summary
+  if (USE_MOCK_COMPLAINTS_FALLBACK && (!data || data.length === 0)) {
+    const { getMockComplaintSummary } = await import('@/data/noise/mockComplaintsDb');
+    let mockData = getMockComplaintSummary();
+
+    // Apply filters to mock data
+    if (options.start) {
+      mockData = mockData.filter(s => s.date >= options.start!);
+    }
+    if (options.end) {
+      mockData = mockData.filter(s => s.date <= options.end!);
+    }
+
+    return mockData;
+  }
+
+  return data || [];
+}
+
+export async function getComplaintHotspots(options: {
+  minComplaints?: number;
+}): Promise<ComplaintHotspot[]> {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from('complaint_hotspots')
+    .select('*')
+    .order('total_complaints', { ascending: false });
+
+  if (options.minComplaints && options.minComplaints > 1) {
+    query = query.gte('total_complaints', options.minComplaints);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.warn(`Supabase complaint hotspots query failed: ${error.message}`);
+  }
+
+  // If no data and fallback is enabled, return mock hotspots
+  if (USE_MOCK_COMPLAINTS_FALLBACK && (!data || data.length === 0)) {
+    const { getMockHotspots } = await import('@/data/noise/mockComplaintsDb');
+    let mockData = getMockHotspots();
+
+    // Apply filters to mock data
+    if (options.minComplaints && options.minComplaints > 1) {
+      mockData = mockData.filter(h => h.total_complaints >= options.minComplaints!);
+    }
+
+    return mockData;
+  }
+
+  return data || [];
+}
+
+export async function getComplaintStats(): Promise<{
+  total_complaints: number;
+  helicopter_complaints: number;
+  jet_complaints: number;
+  curfew_complaints: number;
+  unique_locations: number;
+  matched_to_flights: number;
+  earliest_date: string | null;
+  latest_date: string | null;
+}> {
+  const supabase = await createClient();
+
+  const { data: complaints, error } = await supabase
+    .from('complaints')
+    .select('aircraft_type, is_curfew_period, municipality, matched_flight_id, event_date');
+
+  if (error) {
+    console.warn(`Supabase complaint stats query failed: ${error.message}`);
+  }
+
+  // If no data and fallback is enabled, calculate stats from mock data
+  if (USE_MOCK_COMPLAINTS_FALLBACK && (!complaints || complaints.length === 0)) {
+    const { getMockComplaints } = await import('@/data/noise/mockComplaintsDb');
+    const mockData = getMockComplaints();
+    const municipalities = new Set(mockData.map(c => c.municipality).filter(Boolean));
+    const dates = mockData.map(c => c.event_date).filter(Boolean).sort();
+
+    return {
+      total_complaints: mockData.length,
+      helicopter_complaints: mockData.filter(c => c.aircraft_type === 'Helicopter').length,
+      jet_complaints: mockData.filter(c => c.aircraft_type === 'Jet').length,
+      curfew_complaints: mockData.filter(c => c.is_curfew_period).length,
+      unique_locations: municipalities.size,
+      matched_to_flights: mockData.filter(c => c.matched_flight_id).length,
+      earliest_date: dates[0] || null,
+      latest_date: dates[dates.length - 1] || null,
+    };
+  }
+
+  const all = complaints || [];
+  const municipalities = new Set(all.map(c => c.municipality).filter(Boolean));
+  const dates = all.map(c => c.event_date).filter(Boolean).sort();
+
+  return {
+    total_complaints: all.length,
+    helicopter_complaints: all.filter(c => c.aircraft_type === 'Helicopter').length,
+    jet_complaints: all.filter(c => c.aircraft_type === 'Jet').length,
+    curfew_complaints: all.filter(c => c.is_curfew_period).length,
+    unique_locations: municipalities.size,
+    matched_to_flights: all.filter(c => c.matched_flight_id).length,
+    earliest_date: dates[0] || null,
+    latest_date: dates[dates.length - 1] || null,
+  };
 }
 
 // ─── Airport Coordinates (for mapping) ──────────────────────────────────────

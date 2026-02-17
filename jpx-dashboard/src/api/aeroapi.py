@@ -323,20 +323,37 @@ class AeroAPIClient:
         max_pages: int = 5,
     ) -> dict:
         """
-        GET /history/airports/{id}/flights[/arrivals|/departures]
+        GET /history/airports/{id}/flights/arrivals
+        GET /history/airports/{id}/flights/departures
+
+        Note: The history endpoint requires /arrivals or /departures suffix.
+        When flight_type="all", makes two requests and combines results.
 
         Date params in ISO 8601: "2025-08-01T00:00:00Z"
         History available back to 2011-01-01.
 
         This is the primary endpoint for the daily batch job.
         """
-        suffix = "" if flight_type == "all" else f"/{flight_type}"
         params = {"max_pages": max_pages}
         if start:
             params["start"] = start
         if end:
             params["end"] = end
-        return self._get(f"/history/airports/{airport_id}/flights{suffix}", params)
+
+        if flight_type == "all":
+            # History endpoint requires explicit arrivals/departures suffix
+            arrivals_data = self._get(
+                f"/history/airports/{airport_id}/flights/arrivals", params
+            )
+            departures_data = self._get(
+                f"/history/airports/{airport_id}/flights/departures", params
+            )
+            return {
+                "arrivals": arrivals_data.get("arrivals", []),
+                "departures": departures_data.get("departures", []),
+            }
+        else:
+            return self._get(f"/history/airports/{airport_id}/flights/{flight_type}", params)
 
     def flight_history(self, ident: str, start: str = None, end: str = None) -> dict:
         """

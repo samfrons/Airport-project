@@ -162,7 +162,9 @@ def utc_to_eastern(iso_utc: str) -> datetime:
 def is_curfew_hour(hour_et: int) -> bool:
     """
     Check if an Eastern Time hour falls in the voluntary curfew window.
-    Curfew: 9:00 PM (21:00) to 7:00 AM (07:00) Eastern.
+    Curfew: 9:00 PM (21:00) to 7:00 AM (07:00) Eastern (Pilot's Pledge hours).
+
+    Note: Updated from original 8 PM - 8 AM to match the Pilot's Pledge standard.
     """
     return hour_et >= 21 or hour_et < 7
 
