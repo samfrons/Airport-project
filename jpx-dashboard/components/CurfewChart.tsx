@@ -35,14 +35,21 @@ export function CurfewChart() {
     });
 
     // Curfew hours: 9 PM (21) to 7 AM (6) per Pilot's Pledge
+    // Shoulder hours: 7-8 AM (hour 7) and 8-9 PM (hour 20)
     const backgroundColor = labels.map((_, i) => {
       const isCurfew = i >= 21 || i < 7;
-      return isCurfew ? 'rgba(245, 158, 11, 0.7)' : 'rgba(37, 99, 235, 0.6)';
+      const isShoulder = i === 7 || i === 20;
+      if (isCurfew) return 'rgba(245, 158, 11, 0.7)';
+      if (isShoulder) return 'rgba(245, 158, 11, 0.35)';
+      return 'rgba(37, 99, 235, 0.6)';
     });
 
     const hoverBackgroundColor = labels.map((_, i) => {
       const isCurfew = i >= 21 || i < 7;
-      return isCurfew ? 'rgba(245, 158, 11, 0.9)' : 'rgba(37, 99, 235, 0.85)';
+      const isShoulder = i === 7 || i === 20;
+      if (isCurfew) return 'rgba(245, 158, 11, 0.9)';
+      if (isShoulder) return 'rgba(245, 158, 11, 0.55)';
+      return 'rgba(37, 99, 235, 0.85)';
     });
 
     return {
@@ -87,7 +94,9 @@ export function CurfewChart() {
           },
           label: (ctx: any) => {
             const isCurfew = ctx.dataIndex >= 21 || ctx.dataIndex < 7;
-            return `${ctx.raw} ops${isCurfew ? '  (curfew)' : ''}`;
+            const isShoulder = ctx.dataIndex === 7 || ctx.dataIndex === 20;
+            const suffix = isCurfew ? '  (curfew)' : isShoulder ? '  (shoulder)' : '';
+            return `${ctx.raw} ops${suffix}`;
           },
         },
       },
@@ -134,6 +143,10 @@ export function CurfewChart() {
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 bg-blue-600" />
           <span className="text-[11px] text-zinc-500">Daytime</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 bg-amber-500/40" />
+          <span className="text-[11px] text-zinc-500">Shoulder 7-8a, 8-9p</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 bg-amber-500" />

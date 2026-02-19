@@ -24,18 +24,14 @@ import {
   AlertTriangle,
   Clock,
   Volume2,
-  Bird,
   TrendingUp,
   TrendingDown,
   Minus,
   BarChart3,
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
-import { evaluateAllFlights, generateViolationSummary } from '@/lib/biodiversityViolationEngine';
 import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
 import type { Flight } from '@/types/flight';
-import type { BiodiversityViolation, ViolationSummary } from '@/types/biodiversityThresholds';
-import type { ImpactSeverity } from '@/types/biodiversity';
 
 // ─── Chart.js Registration ──────────────────────────────────────────────────
 
@@ -59,7 +55,6 @@ interface ComplianceScores {
   overall: number;
   curfew: number;
   noise: number;
-  species: number;
   volume: number;
 }
 
@@ -68,7 +63,6 @@ interface DailyCompliance {
   overall: number;
   curfew: number;
   noise: number;
-  species: number;
   volume: number;
 }
 
@@ -145,9 +139,9 @@ function groupFlightsByDate(flights: Flight[]): Map<string, Flight[]> {
   return map;
 }
 
-function computeDayScores(dayFlights: Flight[], dayViolations: BiodiversityViolation[]): ComplianceScores {
+function computeDayScores(dayFlights: Flight[]): ComplianceScores {
   if (dayFlights.length === 0) {
-    return { overall: 100, curfew: 100, noise: 100, species: 100, volume: 100 };
+    return { overall: 100, curfew: 100, noise: 100, volume: 100 };
   }
 
   // Curfew: % not in curfew
@@ -158,15 +152,6 @@ function computeDayScores(dayFlights: Flight[], dayViolations: BiodiversityViola
   const belowNoise = dayFlights.filter((f) => getNoiseDb(f) < NOISE_THRESHOLD_DB).length;
   const noise = (belowNoise / dayFlights.length) * 100;
 
-  // Species: % with no critical/high severity violations
-  const criticalHighFlightIds = new Set(
-    dayViolations
-      .filter((v) => v.overallSeverity === 'critical' || v.overallSeverity === 'high')
-      .map((v) => v.flightId),
-  );
-  const speciesCompliant = dayFlights.filter((f) => !criticalHighFlightIds.has(f.fa_flight_id)).length;
-  const species = (speciesCompliant / dayFlights.length) * 100;
-
   // Volume: check if all hours have < MAX_HOURLY_FLIGHTS
   const hourCounts = new Map<number, number>();
   for (const f of dayFlights) {
@@ -175,13 +160,13 @@ function computeDayScores(dayFlights: Flight[], dayViolations: BiodiversityViola
   const allHoursCompliant = Array.from(hourCounts.values()).every((c) => c < MAX_HOURLY_FLIGHTS);
   const volume = allHoursCompliant ? 100 : 0;
 
-  const overall = curfew * 0.3 + noise * 0.3 + species * 0.25 + volume * 0.15;
+  // Weights: Curfew 40%, Noise 40%, Volume 20%
+  const overall = curfew * 0.4 + noise * 0.4 + volume * 0.2;
 
   return {
     overall: Math.round(overall * 10) / 10,
     curfew: Math.round(curfew * 10) / 10,
     noise: Math.round(noise * 10) / 10,
-    species: Math.round(species * 10) / 10,
     volume: Math.round(volume * 10) / 10,
   };
 }
@@ -291,43 +276,25 @@ function SubScoreBar({
 export function ComplianceDashboard() {
   const flights = useFlightStore((s) => s.flights);
   const dateRange = useFlightStore((s) => s.dateRange);
-  const thresholds = useFlightStore((s) => s.thresholds);
 
   // ─── Core computations ──────────────────────────────────────────────────
 
-  const violations = useMemo(() => evaluateAllFlights(flights, thresholds), [flights, thresholds]);
-  const summary = useMemo(() => generateViolationSummary(violations), [violations]);
-
   const flightsByDate = useMemo(() => groupFlightsByDate(flights), [flights]);
-
-  const violationsByDate = useMemo(() => {
-    const map = new Map<string, BiodiversityViolation[]>();
-    for (const v of violations) {
-      const existing = map.get(v.operationDate);
-      if (existing) {
-        existing.push(v);
-      } else {
-        map.set(v.operationDate, [v]);
-      }
-    }
-    return map;
-  }, [violations]);
 
   // ─── Compliance scores ──────────────────────────────────────────────────
 
   const scores = useMemo<ComplianceScores>(() => {
-    return computeDayScores(flights, violations);
-  }, [flights, violations]);
+    return computeDayScores(flights);
+  }, [flights]);
 
   const dailyCompliance = useMemo<DailyCompliance[]>(() => {
     const dates = Array.from(flightsByDate.keys()).sort();
     return dates.map((date) => {
       const dayFlights = flightsByDate.get(date) || [];
-      const dayViolations = violationsByDate.get(date) || [];
-      const dayScores = computeDayScores(dayFlights, dayViolations);
+      const dayScores = computeDayScores(dayFlights);
       return { date, ...dayScores };
     });
-  }, [flightsByDate, violationsByDate]);
+  }, [flightsByDate]);
 
   // ─── Curfew violators ──────────────────────────────────────────────────
 
@@ -385,12 +352,6 @@ export function ComplianceDashboard() {
 
     const curfewRate = ((flights.filter((f) => !f.is_curfew_period).length / totalFlights) * 100);
     const noiseExceedances = flights.filter((f) => getNoiseDb(f) >= NOISE_THRESHOLD_DB).length;
-    const critHighViolations = violations.filter(
-      (v) => v.overallSeverity === 'critical' || v.overallSeverity === 'high',
-    );
-    const speciesEvents = summary.protectedSpeciesViolations;
-    const habitatEvents = summary.habitatViolations;
-    const repeatOffenders = summary.topOffenders.filter((o) => o.violationCount >= 3).length;
 
     // Compute trend from first half vs second half of date range
     const dates = Array.from(flightsByDate.keys()).sort();
@@ -410,6 +371,13 @@ export function ComplianceDashboard() {
     const curfewTrend: 'up' | 'down' | 'flat' =
       secondHalfCurfew < firstHalfCurfew ? 'down' : secondHalfCurfew > firstHalfCurfew ? 'up' : 'flat';
 
+    // Count repeat curfew offenders (operators with 3+ curfew violations)
+    const curfewByOperator = new Map<string, number>();
+    for (const v of curfewViolators) {
+      curfewByOperator.set(v.operator, (curfewByOperator.get(v.operator) || 0) + 1);
+    }
+    const repeatOffenders = Array.from(curfewByOperator.values()).filter((c) => c >= 3).length;
+
     return [
       {
         metric: 'Curfew Compliance Rate',
@@ -424,25 +392,13 @@ export function ComplianceDashboard() {
         status: noiseExceedances === 0 ? 'pass' : noiseExceedances <= 5 ? 'warn' : 'fail',
       },
       {
-        metric: 'Protected Species Events',
-        value: `${speciesEvents} events`,
-        trend: speciesEvents === 0 ? 'flat' : 'up',
-        status: speciesEvents === 0 ? 'pass' : speciesEvents <= 3 ? 'warn' : 'fail',
-      },
-      {
-        metric: 'Habitat Violations',
-        value: `${habitatEvents} incidents`,
-        trend: habitatEvents === 0 ? 'flat' : 'up',
-        status: habitatEvents === 0 ? 'pass' : habitatEvents <= 5 ? 'warn' : 'fail',
-      },
-      {
-        metric: 'Repeat Offenders',
+        metric: 'Repeat Curfew Offenders',
         value: `${repeatOffenders} operators`,
         trend: repeatOffenders === 0 ? 'flat' : 'up',
         status: repeatOffenders === 0 ? 'pass' : repeatOffenders <= 2 ? 'warn' : 'fail',
       },
     ];
-  }, [flights, violations, summary, flightsByDate]);
+  }, [flights, flightsByDate, curfewViolators]);
 
   // ─── Export handler ─────────────────────────────────────────────────────
 
@@ -457,7 +413,6 @@ export function ComplianceDashboard() {
       ['Overall Compliance Score', `${Math.round(scores.overall)}`, ''],
       ['Curfew Compliance', `${Math.round(scores.curfew)}%`, ''],
       ['Noise Compliance', `${Math.round(scores.noise)}%`, ''],
-      ['Species Protection', `${Math.round(scores.species)}%`, ''],
       ['Volume Compliance', `${Math.round(scores.volume)}%`, ''],
       ['', '', ''],
       ['--- Regulatory Summary ---', '', ''],
@@ -540,19 +495,6 @@ export function ComplianceDashboard() {
           order: 3,
         },
         {
-          label: 'Species',
-          data: dailyCompliance.map((d) => d.species),
-          borderColor: '#22c55e',
-          backgroundColor: 'transparent',
-          borderWidth: 1.5,
-          pointRadius: 0,
-          tension: 0.3,
-          borderDash: [4, 2],
-          hidden: true,
-          fill: false,
-          order: 4,
-        },
-        {
           label: 'Volume',
           data: dailyCompliance.map((d) => d.volume),
           borderColor: '#a855f7',
@@ -563,7 +505,7 @@ export function ComplianceDashboard() {
           borderDash: [4, 2],
           hidden: true,
           fill: false,
-          order: 5,
+          order: 4,
         },
       ],
     };
@@ -914,25 +856,19 @@ export function ComplianceDashboard() {
             <SubScoreBar
               label="Curfew Compliance"
               score={scores.curfew}
-              weight="30%"
+              weight="40%"
               icon={<Clock size={12} className="text-amber-400 flex-shrink-0" />}
             />
             <SubScoreBar
               label="Noise Compliance"
               score={scores.noise}
-              weight="30%"
+              weight="40%"
               icon={<Volume2 size={12} className="text-red-400 flex-shrink-0" />}
-            />
-            <SubScoreBar
-              label="Species Protection"
-              score={scores.species}
-              weight="25%"
-              icon={<Bird size={12} className="text-emerald-400 flex-shrink-0" />}
             />
             <SubScoreBar
               label="Volume Compliance"
               score={scores.volume}
-              weight="15%"
+              weight="20%"
               icon={<BarChart3 size={12} className="text-purple-400 flex-shrink-0" />}
             />
           </div>
@@ -975,7 +911,7 @@ export function ComplianceDashboard() {
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Curfew Compliance</h3>
               <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
-                Voluntary curfew (8 PM - 8 AM ET) adherence -- {curfewViolators.length} violations detected
+                Voluntary curfew (9 PM - 7 AM ET) adherence -- {curfewViolators.length} violations detected
               </p>
             </div>
           </div>

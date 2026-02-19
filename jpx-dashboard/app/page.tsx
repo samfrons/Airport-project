@@ -12,6 +12,7 @@ import { OperatorScorecard } from '@/components/OperatorScorecard';
 import { FlightPathReplay } from '@/components/FlightPathReplay';
 import { ComplianceDashboard } from '@/components/ComplianceDashboard';
 import { CurfewViolatorsTable } from '@/components/CurfewViolatorsTable';
+import { TopCurfewViolators } from '@/components/TopCurfewViolators';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   ErrorBoundary,
@@ -27,13 +28,12 @@ import { useNavStore } from '@/store/navStore';
 
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
-  const { loading, error, fetchFlights, fetchSummary, loadNoiseData, selectedFlight, setSelectedFlight, lastUpdated } = useFlightStore();
+  const { loading, error, fetchFlights, fetchSummary, selectedFlight, setSelectedFlight, lastUpdated } = useFlightStore();
   const isNavExpanded = useNavStore((state) => state.isExpanded);
 
   useEffect(() => {
     fetchFlights();
     fetchSummary();
-    loadNoiseData();
   }, []);
 
   const handleRefresh = () => {
@@ -194,6 +194,9 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="space-y-6">
+            <ErrorBoundary sectionName="Top Curfew Violators" fallback={<PanelSkeleton />}>
+              <TopCurfewViolators />
+            </ErrorBoundary>
             <ErrorBoundary sectionName="Compliance Dashboard" fallback={<ChartSkeleton />}>
               <ComplianceDashboard />
             </ErrorBoundary>

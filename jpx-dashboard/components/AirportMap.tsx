@@ -1508,15 +1508,10 @@ export function AirportMap() {
         </div>
       )}
 
-      {/* Noise Layer Controls */}
-      <div className={`absolute left-4 ${selectedAirport ? 'top-24' : 'top-14'}`}>
-        <NoiseLayerControls />
-      </div>
+      {/* Noise Layer Controls - hidden until real data sources are available
+         (see feedback: "Hide all toggles that don't have data sources yet") */}
 
-      {/* Noise Legend - shown when any noise layer is visible */}
-      <div className="absolute bottom-4 left-36">
-        <NoiseLegend />
-      </div>
+      {/* Noise Legend - hidden until noise layers have real data */}
 
       {/* Legend */}
       <div className="absolute bottom-4 left-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-3 min-w-[130px]">
