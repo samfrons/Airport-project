@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -221,6 +221,12 @@ export function NoiseEnvironmentTimeline() {
   const [viewMode, setViewMode] = useState<ViewMode>('trends');
   const [localStart, setLocalStart] = useState(globalDateRange.start);
   const [localEnd, setLocalEnd] = useState(globalDateRange.end);
+
+  // Sync local state when global date range changes
+  useEffect(() => {
+    setLocalStart(globalDateRange.start);
+    setLocalEnd(globalDateRange.end);
+  }, [globalDateRange.start, globalDateRange.end]);
 
   // Range used for computation
   const dateRange = useMemo(
