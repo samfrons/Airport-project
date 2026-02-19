@@ -166,10 +166,10 @@ function saveThresholdsToStorage(thresholds: BiodiversityThreshold[]) {
 
 const API_BASE = '/api';
 
-// Get today and 7 days ago for default range
+// Get today and 90 days ago for default range (ensures data coverage)
 const today = new Date();
-const weekAgo = new Date(today);
-weekAgo.setDate(weekAgo.getDate() - 7);
+const ninetyDaysAgo = new Date(today);
+ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
 const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
@@ -182,7 +182,7 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   lastUpdated: null,
   mapViewMode: 'routes',
   dateRange: {
-    start: formatDate(weekAgo),
+    start: formatDate(ninetyDaysAgo),
     end: formatDate(today),
   },
   selectedCategory: null,
