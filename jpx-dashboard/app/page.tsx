@@ -12,6 +12,10 @@ import { OperatorScorecard } from '@/components/OperatorScorecard';
 import { FlightPathReplay } from '@/components/FlightPathReplay';
 import { ComplianceDashboard } from '@/components/ComplianceDashboard';
 import { CurfewViolatorsTable } from '@/components/CurfewViolatorsTable';
+import { TopCurfewViolators } from '@/components/TopCurfewViolators';
+import { HistoricalComparison } from '@/components/HistoricalComparison';
+import { ComplaintForm } from '@/components/ComplaintForm';
+import { ComplaintsSummary } from '@/components/ComplaintsSummary';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   ErrorBoundary,
@@ -23,11 +27,12 @@ import {
 import { SideNav, ScrollToTop } from '@/components/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { useFlightStore } from '@/store/flightStore';
+import { AlertTriangle } from 'lucide-react';
 import { useNavStore } from '@/store/navStore';
 
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
-  const { loading, error, fetchFlights, fetchSummary, loadNoiseData, selectedFlight, setSelectedFlight, lastUpdated } = useFlightStore();
+  const { loading, error, fetchFlights, fetchSummary, loadNoiseData, selectedFlight, setSelectedFlight, lastUpdated, flights } = useFlightStore();
   const isNavExpanded = useNavStore((state) => state.isExpanded);
 
   useEffect(() => {
@@ -94,10 +99,23 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              {flights.length > 0 && (() => {
+                const latestDate = flights.reduce((max, f) => f.operation_date > max ? f.operation_date : max, '');
+                const daysSince = Math.floor((Date.now() - new Date(latestDate + 'T23:59:59').getTime()) / (1000 * 60 * 60 * 24));
+                const isStale = daysSince > 2;
+                return (
+                  <div className={`hidden sm:flex items-center gap-1.5 ${isStale ? 'text-amber-500 dark:text-amber-400' : 'text-zinc-500 dark:text-zinc-600'}`}>
+                    <span className="text-[10px] uppercase tracking-widest font-medium">
+                      Data through {new Date(latestDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {isStale && ` (${daysSince}d old)`}
+                    </span>
+                  </div>
+                );
+              })()}
               {formatLastUpdated() && (
-                <div className="hidden sm:flex items-center gap-1.5 text-zinc-500 dark:text-zinc-600">
+                <div className="hidden lg:flex items-center gap-1.5 text-zinc-500 dark:text-zinc-600">
                   <span className="text-[10px] uppercase tracking-widest font-medium">
-                    Updated {formatLastUpdated()}
+                    Fetched {formatLastUpdated()}
                   </span>
                 </div>
               )}
@@ -167,6 +185,9 @@ export default function DashboardPage() {
             <ErrorBoundary sectionName="Hourly Distribution" fallback={<ChartSkeleton />}>
               <CurfewChart />
             </ErrorBoundary>
+            <ErrorBoundary sectionName="Historical Comparison" fallback={<PanelSkeleton />}>
+              <HistoricalComparison />
+            </ErrorBoundary>
           </div>
         </section>
 
@@ -175,6 +196,22 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Aircraft & Operators</h2>
           </div>
+          {/* Operator identity gap notice */}
+          {flights.length > 0 && (() => {
+            const unknownCount = flights.filter(f => !f.operator || f.operator === 'Unknown').length;
+            const pct = Math.round((unknownCount / flights.length) * 100);
+            return pct > 20 ? (
+              <div className="mb-4 flex items-start gap-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 px-4 py-3">
+                <AlertTriangle size={14} className="text-amber-500 mt-0.5 flex-shrink-0" />
+                <div className="text-xs text-amber-800 dark:text-amber-400">
+                  <span className="font-semibold">{pct}% of flights</span> ({unknownCount} of {flights.length}) have
+                  no operator identified. FlightAware does not always provide operator data,
+                  especially for Part 91 private operations. Operator-based analytics are limited
+                  to the {100 - pct}% with known operators.
+                </div>
+              </div>
+            ) : null;
+          })()}
           <div className="space-y-6">
             <ErrorBoundary sectionName="Aircraft Breakdown" fallback={<PanelSkeleton />}>
               <AircraftBreakdownPanel />
@@ -194,6 +231,9 @@ export default function DashboardPage() {
             </span>
           </div>
           <div className="space-y-6">
+            <ErrorBoundary sectionName="Top Curfew Violators" fallback={<PanelSkeleton />}>
+              <TopCurfewViolators />
+            </ErrorBoundary>
             <ErrorBoundary sectionName="Compliance Dashboard" fallback={<ChartSkeleton />}>
               <ComplianceDashboard />
             </ErrorBoundary>
@@ -226,13 +266,20 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Noise & Impact</h2>
           </div>
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6">
-            <div className="text-center py-8">
-              <p className="text-sm text-zinc-500 dark:text-zinc-500 mb-2">
-                Noise monitoring data will appear here when sensors are installed.
+          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 space-y-4">
+            <div className="text-center py-4">
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-2">
+                No physical noise monitors are installed at JPX.
               </p>
-              <p className="text-xs text-zinc-400 dark:text-zinc-600">
-                Contact the Wainscott CAC for updates on monitoring deployment.
+              <p className="text-xs text-zinc-500 dark:text-zinc-500">
+                All dB values shown are estimates derived from EASA/FAA type-certification data
+                at the 1,000 ft reference distance. Actual ground-level noise varies with altitude,
+                distance, flight path, and atmospheric conditions.
+              </p>
+            </div>
+            <div className="border-t border-zinc-200 dark:border-zinc-800 pt-4">
+              <p className="text-xs text-zinc-500 dark:text-zinc-500 text-center">
+                See the Operations and Curfew Compliance sections above for estimated noise analysis.
               </p>
             </div>
           </div>
@@ -243,23 +290,29 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Complaints</h2>
           </div>
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6">
-            <div className="text-center py-4">
-              <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-4">
-                Report noise concerns to East Hampton Town
-              </p>
-              <a
-                href="https://planenoise.com/khto/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 transition-colors"
-              >
-                File a Complaint
-                <ExternalLink size={14} />
-              </a>
-              <p className="text-xs text-zinc-500 dark:text-zinc-600 mt-4">
-                Opens planenoise.com in a new tab
-              </p>
+          <div className="space-y-6">
+            <ErrorBoundary sectionName="Community Noise Reports" fallback={<PanelSkeleton />}>
+              <ComplaintForm />
+            </ErrorBoundary>
+            <ErrorBoundary sectionName="Complaint Analysis" fallback={<PanelSkeleton />}>
+              <ComplaintsSummary />
+            </ErrorBoundary>
+            {/* External filing link */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                  File an official complaint with East Hampton Town
+                </div>
+                <a
+                  href="https://planenoise.com/khto/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-[10px] font-semibold hover:bg-blue-500 transition-colors"
+                >
+                  planenoise.com
+                  <ExternalLink size={10} />
+                </a>
+              </div>
             </div>
           </div>
         </section>
@@ -267,10 +320,26 @@ export default function DashboardPage() {
 
       {/* ─── Footer ────────────────────────────────────────────────── */}
       <footer className="border-t border-zinc-200 dark:border-zinc-800/60 mt-12">
-        <div className="px-4 sm:px-6 py-6">
+        <div className="px-4 sm:px-6 py-6 space-y-3">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">
             <p>Data via FlightAware AeroAPI</p>
             <p>Wainscott Citizens Advisory Committee</p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-[9px] text-zinc-400 dark:text-zinc-700">
+            <div className="flex items-center gap-3">
+              <span>JPX Dashboard v0.4.0</span>
+              <span>&middot;</span>
+              <span>Build {new Date().toISOString().slice(0, 10)}</span>
+              {lastUpdated && (
+                <>
+                  <span>&middot;</span>
+                  <span>Data as of {formatLastUpdated()}</span>
+                </>
+              )}
+            </div>
+            <div>
+              <span>Est. noise from EASA/FAA type-certification data &middot; No on-site monitors</span>
+            </div>
           </div>
         </div>
       </footer>

@@ -20,7 +20,7 @@ import {
   User,
 } from 'lucide-react';
 import { useFlightStore, type FlightTrack, type AircraftOwner } from '@/store/flightStore';
-import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
+import { getNoiseDb, getNoiseCategory } from '@/lib/noise/getNoiseDb';
 import type { Flight } from '@/types/flight';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -32,9 +32,9 @@ type PlaybackSpeed = (typeof SPEED_OPTIONS)[number];
 /** Interval in ms for a single "minute" tick at 1x speed. */
 const BASE_TICK_MS = 100;
 
-/** Curfew: 8 PM (20) through 7 AM (< 8). */
+/** Curfew: 9 PM (21) through 7 AM (< 7) per Pilot's Pledge. */
 function isCurfewHour(hour: number): boolean {
-  return hour >= 20 || hour < 8;
+  return hour >= 21 || hour < 7;
 }
 
 /** Category color mapping (matches design spec). */
@@ -60,10 +60,9 @@ interface FlightWithNoise extends Flight {
 }
 
 function enrichFlightNoise(flight: Flight): FlightWithNoise {
-  const profile = getAircraftNoiseProfile(flight.aircraft_type);
-  const noiseDb =
-    flight.direction === 'arrival' ? profile.approachDb : profile.takeoffDb;
-  return { ...flight, noiseDb, noiseCategory: profile.noiseCategory };
+  const noiseDb = getNoiseDb(flight);
+  const noiseCategory = getNoiseCategory(noiseDb);
+  return { ...flight, noiseDb, noiseCategory };
 }
 
 function formatHour(hour: number): string {
@@ -195,10 +194,10 @@ export function FlightPathReplay() {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
 
-  // Auto-select first available date
+  // Auto-select latest available date (most recent data)
   useEffect(() => {
     if (availableDates.length > 0 && !availableDates.includes(selectedDate)) {
-      setSelectedDate(availableDates[0]);
+      setSelectedDate(availableDates[availableDates.length - 1]);
     }
   }, [availableDates, selectedDate]);
 
@@ -477,7 +476,7 @@ export function FlightPathReplay() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-0.5 bg-amber-500/30" />
-              <span className="text-[9px] text-zinc-600">Curfew 8p&ndash;8a</span>
+              <span className="text-[9px] text-zinc-600">Curfew 9p&ndash;7a</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-blue-500/30" />
@@ -623,7 +622,7 @@ export function FlightPathReplay() {
           {/* Peak noise */}
           <div>
             <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.1em] mb-1">
-              Peak Noise
+              Est. Peak Noise
             </div>
             <div className="flex items-center gap-1.5">
               {runningStats.peakNoiseDb > 0 && (
@@ -694,7 +693,7 @@ export function FlightPathReplay() {
       <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-[0.1em]">
-            Active Flights &middot; {formatHour(currentHour)}
+            Flights at {formatHour(currentHour)}
           </h4>
           <span className="text-[11px] text-zinc-500 dark:text-zinc-600 tabular-nums">
             {activeFlights.length} operation{activeFlights.length !== 1 ? 's' : ''}
@@ -745,10 +744,10 @@ export function FlightPathReplay() {
                   Fixed
                 </th>
                 <th className="text-right py-2 px-2 text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
-                  Avg dB
+                  Est. Avg dB
                 </th>
                 <th className="text-right py-2 px-2 text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
-                  Peak dB
+                  Est. Peak dB
                 </th>
                 <th className="text-center py-2 px-2 text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
                   Curfew
