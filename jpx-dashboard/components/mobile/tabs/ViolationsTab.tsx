@@ -5,8 +5,13 @@ import { useFlightStore } from '@/store/flightStore';
 import { MobileHeader } from '../MobileHeader';
 import { ViolationRow } from '../shared/ViolationRow';
 import { CURFEW } from '@/lib/constants/curfew';
+import type { Flight } from '@/types/flight';
 
-export function ViolationsTab() {
+interface ViolationsTabProps {
+  onFileComplaint?: (flight: Flight) => void;
+}
+
+export function ViolationsTab({ onFileComplaint }: ViolationsTabProps) {
   const { flights } = useFlightStore();
 
   // Filter to curfew violations
@@ -101,7 +106,12 @@ export function ViolationsTab() {
           const isRepeat = (repeatViolators.get(key) || 0) > 1;
 
           return (
-            <ViolationRow key={v.id} flight={v} isRepeat={isRepeat} />
+            <ViolationRow
+              key={v.id}
+              flight={v}
+              isRepeat={isRepeat}
+              onReport={onFileComplaint ? () => onFileComplaint(v) : undefined}
+            />
           );
         })}
 

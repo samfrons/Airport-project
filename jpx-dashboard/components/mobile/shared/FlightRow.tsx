@@ -1,19 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { NoiseDbBadge } from './NoiseDbBadge';
 import { TypeChip } from './TypeChip';
 import { getNoiseDb } from '@/lib/noise/getNoiseDb';
-import { buildComplaintUrl } from '@/lib/mobile/complaint';
 import type { Flight } from '@/types/flight';
 
 interface FlightRowProps {
   flight: Flight;
-  showReportButton?: boolean;
+  onReport?: () => void;
 }
 
-export function FlightRow({ flight, showReportButton = true }: FlightRowProps) {
+export function FlightRow({ flight, onReport }: FlightRowProps) {
   const [expanded, setExpanded] = useState(false);
   const db = getNoiseDb(flight);
   const time = formatTime(flight.actual_on || flight.actual_off);
@@ -26,8 +25,7 @@ export function FlightRow({ flight, showReportButton = true }: FlightRowProps) {
 
   const handleReport = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const url = buildComplaintUrl(flight);
-    window.open(url, '_blank', 'noopener,noreferrer');
+    onReport?.();
   };
 
   return (
@@ -57,7 +55,7 @@ export function FlightRow({ flight, showReportButton = true }: FlightRowProps) {
         </div>
 
         {/* Report button (quick action) */}
-        {showReportButton && (
+        {onReport && (
           <button
             onClick={handleReport}
             className="bg-[#1A6B72] text-white text-[9px] font-bold px-3 py-1.5 flex items-center gap-1"
@@ -117,13 +115,14 @@ export function FlightRow({ flight, showReportButton = true }: FlightRowProps) {
             </div>
 
             {/* Full report button */}
-            <button
-              onClick={handleReport}
-              className="w-full bg-red-600 text-white py-2 text-[11px] font-bold flex items-center justify-center gap-2"
-            >
-              📢 File Complaint for This Flight
-              <ExternalLink size={12} />
-            </button>
+            {onReport && (
+              <button
+                onClick={handleReport}
+                className="w-full bg-red-600 text-white py-2 text-[11px] font-bold flex items-center justify-center gap-2"
+              >
+                📢 File Complaint for This Flight
+              </button>
+            )}
           </div>
         </div>
       )}

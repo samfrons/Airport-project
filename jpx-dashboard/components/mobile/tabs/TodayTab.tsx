@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { ExternalLink } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 import { MobileHeader } from '../MobileHeader';
 import { DataFreshnessChip } from '../shared/DataFreshnessChip';
@@ -11,15 +10,15 @@ import { HourlyChart } from '../shared/HourlyChart';
 import { AircraftTypeBar } from '../shared/AircraftTypeBar';
 import { CURFEW } from '@/lib/constants/curfew';
 import { getNoiseDb } from '@/lib/noise/getNoiseDb';
-import { buildGeneralComplaintUrl } from '@/lib/mobile/complaint';
 import { NAVY, NOISE_COLORS } from '@/lib/mobile/colors';
 
 interface TodayTabProps {
   onNavigateToViolations?: () => void;
+  onFileComplaint?: () => void;
 }
 
-export function TodayTab({ onNavigateToViolations }: TodayTabProps) {
-  const { flights, dateRange } = useFlightStore();
+export function TodayTab({ onNavigateToViolations, onFileComplaint }: TodayTabProps) {
+  const { flights } = useFlightStore();
   const [comparison, setComparison] = useState<ComparisonPeriod>(null);
 
   // Filter to today's flights
@@ -74,11 +73,6 @@ export function TodayTab({ onNavigateToViolations }: TodayTabProps) {
         : stats.avgDb >= 65
           ? NOISE_COLORS.moderate
           : NOISE_COLORS.quiet;
-
-  const handleFileComplaint = () => {
-    const url = buildGeneralComplaintUrl();
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
 
   return (
     <div className="flex flex-col min-h-full">
@@ -146,11 +140,10 @@ export function TodayTab({ onNavigateToViolations }: TodayTabProps) {
       {/* Fixed CTA button */}
       <div className="p-4 border-t border-subtle">
         <button
-          onClick={handleFileComplaint}
-          className="w-full bg-red-600 text-white py-3 text-[13px] font-extrabold shadow-lg flex items-center justify-center gap-2"
+          onClick={onFileComplaint}
+          className="w-full bg-red-600 text-white py-3 text-[13px] font-extrabold shadow-lg"
         >
           📢 File a Noise Complaint
-          <ExternalLink size={14} />
         </button>
       </div>
     </div>

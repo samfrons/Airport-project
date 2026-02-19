@@ -1,19 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronRight, ChevronDown, ExternalLink } from 'lucide-react';
+import { ChevronRight, ChevronDown } from 'lucide-react';
 import { NoiseDbBadge } from './NoiseDbBadge';
 import { TypeChip } from './TypeChip';
 import { getNoiseDb } from '@/lib/noise/getNoiseDb';
-import { buildComplaintUrl } from '@/lib/mobile/complaint';
 import type { Flight } from '@/types/flight';
 
 interface ViolationRowProps {
   flight: Flight;
   isRepeat?: boolean;
+  onReport?: () => void;
 }
 
-export function ViolationRow({ flight, isRepeat }: ViolationRowProps) {
+export function ViolationRow({ flight, isRepeat, onReport }: ViolationRowProps) {
   const [expanded, setExpanded] = useState(false);
   const db = getNoiseDb(flight);
   const time = formatTime(flight.actual_on || flight.actual_off);
@@ -23,11 +23,6 @@ export function ViolationRow({ flight, isRepeat }: ViolationRowProps) {
     flight.direction === 'arrival'
       ? `${flight.origin_code || '???'} → KJPX`
       : `KJPX → ${flight.destination_code || '???'}`;
-
-  const handleReport = () => {
-    const url = buildComplaintUrl(flight);
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
 
   return (
     <div>
@@ -105,14 +100,18 @@ export function ViolationRow({ flight, isRepeat }: ViolationRowProps) {
           </div>
 
           {/* Report button */}
-          <button
-            onClick={handleReport}
-            className="w-full bg-red-600 text-white py-2.5 text-[11px] font-bold flex items-center justify-center gap-2"
-          >
-            <span>📢</span>
-            Report This Violation
-            <ExternalLink size={12} />
-          </button>
+          {onReport && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onReport();
+              }}
+              className="w-full bg-red-600 text-white py-2.5 text-[11px] font-bold flex items-center justify-center gap-2"
+            >
+              <span>📢</span>
+              Report This Violation
+            </button>
+          )}
         </div>
       )}
     </div>

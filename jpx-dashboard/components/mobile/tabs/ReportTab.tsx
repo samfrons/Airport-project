@@ -4,10 +4,14 @@ import { useMemo } from 'react';
 import { useFlightStore } from '@/store/flightStore';
 import { MobileHeader } from '../MobileHeader';
 import { FlightRow } from '../shared/FlightRow';
-import { buildGeneralComplaintUrl } from '@/lib/mobile/complaint';
-import { Map, ExternalLink, Phone, Mail } from 'lucide-react';
+import { Map, Phone, Mail } from 'lucide-react';
+import type { Flight } from '@/types/flight';
 
-export function ReportTab() {
+interface ReportTabProps {
+  onFileComplaint?: (flight?: Flight) => void;
+}
+
+export function ReportTab({ onFileComplaint }: ReportTabProps) {
   const { flights } = useFlightStore();
 
   // Get recent flights (last 10, sorted by most recent)
@@ -20,11 +24,6 @@ export function ReportTab() {
       })
       .slice(0, 10);
   }, [flights]);
-
-  const handleFileComplaint = () => {
-    const url = buildGeneralComplaintUrl();
-    window.open(url, '_blank', 'noopener,noreferrer');
-  };
 
   return (
     <div className="flex flex-col min-h-full">
@@ -46,14 +45,13 @@ export function ReportTab() {
             report will be pre-filled with the current time and your location.
           </div>
           <button
-            onClick={handleFileComplaint}
-            className="w-full bg-red-600 text-white py-3 text-[13px] font-extrabold shadow-lg flex items-center justify-center gap-2"
+            onClick={() => onFileComplaint?.()}
+            className="w-full bg-red-600 text-white py-3 text-[13px] font-extrabold shadow-lg"
           >
             📢 File a Complaint Now
-            <ExternalLink size={14} />
           </button>
           <div className="text-[9px] text-center text-muted mt-2">
-            Opens East Hampton Town complaint form
+            Opens complaint form
           </div>
         </div>
 
@@ -92,7 +90,11 @@ export function ReportTab() {
 
         {/* Flight list */}
         {recentFlights.map((f) => (
-          <FlightRow key={f.id} flight={f} showReportButton={true} />
+          <FlightRow
+            key={f.id}
+            flight={f}
+            onReport={onFileComplaint ? () => onFileComplaint(f) : undefined}
+          />
         ))}
 
         {recentFlights.length === 0 && (
