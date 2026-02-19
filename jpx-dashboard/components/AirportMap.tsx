@@ -1547,7 +1547,6 @@ export function AirportMap() {
 
   const viewModes: { mode: MapViewMode; icon: React.ReactNode; label: string }[] = [
     { mode: 'routes', icon: <Route size={14} strokeWidth={1.8} />, label: 'Routes' },
-    { mode: 'stats', icon: <Map size={14} strokeWidth={1.8} />, label: 'Airport' },
     { mode: 'heatmap', icon: <BarChart3 size={14} strokeWidth={1.8} />, label: 'Heatmap' },
   ];
 
@@ -1675,7 +1674,9 @@ export function AirportMap() {
           Aircraft Type
         </div>
         <div className="flex flex-col gap-1.5">
-          {Object.entries(categoryColors).map(([category, color]) => (
+          {Object.entries(categoryColors)
+            .filter(([category]) => categoryCounts[category] > 0)
+            .map(([category, color]) => (
             <div key={category} className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div
@@ -1686,11 +1687,9 @@ export function AirportMap() {
                   {categoryLabels[category]}
                 </span>
               </div>
-              {categoryCounts[category] != null && (
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-600 tabular-nums">
-                  {categoryCounts[category]}
-                </span>
-              )}
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-600 tabular-nums">
+                {categoryCounts[category]}
+              </span>
             </div>
           ))}
         </div>
@@ -1700,6 +1699,25 @@ export function AirportMap() {
           </div>
         )}
       </div>
+
+      {/* Heatmap Legend */}
+      {mapViewMode === 'heatmap' && (
+        <div className="absolute bottom-4 right-14 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.12em] mb-2">
+            Flight Density
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] text-zinc-500">Low</span>
+            <div className="w-24 h-2 rounded-sm" style={{
+              background: 'linear-gradient(to right, rgba(37,99,235,0.3), rgba(52,211,153,0.5), rgba(245,158,11,0.65), rgba(239,68,68,0.85))'
+            }} />
+            <span className="text-[9px] text-zinc-500">High</span>
+          </div>
+          <div className="text-[8px] text-zinc-400 dark:text-zinc-600 mt-1">
+            Based on origin/destination frequency
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen hint */}
       {isFullscreen && (
