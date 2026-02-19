@@ -14,6 +14,8 @@ import { ComplianceDashboard } from '@/components/ComplianceDashboard';
 import { CurfewViolatorsTable } from '@/components/CurfewViolatorsTable';
 import { TopCurfewViolators } from '@/components/TopCurfewViolators';
 import { HistoricalComparison } from '@/components/HistoricalComparison';
+import { ComplaintForm } from '@/components/ComplaintForm';
+import { ComplaintsSummary } from '@/components/ComplaintsSummary';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   ErrorBoundary,
@@ -30,12 +32,13 @@ import { useNavStore } from '@/store/navStore';
 
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
-  const { loading, error, fetchFlights, fetchSummary, selectedFlight, setSelectedFlight, lastUpdated, flights } = useFlightStore();
+  const { loading, error, fetchFlights, fetchSummary, loadNoiseData, selectedFlight, setSelectedFlight, lastUpdated, flights } = useFlightStore();
   const isNavExpanded = useNavStore((state) => state.isExpanded);
 
   useEffect(() => {
     fetchFlights();
     fetchSummary();
+    loadNoiseData();
   }, []);
 
   const handleRefresh = () => {
@@ -287,23 +290,29 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="overline">Complaints</h2>
           </div>
-          <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6">
-            <div className="text-center py-4">
-              <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-4">
-                Report noise concerns to East Hampton Town
-              </p>
-              <a
-                href="https://planenoise.com/khto/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 transition-colors"
-              >
-                File a Complaint
-                <ExternalLink size={14} />
-              </a>
-              <p className="text-xs text-zinc-500 dark:text-zinc-600 mt-4">
-                Opens planenoise.com in a new tab
-              </p>
+          <div className="space-y-6">
+            <ErrorBoundary sectionName="Community Noise Reports" fallback={<PanelSkeleton />}>
+              <ComplaintForm />
+            </ErrorBoundary>
+            <ErrorBoundary sectionName="Complaint Analysis" fallback={<PanelSkeleton />}>
+              <ComplaintsSummary />
+            </ErrorBoundary>
+            {/* External filing link */}
+            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                  File an official complaint with East Hampton Town
+                </div>
+                <a
+                  href="https://planenoise.com/khto/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-[10px] font-semibold hover:bg-blue-500 transition-colors"
+                >
+                  planenoise.com
+                  <ExternalLink size={10} />
+                </a>
+              </div>
             </div>
           </div>
         </section>
