@@ -1,7 +1,7 @@
 'use client';
 
 import { X, Download, ArrowUpDown, Repeat } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Flight } from '@/types/flight';
 import { exportFlightsCsv } from '@/lib/exportUtils';
 import { AIRCRAFT_COLORS, getAircraftCategoryColor } from '@/lib/constants/colors';
@@ -130,18 +130,35 @@ export function DetailPanel({
     return `${h} ${ampm}`;
   };
 
-  if (!isOpen) return null;
+  // Animation state management
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [shouldRender, setShouldRender] = useState(isOpen);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      // Small delay to ensure DOM is ready before animating
+      const timer = setTimeout(() => setIsAnimating(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setIsAnimating(false);
+      const timer = setTimeout(() => setShouldRender(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  if (!shouldRender) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className={`fixed inset-0 z-50 flex justify-end transition-opacity duration-300 ease-out ${isAnimating ? 'opacity-100' : 'opacity-0'}`}>
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       />
 
       {/* Panel */}
-      <div className="relative w-full max-w-lg bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col">
+      <div className={`relative w-full max-w-lg bg-white dark:bg-zinc-900 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col transform transition-transform duration-300 ease-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
         {/* Header */}
         <div className="flex-shrink-0 px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <div>

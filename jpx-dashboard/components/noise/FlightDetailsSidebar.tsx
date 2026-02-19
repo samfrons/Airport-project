@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { X, Plane, User, Volume2, Navigation, MapPin, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
@@ -37,7 +38,23 @@ interface FlightDetailsSidebarProps {
 }
 
 export function FlightDetailsSidebar({ flight, onClose }: FlightDetailsSidebarProps) {
-  if (!flight) return null;
+  // Animation state management
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [shouldRender, setShouldRender] = useState(!!flight);
+
+  useEffect(() => {
+    if (flight) {
+      setShouldRender(true);
+      const timer = setTimeout(() => setIsAnimating(true), 10);
+      return () => clearTimeout(timer);
+    } else {
+      setIsAnimating(false);
+      const timer = setTimeout(() => setShouldRender(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [flight]);
+
+  if (!shouldRender || !flight) return null;
 
   // Use EASA-based profile from API if available, otherwise fall back to local profiles
   const hasEASAProfile = !!flight.noise_profile;
@@ -67,7 +84,7 @@ export function FlightDetailsSidebar({ flight, onClose }: FlightDetailsSidebarPr
   const confidence = easaData?.confidence || 'low';
 
   return (
-    <div className="fixed right-0 top-0 h-full w-80 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 z-50 overflow-y-auto">
+    <div className={`fixed right-0 top-0 h-full w-80 bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 z-50 overflow-y-auto transform transition-transform duration-300 ease-out ${isAnimating ? 'translate-x-0' : 'translate-x-full'}`}>
       {/* Header */}
       <div className="sticky top-0 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 px-4 py-3 flex items-center justify-between">
         <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.12em] flex items-center gap-1.5">

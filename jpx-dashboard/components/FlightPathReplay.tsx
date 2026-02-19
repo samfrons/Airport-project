@@ -994,46 +994,50 @@ function FlightCard({ flight }: { flight: FlightWithNoise }) {
         )}
       </div>
 
-      {/* Expanded details */}
-      {showDetails && (cachedTrack || cachedOwner) && (
-        <div className="mt-2 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50 space-y-2">
-          {/* Owner info */}
-          {cachedOwner && cachedOwner.owner && (
-            <div className="text-[10px]">
-              <div className="text-zinc-500 uppercase tracking-wide text-[8px] mb-0.5">Owner</div>
-              <div className="text-zinc-700 dark:text-zinc-300">{cachedOwner.owner}</div>
-              {cachedOwner.location && (
-                <div className="text-zinc-500">{cachedOwner.location}</div>
+      {/* Expanded details - Animated */}
+      {(cachedTrack || cachedOwner) && (
+        <div className={`grid transition-all duration-300 ease-out ${showDetails ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+          <div className="overflow-hidden">
+            <div className="mt-2 pt-2 border-t border-zinc-200/50 dark:border-zinc-800/50 space-y-2">
+              {/* Owner info */}
+              {cachedOwner && cachedOwner.owner && (
+                <div className="text-[10px]">
+                  <div className="text-zinc-500 uppercase tracking-wide text-[8px] mb-0.5">Owner</div>
+                  <div className="text-zinc-700 dark:text-zinc-300">{cachedOwner.owner}</div>
+                  {cachedOwner.location && (
+                    <div className="text-zinc-500">{cachedOwner.location}</div>
+                  )}
+                </div>
+              )}
+
+              {/* Track summary */}
+              {cachedTrack && cachedTrack.positions.length > 0 && (
+                <div className="text-[10px]">
+                  <div className="text-zinc-500 uppercase tracking-wide text-[8px] mb-0.5">Track Data</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-zinc-600 dark:text-zinc-400">
+                    <span>Positions:</span>
+                    <span className="text-zinc-700 dark:text-zinc-300">{cachedTrack.position_count}</span>
+                    {cachedTrack.positions[0]?.altitude && (
+                      <>
+                        <span>Max Alt:</span>
+                        <span className="text-zinc-700 dark:text-zinc-300">
+                          {Math.max(...cachedTrack.positions.map(p => p.altitude || 0)).toLocaleString()} ft
+                        </span>
+                      </>
+                    )}
+                    {cachedTrack.positions[0]?.groundspeed && (
+                      <>
+                        <span>Max Speed:</span>
+                        <span className="text-zinc-700 dark:text-zinc-300">
+                          {Math.max(...cachedTrack.positions.map(p => p.groundspeed || 0))} kts
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-          )}
-
-          {/* Track summary */}
-          {cachedTrack && cachedTrack.positions.length > 0 && (
-            <div className="text-[10px]">
-              <div className="text-zinc-500 uppercase tracking-wide text-[8px] mb-0.5">Track Data</div>
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-zinc-600 dark:text-zinc-400">
-                <span>Positions:</span>
-                <span className="text-zinc-700 dark:text-zinc-300">{cachedTrack.position_count}</span>
-                {cachedTrack.positions[0]?.altitude && (
-                  <>
-                    <span>Max Alt:</span>
-                    <span className="text-zinc-700 dark:text-zinc-300">
-                      {Math.max(...cachedTrack.positions.map(p => p.altitude || 0)).toLocaleString()} ft
-                    </span>
-                  </>
-                )}
-                {cachedTrack.positions[0]?.groundspeed && (
-                  <>
-                    <span>Max Speed:</span>
-                    <span className="text-zinc-700 dark:text-zinc-300">
-                      {Math.max(...cachedTrack.positions.map(p => p.groundspeed || 0))} kts
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       )}
     </div>

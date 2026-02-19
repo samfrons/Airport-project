@@ -124,11 +124,10 @@ export function AircraftBreakdownPanel() {
               className="w-full flex items-center justify-between px-2 py-1.5 bg-zinc-100/50 dark:bg-zinc-800/50 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
             >
               <div className="flex items-center gap-2">
-                {expandedCategories.has(cat.category) ? (
-                  <ChevronDown size={12} className="text-zinc-500" />
-                ) : (
-                  <ChevronRight size={12} className="text-zinc-500" />
-                )}
+                <ChevronRight
+                  size={12}
+                  className={`text-zinc-500 transition-transform duration-200 ease-out ${expandedCategories.has(cat.category) ? 'rotate-90' : 'rotate-0'}`}
+                />
                 <span className="text-[11px] font-medium text-zinc-700 dark:text-zinc-300">
                   {cat.label}
                 </span>
@@ -145,39 +144,41 @@ export function AircraftBreakdownPanel() {
               </div>
             </button>
 
-            {/* Aircraft Types List */}
-            {expandedCategories.has(cat.category) && (
-              <div className="mt-1 space-y-1 pl-4">
-                {cat.aircraftTypes.map((type) => {
-                  const barWidth = ((type.avgDb - minDb) / (maxDb - minDb)) * 100;
-                  return (
-                    <div key={type.aircraftType} className="flex items-center gap-2">
-                      <span className="text-[10px] text-zinc-600 dark:text-zinc-400 w-10 font-mono">
-                        {type.aircraftType}
-                      </span>
-                      <div className="flex-1 h-2 bg-zinc-200 dark:bg-zinc-800 relative">
-                        <div
-                          className="h-full transition-all"
-                          style={{
-                            width: `${Math.max(5, Math.min(100, barWidth))}%`,
-                            backgroundColor: getDbLevelColor(type.avgDb),
-                          }}
-                        />
+            {/* Aircraft Types List - Animated expand/collapse */}
+            <div className={`grid transition-all duration-300 ease-out ${expandedCategories.has(cat.category) ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+              <div className="overflow-hidden">
+                <div className="mt-1 space-y-1 pl-4">
+                  {cat.aircraftTypes.map((type) => {
+                    const barWidth = ((type.avgDb - minDb) / (maxDb - minDb)) * 100;
+                    return (
+                      <div key={type.aircraftType} className="flex items-center gap-2">
+                        <span className="text-[10px] text-zinc-600 dark:text-zinc-400 w-10 font-mono">
+                          {type.aircraftType}
+                        </span>
+                        <div className="flex-1 h-2 bg-zinc-200 dark:bg-zinc-800 relative">
+                          <div
+                            className="h-full transition-all"
+                            style={{
+                              width: `${Math.max(5, Math.min(100, barWidth))}%`,
+                              backgroundColor: getDbLevelColor(type.avgDb),
+                            }}
+                          />
+                        </div>
+                        <span className="text-[10px] text-zinc-500 w-4 text-right tabular-nums">
+                          {type.count}
+                        </span>
+                        <span
+                          className="text-[10px] font-medium w-14 text-right tabular-nums"
+                          style={{ color: getDbLevelColor(type.avgDb) }}
+                        >
+                          {formatEstimatedNoise(Math.round(type.avgDb), 'short')}
+                        </span>
                       </div>
-                      <span className="text-[10px] text-zinc-500 w-4 text-right tabular-nums">
-                        {type.count}
-                      </span>
-                      <span
-                        className="text-[10px] font-medium w-14 text-right tabular-nums"
-                        style={{ color: getDbLevelColor(type.avgDb) }}
-                      >
-                        {formatEstimatedNoise(Math.round(type.avgDb), 'short')}
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         ))}
       </div>

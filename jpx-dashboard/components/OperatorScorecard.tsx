@@ -285,17 +285,17 @@ export function OperatorScorecard() {
                         Clean
                       </div>
                     )}
-                    {isExpanded ? (
-                      <ChevronDown size={12} className="text-zinc-600" />
-                    ) : (
-                      <ChevronRight size={12} className="text-zinc-600" />
-                    )}
+                    <ChevronRight
+                      size={12}
+                      className={`text-zinc-600 transition-transform duration-200 ease-out ${isExpanded ? 'rotate-90' : 'rotate-0'}`}
+                    />
                   </div>
                 </button>
 
-                {/* Expanded detail */}
-                {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-zinc-200/40 dark:border-zinc-800/40 space-y-3 pt-3">
+                {/* Expanded detail - Animated */}
+                <div className={`grid transition-all duration-300 ease-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                  <div className="overflow-hidden">
+                    <div className="px-4 pb-4 border-t border-zinc-200/40 dark:border-zinc-800/40 space-y-3 pt-3">
                     {/* Quick stats */}
                     <div className="grid grid-cols-5 gap-px bg-zinc-200/40 dark:bg-zinc-800/40">
                       <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
@@ -381,8 +381,9 @@ export function OperatorScorecard() {
                         </div>
                       </div>
                     )}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })
