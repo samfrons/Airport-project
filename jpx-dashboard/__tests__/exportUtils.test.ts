@@ -112,7 +112,7 @@ describe('exportViolationsCsv', () => {
       operationHour: 10,
       estimatedNoiseDb: 92,
       violatedThresholds: [
-        { thresholdId: 't1', thresholdLabel: 'Noise Limit', severity: 'high', exceedanceDb: 7, reason: 'Test' },
+        { thresholdId: 't1', thresholdLabel: 'Noise Limit', severity: 'high', exceedanceDb: 7 },
       ],
       overallSeverity: 'high',
       speciesAffected: [],
@@ -138,10 +138,9 @@ describe('exportOperatorReportCsv', () => {
         registrations: ['N111', 'N222'],
         aircraftTypes: ['GLF5'],
         totalFlights: 50,
-        totalViolations: 10,
-        criticalViolations: 2,
-        protectedSpeciesEvents: 3,
-        worstSeverity: 'critical',
+        curfewViolations: 10,
+        noiseExceedances: 2,
+        avgNoiseDb: 82.5,
       },
     ];
 
@@ -149,7 +148,7 @@ describe('exportOperatorReportCsv', () => {
 
     const lines = lastCsvContent.split('\n');
     expect(lines[0]).toContain('Operator');
-    expect(lines[0]).toContain('Total Violations');
+    expect(lines[0]).toContain('Curfew Violations');
     expect(lines).toHaveLength(2);
     expect(lines[1]).toContain('Test Airlines');
     // Registrations should be semicolon-separated and quoted (contains ;)

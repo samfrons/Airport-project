@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,21 +15,17 @@ import {
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import {
+  CalendarDays,
   Volume2,
-  TreePine,
   TrendingUp,
   BarChart3,
   Grid3X3,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
-import { evaluateFlight } from '@/lib/biodiversityViolationEngine';
-import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
-import { getImpactSeverityColor } from '@/types/biodiversity';
-import { formatEstimatedNoise } from '@/components/noise/EstimatedNoiseDisplay';
-import { AIRCRAFT_COLORS } from '@/lib/constants/colors';
-import type { ImpactSeverity } from '@/types/biodiversity';
+import { getNoiseDb } from '@/lib/noise/getNoiseDb';
 import type { Flight } from '@/types/flight';
-import type { BiodiversityThreshold, BiodiversityViolation } from '@/types/biodiversityThresholds';
 
 ChartJS.register(
   CategoryScale,
@@ -57,10 +53,8 @@ interface DayBucket {
   fixedWing: number;
   avgNoise: number;
   peakNoise: number;
-  violations: BiodiversityViolation[];
-  violationsBySeverity: Record<ImpactSeverity, number>;
-  protectedSpeciesAtRisk: number;
-  habitatsImpacted: number;
+  curfewOps: number;
+  loudOps: number;
 }
 
 interface HourCell {
@@ -68,7 +62,6 @@ interface HourCell {
   hour: number;
   count: number;
   avgNoise: number;
-  violations: number;
 }
 
 type ViewMode = 'trends' | 'heatmap';
@@ -97,14 +90,11 @@ function getAllDatesInRange(start: string, end: string): string[] {
   return dates;
 }
 
-function getFlightNoise(flight: Flight): number {
-  const profile = getAircraftNoiseProfile(flight.aircraft_type);
-  return flight.direction === 'arrival' ? profile.approachDb : profile.takeoffDb;
-}
+// Use canonical getNoiseDb from lib/noise/getNoiseDb.ts
+const getFlightNoise = getNoiseDb;
 
 function buildDayBuckets(
   flights: Flight[],
-  thresholds: BiodiversityThreshold[],
   dateRange: { start: string; end: string },
 ): DayBucket[] {
   const allDates = getAllDatesInRange(dateRange.start, dateRange.end);
@@ -122,22 +112,6 @@ function buildDayBuckets(
     const avgNoise = noises.length > 0 ? Math.round(noises.reduce((a, b) => a + b, 0) / noises.length) : 0;
     const peakNoise = noises.length > 0 ? Math.max(...noises) : 0;
 
-    const violations = dayFlights
-      .map((f) => evaluateFlight(f, thresholds))
-      .filter((v): v is BiodiversityViolation => v !== null);
-
-    const violationsBySeverity: Record<ImpactSeverity, number> = {
-      critical: 0, high: 0, moderate: 0, low: 0, minimal: 0,
-    };
-    let protectedSpeciesAtRisk = 0;
-    const habitatIds = new Set<string>();
-
-    for (const v of violations) {
-      violationsBySeverity[v.overallSeverity]++;
-      if (v.speciesAffected.some((s) => s.conservationStatus)) protectedSpeciesAtRisk++;
-      for (const h of v.habitatsAffected) habitatIds.add(h.habitatId);
-    }
-
     return {
       date,
       label: formatShortDate(date),
@@ -150,17 +124,14 @@ function buildDayBuckets(
       fixedWing: dayFlights.filter((f) => f.aircraft_category === 'fixed_wing').length,
       avgNoise,
       peakNoise,
-      violations,
-      violationsBySeverity,
-      protectedSpeciesAtRisk,
-      habitatsImpacted: habitatIds.size,
+      curfewOps: dayFlights.filter((f) => f.is_curfew_period).length,
+      loudOps: dayFlights.filter((f) => getFlightNoise(f) >= 85).length,
     };
   });
 }
 
 function buildHourCells(
   flights: Flight[],
-  thresholds: BiodiversityThreshold[],
   dateRange: { start: string; end: string },
 ): { cells: HourCell[]; dates: string[] } {
   const dates = getAllDatesInRange(dateRange.start, dateRange.end);
@@ -172,22 +143,27 @@ function buildHourCells(
         (f) => f.operation_date === date && f.operation_hour_et === hour,
       );
       const noises = matching.map(getFlightNoise);
-      const violationCount = matching.filter(
-        (f) => evaluateFlight(f, thresholds) !== null,
-      ).length;
 
       cells.push({
         date,
         hour,
         count: matching.length,
         avgNoise: noises.length > 0 ? Math.round(noises.reduce((a, b) => a + b, 0) / noises.length) : 0,
-        violations: violationCount,
       });
     }
   }
 
   return { cells, dates };
 }
+
+// ─── Preset Ranges ──────────────────────────────────────────────────────────
+
+const presets = [
+  { label: '7d', days: 7 },
+  { label: '14d', days: 14 },
+  { label: '30d', days: 30 },
+  { label: '90d', days: 90 },
+];
 
 // ─── Chart styling ──────────────────────────────────────────────────────────
 
@@ -239,28 +215,66 @@ function MiniStat({
 
 export function NoiseEnvironmentTimeline() {
   const flights = useFlightStore((s) => s.flights);
-  const thresholds = useFlightStore((s) => s.thresholds);
-  const dateRange = useFlightStore((s) => s.dateRange);
+
+  const globalDateRange = useFlightStore((s) => s.dateRange);
 
   const [viewMode, setViewMode] = useState<ViewMode>('trends');
+  const [localStart, setLocalStart] = useState(globalDateRange.start);
+  const [localEnd, setLocalEnd] = useState(globalDateRange.end);
+
+  // Sync local state when global date range changes
+  useEffect(() => {
+    setLocalStart(globalDateRange.start);
+    setLocalEnd(globalDateRange.end);
+  }, [globalDateRange.start, globalDateRange.end]);
+
+  // Range used for computation
+  const dateRange = useMemo(
+    () => ({ start: localStart, end: localEnd }),
+    [localStart, localEnd],
+  );
+
+  // Preset range setter
+  const applyPreset = useCallback((days: number) => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    setLocalStart(start.toISOString().split('T')[0]);
+    setLocalEnd(end.toISOString().split('T')[0]);
+  }, []);
+
+  // Shift range forward/backward
+  const shiftRange = useCallback(
+    (direction: 'prev' | 'next') => {
+      const s = new Date(localStart + 'T12:00:00');
+      const e = new Date(localEnd + 'T12:00:00');
+      const span = e.getTime() - s.getTime();
+      const shift = direction === 'next' ? span : -span;
+      const ns = new Date(s.getTime() + shift);
+      const ne = new Date(e.getTime() + shift);
+      setLocalStart(ns.toISOString().split('T')[0]);
+      setLocalEnd(ne.toISOString().split('T')[0]);
+    },
+    [localStart, localEnd],
+  );
 
   // ─── Computed Data ──────────────────────────────────────────────────
 
   const dayBuckets = useMemo(
-    () => buildDayBuckets(flights, thresholds, dateRange),
-    [flights, thresholds, dateRange],
+    () => buildDayBuckets(flights, dateRange),
+    [flights, dateRange],
   );
 
   const heatmapData = useMemo(
-    () => (viewMode === 'heatmap' ? buildHourCells(flights, thresholds, dateRange) : null),
-    [flights, thresholds, dateRange, viewMode],
+    () => (viewMode === 'heatmap' ? buildHourCells(flights, dateRange) : null),
+    [flights, dateRange, viewMode],
   );
 
   // Aggregate stats
   const aggStats = useMemo(() => {
     const totalOps = dayBuckets.reduce((s, d) => s + d.totalOps, 0);
-    const totalViolations = dayBuckets.reduce((s, d) => s + d.violations.length, 0);
-    const criticalViolations = dayBuckets.reduce((s, d) => s + d.violationsBySeverity.critical, 0);
+    const curfewOps = dayBuckets.reduce((s, d) => s + d.curfewOps, 0);
+    const loudOps = dayBuckets.reduce((s, d) => s + d.loudOps, 0);
     const peakNoise = Math.max(...dayBuckets.map((d) => d.peakNoise), 0);
     const avgNoise =
       totalOps > 0
@@ -268,9 +282,7 @@ export function NoiseEnvironmentTimeline() {
             dayBuckets.reduce((s, d) => s + d.avgNoise * d.totalOps, 0) / totalOps,
           )
         : 0;
-    const daysWithViolations = dayBuckets.filter((d) => d.violations.length > 0).length;
-    const protectedTotal = dayBuckets.reduce((s, d) => s + d.protectedSpeciesAtRisk, 0);
-    return { totalOps, totalViolations, criticalViolations, peakNoise, avgNoise, daysWithViolations, protectedTotal };
+    return { totalOps, curfewOps, loudOps, peakNoise, avgNoise };
   }, [dayBuckets]);
 
   // ─── Trend Charts Data ────────────────────────────────────────────
@@ -284,19 +296,19 @@ export function NoiseEnvironmentTimeline() {
         {
           label: 'Helicopter',
           data: dayBuckets.map((d) => d.helicopters),
-          backgroundColor: AIRCRAFT_COLORS.helicopter.primary + 'b3', // 70% opacity
+          backgroundColor: 'rgba(239, 68, 68, 0.7)',
           stack: 'ops',
         },
         {
           label: 'Jet',
           data: dayBuckets.map((d) => d.jets),
-          backgroundColor: AIRCRAFT_COLORS.jet.primary + 'b3', // 70% opacity
+          backgroundColor: 'rgba(59, 130, 246, 0.7)',
           stack: 'ops',
         },
         {
           label: 'Fixed Wing',
           data: dayBuckets.map((d) => d.fixedWing),
-          backgroundColor: AIRCRAFT_COLORS.fixed_wing.primary + 'b3', // 70% opacity
+          backgroundColor: 'rgba(16, 185, 129, 0.7)',
           stack: 'ops',
         },
       ],
@@ -309,7 +321,7 @@ export function NoiseEnvironmentTimeline() {
       labels,
       datasets: [
         {
-          label: 'Peak (Est.)',
+          label: 'Peak dB',
           data: dayBuckets.map((d) => d.peakNoise || null),
           borderColor: 'rgba(239, 68, 68, 0.8)',
           backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -320,7 +332,7 @@ export function NoiseEnvironmentTimeline() {
           borderWidth: 1.5,
         },
         {
-          label: 'Avg (Est.)',
+          label: 'Avg dB',
           data: dayBuckets.map((d) => d.avgNoise || null),
           borderColor: 'rgba(59, 130, 246, 0.8)',
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -335,64 +347,21 @@ export function NoiseEnvironmentTimeline() {
     [dayBuckets, labels],
   );
 
-  const violationsChartData = useMemo(
+  const complianceChartData = useMemo(
     () => ({
       labels,
       datasets: [
         {
-          label: 'Critical',
-          data: dayBuckets.map((d) => d.violationsBySeverity.critical),
-          backgroundColor: getImpactSeverityColor('critical'),
-          stack: 'vio',
+          label: 'Curfew Ops',
+          data: dayBuckets.map((d) => d.curfewOps),
+          backgroundColor: 'rgba(245, 158, 11, 0.7)',
+          stack: 'compliance',
         },
         {
-          label: 'High',
-          data: dayBuckets.map((d) => d.violationsBySeverity.high),
-          backgroundColor: getImpactSeverityColor('high'),
-          stack: 'vio',
-        },
-        {
-          label: 'Moderate',
-          data: dayBuckets.map((d) => d.violationsBySeverity.moderate),
-          backgroundColor: getImpactSeverityColor('moderate'),
-          stack: 'vio',
-        },
-        {
-          label: 'Low',
-          data: dayBuckets.map((d) => d.violationsBySeverity.low),
-          backgroundColor: getImpactSeverityColor('low'),
-          stack: 'vio',
-        },
-      ],
-    }),
-    [dayBuckets, labels],
-  );
-
-  const speciesChartData = useMemo(
-    () => ({
-      labels,
-      datasets: [
-        {
-          label: 'Protected Species at Risk',
-          data: dayBuckets.map((d) => d.protectedSpeciesAtRisk),
-          borderColor: 'rgba(245, 158, 11, 0.8)',
-          backgroundColor: 'rgba(245, 158, 11, 0.15)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 2,
-          pointHoverRadius: 5,
-          borderWidth: 1.5,
-        },
-        {
-          label: 'Habitats Impacted',
-          data: dayBuckets.map((d) => d.habitatsImpacted),
-          borderColor: 'rgba(16, 185, 129, 0.8)',
-          backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 2,
-          pointHoverRadius: 5,
-          borderWidth: 1.5,
+          label: 'Loud Ops (\u226585 dB)',
+          data: dayBuckets.map((d) => d.loudOps),
+          backgroundColor: 'rgba(239, 68, 68, 0.7)',
+          stack: 'compliance',
         },
       ],
     }),
@@ -450,55 +419,6 @@ export function NoiseEnvironmentTimeline() {
     [],
   );
 
-  const violationBarOpts = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top' as const,
-          labels: { color: '#71717a', font: { ...chartFont, size: 10 }, boxWidth: 8, padding: 12 },
-        },
-        tooltip: tooltipOpts,
-      },
-      scales: {
-        x: {
-          ...commonScaleOpts,
-          stacked: true,
-          grid: { display: false },
-          border: { color: '#27272a' },
-        },
-        y: { ...commonScaleOpts, stacked: true, beginAtZero: true },
-      },
-    }),
-    [],
-  );
-
-  const speciesLineOpts = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'top' as const,
-          labels: { color: '#71717a', font: { ...chartFont, size: 10 }, boxWidth: 8, padding: 12 },
-        },
-        tooltip: tooltipOpts,
-      },
-      scales: {
-        x: {
-          ...commonScaleOpts,
-          grid: { display: false },
-          border: { color: '#27272a' },
-        },
-        y: { ...commonScaleOpts, beginAtZero: true },
-      },
-    }),
-    [],
-  );
-
   // ─── Heatmap ──────────────────────────────────────────────────────
 
   const heatmapMaxCount = useMemo(() => {
@@ -513,13 +433,6 @@ export function NoiseEnvironmentTimeline() {
     if (intensity > 0.5) return 'rgba(245, 158, 11, 0.7)';
     if (intensity > 0.25) return 'rgba(59, 130, 246, 0.6)';
     return 'rgba(59, 130, 246, 0.3)';
-  }
-
-  function violationHeatmapColor(violations: number): string {
-    if (violations === 0) return 'rgba(39, 39, 42, 0.3)';
-    if (violations >= 3) return getImpactSeverityColor('critical');
-    if (violations >= 2) return getImpactSeverityColor('high');
-    return getImpactSeverityColor('moderate');
   }
 
   const hourLabels = Array.from({ length: 24 }, (_, i) => {
@@ -543,7 +456,7 @@ export function NoiseEnvironmentTimeline() {
                 Noise & Environment Impact Timeline
               </h3>
               <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
-                Explore aircraft noise and biodiversity impact trends over time
+                Explore aircraft noise and compliance trends over time
               </p>
             </div>
           </div>
@@ -576,37 +489,75 @@ export function NoiseEnvironmentTimeline() {
         </div>
       </div>
 
-      {/* ─── Date Range Summary ──────────────────────────────────── */}
-      <div className="px-5 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60 flex items-center">
-        <span className="text-[10px] text-zinc-500 dark:text-zinc-600">
+      {/* ─── Date Range Picker ──────────────────────────────────── */}
+      <div className="px-5 py-3 border-b border-zinc-200/60 dark:border-zinc-800/60 flex flex-wrap items-center gap-3">
+        {/* Navigation arrows */}
+        <button
+          onClick={() => shiftRange('prev')}
+          className="p-1.5 bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+        >
+          <ChevronLeft size={14} />
+        </button>
+        <button
+          onClick={() => shiftRange('next')}
+          className="p-1.5 bg-zinc-200/60 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+        >
+          <ChevronRight size={14} />
+        </button>
+
+        {/* Presets */}
+        <div className="flex bg-zinc-100/60 dark:bg-zinc-950/60 p-0.5">
+          {presets.map((p) => (
+            <button
+              key={p.label}
+              onClick={() => applyPreset(p.days)}
+              className="px-3 py-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="w-px h-5 bg-zinc-200 dark:bg-zinc-800" />
+
+        {/* Date inputs */}
+        <div className="flex items-center gap-2">
+          <CalendarDays size={12} className="text-zinc-500 dark:text-zinc-600" />
+          <input
+            type="date"
+            value={localStart}
+            onChange={(e) => setLocalStart(e.target.value)}
+            className="px-2 py-1 bg-zinc-100 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-medium focus:outline-none focus:border-purple-600 transition-colors"
+          />
+          <span className="text-zinc-500 dark:text-zinc-600 text-[10px]">&ndash;</span>
+          <input
+            type="date"
+            value={localEnd}
+            onChange={(e) => setLocalEnd(e.target.value)}
+            className="px-2 py-1 bg-zinc-100 dark:bg-zinc-950 border border-zinc-300 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 text-[11px] font-medium focus:outline-none focus:border-purple-600 transition-colors"
+          />
+        </div>
+
+        {/* Range summary */}
+        <span className="text-[10px] text-zinc-500 dark:text-zinc-600 ml-auto">
           {dayBuckets.length} days · {aggStats.totalOps} operations
         </span>
       </div>
 
       {/* ─── Aggregate Stats ────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-zinc-200/60 dark:bg-zinc-800/60">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-px bg-zinc-200/60 dark:bg-zinc-800/60">
         <MiniStat label="Total Ops" value={aggStats.totalOps} />
-        <MiniStat label="Avg Noise (Est.)" value={formatEstimatedNoise(aggStats.avgNoise, 'short')} color="#3b82f6" />
-        <MiniStat label="Peak Noise (Est.)" value={formatEstimatedNoise(aggStats.peakNoise, 'short')} color="#ef4444" />
+        <MiniStat label="Est. Avg Noise" value={`${aggStats.avgNoise} dB`} color="#3b82f6" />
+        <MiniStat label="Est. Peak Noise" value={`${aggStats.peakNoise} dB`} color="#ef4444" />
         <MiniStat
-          label="Violations"
-          value={aggStats.totalViolations}
-          color={aggStats.totalViolations > 0 ? '#ef4444' : '#10b981'}
+          label="Curfew Ops"
+          value={aggStats.curfewOps}
+          color={aggStats.curfewOps > 0 ? '#f59e0b' : '#10b981'}
         />
         <MiniStat
-          label="Critical"
-          value={aggStats.criticalViolations}
-          color={aggStats.criticalViolations > 0 ? getImpactSeverityColor('critical') : '#71717a'}
-        />
-        <MiniStat
-          label="Days w/ Violations"
-          value={aggStats.daysWithViolations}
-          subValue={`of ${dayBuckets.length} days`}
-        />
-        <MiniStat
-          label="Protected Spp. Events"
-          value={aggStats.protectedTotal}
-          color="#f59e0b"
+          label="Loud Ops (\u226585 dB)"
+          value={aggStats.loudOps}
+          color={aggStats.loudOps > 0 ? '#ef4444' : '#10b981'}
         />
       </div>
 
@@ -632,7 +583,7 @@ export function NoiseEnvironmentTimeline() {
               <div className="flex items-center gap-2 mb-3">
                 <Volume2 size={12} className="text-zinc-500 dark:text-zinc-500" />
                 <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                  Daily Noise Levels (Est. dB)
+                  Daily Noise Levels (dB)
                 </h4>
               </div>
               <div className="h-48">
@@ -640,29 +591,16 @@ export function NoiseEnvironmentTimeline() {
               </div>
             </div>
 
-            {/* Violations by Severity */}
+            {/* Curfew & Loud Ops */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <TreePine size={12} className="text-zinc-500 dark:text-zinc-500" />
+                <Volume2 size={12} className="text-zinc-500 dark:text-zinc-500" />
                 <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                  Daily Biodiversity Violations by Severity
+                  Daily Curfew & Loud Operations
                 </h4>
               </div>
               <div className="h-48">
-                <Bar data={violationsChartData} options={violationBarOpts} />
-              </div>
-            </div>
-
-            {/* Protected Species & Habitats */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <TreePine size={12} className="text-zinc-500 dark:text-zinc-500" />
-                <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                  Protected Species & Habitat Impact Over Time
-                </h4>
-              </div>
-              <div className="h-48">
-                <Line data={speciesChartData} options={speciesLineOpts} />
+                <Bar data={complianceChartData} options={stackedBarOpts} />
               </div>
             </div>
           </>
@@ -720,13 +658,19 @@ export function NoiseEnvironmentTimeline() {
                             key={hour}
                             className="flex-1 aspect-square m-[1px] relative group"
                             style={{ backgroundColor: heatmapColor(count, heatmapMaxCount) }}
-                            title={`${date} ${hour}:00 — ${count} ops${cell?.avgNoise ? `, avg ${cell.avgNoise} dB` : ''}`}
                           >
                             {count > 0 && (
                               <span className="absolute inset-0 flex items-center justify-center text-[7px] text-white/70 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                                 {count}
                               </span>
                             )}
+                            {/* Custom tooltip */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10 pointer-events-none">
+                              <div className="bg-zinc-900 dark:bg-zinc-800 text-white text-[9px] px-2 py-1 whitespace-nowrap rounded shadow-lg">
+                                <div className="font-medium">{formatShortDate(date)} {hour}:00–{hour + 1}:00</div>
+                                <div>{count} operation{count !== 1 ? 's' : ''}{cell?.avgNoise ? ` · Est. avg ${cell.avgNoise} dB` : ''}</div>
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
@@ -736,71 +680,6 @@ export function NoiseEnvironmentTimeline() {
               </div>
             </div>
 
-            {/* Violations Heatmap */}
-            <div className="mt-6">
-              <div className="flex items-center gap-2 mb-3">
-                <TreePine size={12} className="text-zinc-500 dark:text-zinc-500" />
-                <h4 className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
-                  Biodiversity Violations Heatmap (Date x Hour)
-                </h4>
-                <div className="flex items-center gap-2 ml-auto">
-                  <div className="flex gap-0.5">
-                    <div className="w-3 h-3" style={{ backgroundColor: 'rgba(39, 39, 42, 0.3)' }} />
-                    <div className="w-3 h-3" style={{ backgroundColor: getImpactSeverityColor('moderate') }} />
-                    <div className="w-3 h-3" style={{ backgroundColor: getImpactSeverityColor('high') }} />
-                    <div className="w-3 h-3" style={{ backgroundColor: getImpactSeverityColor('critical') }} />
-                  </div>
-                  <span className="text-[9px] text-zinc-500 dark:text-zinc-600">None → Critical</span>
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <div className="min-w-[600px]">
-                  {/* Hour header */}
-                  <div className="flex">
-                    <div className="w-16 flex-shrink-0" />
-                    {hourLabels.map((h, i) => (
-                      <div
-                        key={i}
-                        className={`flex-1 text-center text-[8px] pb-1 ${
-                          i >= 20 || i < 8 ? 'text-amber-600' : 'text-zinc-600'
-                        }`}
-                      >
-                        {h}
-                      </div>
-                    ))}
-                  </div>
-                  {/* Date rows */}
-                  {heatmapData.dates.map((date) => (
-                    <div key={date} className="flex">
-                      <div className="w-16 flex-shrink-0 text-[9px] text-zinc-500 flex items-center pr-1 justify-end">
-                        <span className="text-zinc-600 mr-1">{formatDayOfWeek(date)}</span>
-                        {formatShortDate(date)}
-                      </div>
-                      {Array.from({ length: 24 }, (_, hour) => {
-                        const cell = heatmapData.cells.find(
-                          (c) => c.date === date && c.hour === hour,
-                        );
-                        const violations = cell?.violations ?? 0;
-                        return (
-                          <div
-                            key={hour}
-                            className="flex-1 aspect-square m-[1px] relative group"
-                            style={{ backgroundColor: violationHeatmapColor(violations) }}
-                            title={`${date} ${hour}:00 — ${violations} violations`}
-                          >
-                            {violations > 0 && (
-                              <span className="absolute inset-0 flex items-center justify-center text-[7px] text-white/80 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                                {violations}
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </>
         )}
       </div>
@@ -808,12 +687,10 @@ export function NoiseEnvironmentTimeline() {
       {/* ─── Footer ─────────────────────────────────────────────── */}
       <div className="px-5 py-3 border-t border-zinc-200/60 dark:border-zinc-800/60 flex items-center justify-between">
         <div className="text-[10px] text-zinc-500 dark:text-zinc-600">
-          Showing {formatShortDate(dateRange.start)} – {formatShortDate(dateRange.end)}
+          Showing {formatShortDate(localStart)} – {formatShortDate(localEnd)}
         </div>
         <div className="flex items-center gap-3 text-[9px] text-zinc-500 dark:text-zinc-600">
-          <span>Noise data derived from FAA noise certification profiles</span>
-          <span>·</span>
-          <span>Biodiversity thresholds based on peer-reviewed research</span>
+          <span>Est. noise from EASA/FAA type-certification data at 1,000 ft reference distance</span>
         </div>
       </div>
     </div>

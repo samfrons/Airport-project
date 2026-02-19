@@ -1,15 +1,9 @@
 import { create } from 'zustand';
 import type { Flight, DailySummary, Airport, MapViewMode, DateRange } from '@/types/flight';
-import type {
-  NoiseLayerSettings,
-  NoiseSensor,
-  NoiseComplaint,
-  Complaint,
-  ComplaintDailySummary,
-  ComplaintHotspot,
-  ComplaintStats,
-} from '@/types/noise';
+import type { NoiseLayerSettings, NoiseSensor, NoiseComplaint } from '@/types/noise';
+import type { BiodiversityLayerSettings } from '@/types/biodiversity';
 import type { BiodiversityThreshold } from '@/types/biodiversityThresholds';
+import { biodiversityThresholds as defaultThresholds } from '@/data/biodiversity/thresholds';
 
 // Default noise layer settings
 const defaultNoiseSettings: NoiseLayerSettings = {
@@ -26,6 +20,15 @@ const defaultNoiseSettings: NoiseLayerSettings = {
   complaintsMode: 'markers',
 };
 
+// Default biodiversity layer settings
+const defaultBiodiversitySettings: BiodiversityLayerSettings = {
+  visible: false,
+  opacity: 0.7,
+  showImpactZones: true,
+  showSpeciesMarkers: false,
+  showHabitatAreas: true,
+  selectedSpeciesGroup: 'all',
+};
 
 // ─── Flight Track Types ──────────────────────────────────────────────────────
 
@@ -85,17 +88,15 @@ interface FlightState {
   noiseSensors: NoiseSensor[];
   noiseComplaints: NoiseComplaint[];
 
-  // Complaint data (PlaneNoise integration)
-  complaints: Complaint[];
-  complaintsSummary: ComplaintDailySummary[];
-  complaintHotspots: ComplaintHotspot[];
-  complaintStats: ComplaintStats | null;
-  complaintsLoading: boolean;
+  // Biodiversity layer state
+  biodiversitySettings: BiodiversityLayerSettings;
 
-  // Thresholds (disabled stub - always empty)
+  // Threshold management state
   thresholds: BiodiversityThreshold[];
+  _thresholdsHydrated: boolean;
 
   // Actions
+  hydrateThresholds: () => void;
   setFlights: (flights: Flight[]) => void;
   setSummary: (summary: DailySummary[]) => void;
   setAirports: (airports: Airport[]) => void;
@@ -123,12 +124,44 @@ interface FlightState {
   setNoiseComplaints: (complaints: NoiseComplaint[]) => void;
   loadNoiseData: () => Promise<void>;
 
-  // Complaint actions (PlaneNoise integration)
-  fetchComplaints: () => Promise<void>;
-  fetchComplaintsSummary: () => Promise<void>;
-  fetchComplaintHotspots: (minComplaints?: number) => Promise<void>;
-  setComplaints: (complaints: Complaint[]) => void;
+  // Biodiversity actions
+  setBiodiversitySettings: (settings: BiodiversityLayerSettings) => void;
+  toggleBiodiversityLayer: () => void;
+  setBiodiversityOpacity: (value: number) => void;
 
+  // Threshold management actions
+  addThreshold: (threshold: BiodiversityThreshold) => void;
+  updateThreshold: (id: string, updates: Partial<BiodiversityThreshold>) => void;
+  deleteThreshold: (id: string) => void;
+  toggleThreshold: (id: string) => void;
+  resetThresholds: () => void;
+}
+
+// ─── Threshold localStorage persistence ─────────────────────────────────────
+
+const THRESHOLDS_STORAGE_KEY = 'jpx-biodiversity-thresholds';
+
+function loadThresholdsFromStorage(): BiodiversityThreshold[] {
+  if (typeof window === 'undefined') return defaultThresholds;
+  try {
+    const stored = localStorage.getItem(THRESHOLDS_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as BiodiversityThreshold[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // Corrupted data — fall back to defaults
+  }
+  return defaultThresholds;
+}
+
+function saveThresholdsToStorage(thresholds: BiodiversityThreshold[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(THRESHOLDS_STORAGE_KEY, JSON.stringify(thresholds));
+  } catch {
+    // Storage full or unavailable — silently ignore
+  }
 }
 
 const API_BASE = '/api';
@@ -168,15 +201,22 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   noiseSensors: [],
   noiseComplaints: [],
 
-  // Complaint data (PlaneNoise integration)
-  complaints: [],
-  complaintsSummary: [],
-  complaintHotspots: [],
-  complaintStats: null,
-  complaintsLoading: false,
+  // Biodiversity layer state
+  biodiversitySettings: defaultBiodiversitySettings,
 
-  // Thresholds (disabled stub - always empty)
-  thresholds: [],
+  // Threshold management state - SSR-safe default, hydrate on client
+  thresholds: defaultThresholds,
+  _thresholdsHydrated: false,
+
+  // Hydrate thresholds from localStorage - call this in useEffect on client
+  hydrateThresholds: () => {
+    if (typeof window === 'undefined' || get()._thresholdsHydrated) return;
+    const stored = loadThresholdsFromStorage();
+    set({
+      thresholds: stored,
+      _thresholdsHydrated: true,
+    });
+  },
 
   setFlights: (flights) => set({ flights }),
   setSummary: (summary) => set({ summary }),
@@ -384,6 +424,25 @@ export const useFlightStore = create<FlightState>((set, get) => ({
   setNoiseSensors: (sensors) => set({ noiseSensors: sensors }),
   setNoiseComplaints: (complaints) => set({ noiseComplaints: complaints }),
 
+  // Biodiversity actions
+  setBiodiversitySettings: (settings) => set({ biodiversitySettings: settings }),
+
+  toggleBiodiversityLayer: () =>
+    set((state) => ({
+      biodiversitySettings: {
+        ...state.biodiversitySettings,
+        visible: !state.biodiversitySettings.visible,
+      },
+    })),
+
+  setBiodiversityOpacity: (value) =>
+    set((state) => ({
+      biodiversitySettings: {
+        ...state.biodiversitySettings,
+        opacity: value,
+      },
+    })),
+
   loadNoiseData: async () => {
     // Dynamically import mock data to avoid SSR issues
     const { mockNoiseSensors } = await import('@/data/noise/mockSensors');
@@ -400,78 +459,37 @@ export const useFlightStore = create<FlightState>((set, get) => ({
     }
   },
 
-  // ─── Complaint Actions (PlaneNoise Integration) ─────────────────────────────
-
-  fetchComplaints: async () => {
-    const { dateRange } = get();
-    set({ complaintsLoading: true, error: null });
-
-    try {
-      const params = new URLSearchParams({
-        start: dateRange.start,
-        end: dateRange.end,
-      });
-
-      const response = await fetch(`${API_BASE}/complaints?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch complaints');
-
-      const data = await response.json();
-      set({
-        complaints: data.complaints,
-      });
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Unknown error' });
-    } finally {
-      set({ complaintsLoading: false });
-    }
+  // Threshold management actions
+  addThreshold: (threshold) => {
+    const updated = [...get().thresholds, threshold];
+    saveThresholdsToStorage(updated);
+    set({ thresholds: updated });
   },
 
-  fetchComplaintsSummary: async () => {
-    const { dateRange } = get();
-    set({ complaintsLoading: true, error: null });
-
-    try {
-      const params = new URLSearchParams({
-        start: dateRange.start,
-        end: dateRange.end,
-      });
-
-      const response = await fetch(`${API_BASE}/complaints/summary?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch complaint summary');
-
-      const data = await response.json();
-      set({
-        complaintsSummary: data.summary,
-        complaintStats: data.stats,
-      });
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Unknown error' });
-    } finally {
-      set({ complaintsLoading: false });
-    }
+  updateThreshold: (id, updates) => {
+    const updated = get().thresholds.map((t) =>
+      t.id === id ? { ...t, ...updates } : t
+    );
+    saveThresholdsToStorage(updated);
+    set({ thresholds: updated });
   },
 
-  fetchComplaintHotspots: async (minComplaints: number = 1) => {
-    set({ complaintsLoading: true, error: null });
-
-    try {
-      const params = new URLSearchParams({
-        min_complaints: minComplaints.toString(),
-      });
-
-      const response = await fetch(`${API_BASE}/complaints/hotspots?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch complaint hotspots');
-
-      const data = await response.json();
-      set({
-        complaintHotspots: data.hotspots,
-      });
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Unknown error' });
-    } finally {
-      set({ complaintsLoading: false });
-    }
+  deleteThreshold: (id) => {
+    const updated = get().thresholds.filter((t) => t.id !== id);
+    saveThresholdsToStorage(updated);
+    set({ thresholds: updated });
   },
 
-  setComplaints: (complaints) => set({ complaints }),
+  toggleThreshold: (id) => {
+    const updated = get().thresholds.map((t) =>
+      t.id === id ? { ...t, enabled: !t.enabled } : t
+    );
+    saveThresholdsToStorage(updated);
+    set({ thresholds: updated });
+  },
+
+  resetThresholds: () => {
+    saveThresholdsToStorage(defaultThresholds);
+    set({ thresholds: defaultThresholds });
+  },
 }));

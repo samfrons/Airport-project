@@ -50,3 +50,4 @@ npm-debug.log*
 # SQLite WAL files
 *.db-shm
 *.db-wal
+jpx-dashboard/backups/

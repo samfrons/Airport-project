@@ -3,21 +3,17 @@
 import { useState, useMemo } from 'react';
 import {
   Users,
-  AlertTriangle,
-  TreePine,
   Search,
   Download,
   ChevronDown,
   ChevronRight,
   Plane,
+  Clock,
+  Volume2,
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
-import { evaluateAllFlights } from '@/lib/biodiversityViolationEngine';
-import { getImpactSeverityColor } from '@/types/biodiversity';
-import type { ImpactSeverity } from '@/types/biodiversity';
+import { getNoiseDb, LOUD_THRESHOLD_DB } from '@/lib/noise/getNoiseDb';
 import type { Flight } from '@/types/flight';
-import type { BiodiversityViolation } from '@/types/biodiversityThresholds';
-import { getHighestSeverity } from '@/types/biodiversityThresholds';
 import { exportOperatorReportCsv, type OperatorReport } from '@/lib/exportUtils';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -28,23 +24,13 @@ interface OperatorProfile {
   aircraftTypes: Set<string>;
   categories: Set<string>;
   flights: Flight[];
-  violations: BiodiversityViolation[];
-  criticalCount: number;
-  highCount: number;
-  protectedSpeciesEvents: number;
-  worstSeverity: ImpactSeverity;
-  violationRate: number;
+  curfewViolations: number;
+  shoulderOps: number;
+  noiseExceedances: number;
+  avgNoiseDb: number;
 }
 
-type SortKey = 'violations' | 'critical' | 'flights' | 'rate' | 'operator';
-
-const severityBadge: Record<ImpactSeverity, { bg: string; text: string }> = {
-  critical: { bg: 'bg-red-100 dark:bg-red-950/60', text: 'text-red-600 dark:text-red-400' },
-  high: { bg: 'bg-orange-100 dark:bg-orange-950/60', text: 'text-orange-600 dark:text-orange-400' },
-  moderate: { bg: 'bg-amber-100 dark:bg-amber-950/60', text: 'text-amber-600 dark:text-amber-400' },
-  low: { bg: 'bg-lime-100 dark:bg-lime-950/60', text: 'text-lime-600 dark:text-lime-400' },
-  minimal: { bg: 'bg-green-100 dark:bg-green-950/60', text: 'text-green-600 dark:text-green-400' },
-};
+type SortKey = 'curfew' | 'noise' | 'flights' | 'operator';
 
 const categoryLabels: Record<string, string> = {
   helicopter: 'Heli',
@@ -57,19 +43,14 @@ const categoryLabels: Record<string, string> = {
 
 export function OperatorScorecard() {
   const flights = useFlightStore((s) => s.flights);
-  const thresholds = useFlightStore((s) => s.thresholds);
   const setSelectedFlight = useFlightStore((s) => s.setSelectedFlight);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('violations');
+  const [sortKey, setSortKey] = useState<SortKey>('curfew');
   const [expandedOperator, setExpandedOperator] = useState<string | null>(null);
 
-  // Build operator profiles
+  // Build operator profiles based on curfew + noise compliance
   const profiles = useMemo(() => {
-    const violations = evaluateAllFlights(flights, thresholds);
-    const violationByFlight = new Map<string, BiodiversityViolation>();
-    for (const v of violations) violationByFlight.set(v.flightId, v);
-
     const map = new Map<string, OperatorProfile>();
 
     for (const f of flights) {
@@ -81,12 +62,10 @@ export function OperatorScorecard() {
           aircraftTypes: new Set(),
           categories: new Set(),
           flights: [],
-          violations: [],
-          criticalCount: 0,
-          highCount: 0,
-          protectedSpeciesEvents: 0,
-          worstSeverity: 'minimal',
-          violationRate: 0,
+          curfewViolations: 0,
+          shoulderOps: 0,
+          noiseExceedances: 0,
+          avgNoiseDb: 0,
         });
       }
       const profile = map.get(opName)!;
@@ -95,26 +74,27 @@ export function OperatorScorecard() {
       if (f.aircraft_type) profile.aircraftTypes.add(f.aircraft_type);
       profile.categories.add(f.aircraft_category);
 
-      const v = violationByFlight.get(f.fa_flight_id);
-      if (v) {
-        profile.violations.push(v);
-        if (v.overallSeverity === 'critical') profile.criticalCount++;
-        if (v.overallSeverity === 'high') profile.highCount++;
-        if (v.speciesAffected.some((s) => s.conservationStatus)) profile.protectedSpeciesEvents++;
-      }
+      // Curfew: 9 PM - 7 AM
+      if (f.is_curfew_period) profile.curfewViolations++;
+
+      // Shoulder: 7-8 AM (hour 7) or 8-9 PM (hour 20)
+      const h = f.operation_hour_et;
+      if (h === 7 || h === 20) profile.shoulderOps++;
+
+      // Noise exceedance
+      if (getNoiseDb(f) >= LOUD_THRESHOLD_DB) profile.noiseExceedances++;
     }
 
+    // Compute avg noise per operator
     for (const profile of map.values()) {
-      profile.worstSeverity = profile.violations.length > 0
-        ? getHighestSeverity(profile.violations.map((v) => v.overallSeverity))
-        : 'minimal';
-      profile.violationRate = profile.flights.length > 0
-        ? profile.violations.length / profile.flights.length
+      const totalDb = profile.flights.reduce((sum, f) => sum + getNoiseDb(f), 0);
+      profile.avgNoiseDb = profile.flights.length > 0
+        ? Math.round((totalDb / profile.flights.length) * 10) / 10
         : 0;
     }
 
     return Array.from(map.values());
-  }, [flights, thresholds]);
+  }, [flights]);
 
   // Filter & sort
   const filteredProfiles = useMemo(() => {
@@ -130,10 +110,9 @@ export function OperatorScorecard() {
     }
 
     const sortFns: Record<SortKey, (a: OperatorProfile, b: OperatorProfile) => number> = {
-      violations: (a, b) => b.violations.length - a.violations.length,
-      critical: (a, b) => b.criticalCount - a.criticalCount || b.violations.length - a.violations.length,
+      curfew: (a, b) => b.curfewViolations - a.curfewViolations || b.flights.length - a.flights.length,
+      noise: (a, b) => b.noiseExceedances - a.noiseExceedances || b.avgNoiseDb - a.avgNoiseDb,
       flights: (a, b) => b.flights.length - a.flights.length,
-      rate: (a, b) => b.violationRate - a.violationRate,
       operator: (a, b) => a.operator.localeCompare(b.operator),
     };
 
@@ -146,10 +125,9 @@ export function OperatorScorecard() {
       registrations: Array.from(p.registrations),
       aircraftTypes: Array.from(p.aircraftTypes),
       totalFlights: p.flights.length,
-      totalViolations: p.violations.length,
-      criticalViolations: p.criticalCount,
-      protectedSpeciesEvents: p.protectedSpeciesEvents,
-      worstSeverity: p.worstSeverity,
+      curfewViolations: p.curfewViolations,
+      noiseExceedances: p.noiseExceedances,
+      avgNoiseDb: p.avgNoiseDb,
     }));
     exportOperatorReportCsv(reports);
   };
@@ -160,8 +138,8 @@ export function OperatorScorecard() {
 
   // Aggregate stats
   const totalOperators = profiles.length;
-  const operatorsWithViolations = profiles.filter((p) => p.violations.length > 0).length;
-  const repeatOffenders = profiles.filter((p) => p.violations.length >= 3).length;
+  const operatorsWithCurfew = profiles.filter((p) => p.curfewViolations > 0).length;
+  const repeatCurfew = profiles.filter((p) => p.curfewViolations >= 2).length;
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
@@ -175,7 +153,7 @@ export function OperatorScorecard() {
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Operator Scorecards</h3>
               <p className="text-[10px] text-zinc-500 mt-0.5">
-                Violation profiles by operator — {totalOperators} operators, {operatorsWithViolations} with violations, {repeatOffenders} repeat offenders
+                {totalOperators} operators — {operatorsWithCurfew} with curfew violations, {repeatCurfew} repeat offenders
               </p>
             </div>
           </div>
@@ -205,9 +183,8 @@ export function OperatorScorecard() {
         <div className="flex items-center gap-1">
           <span className="text-[9px] text-zinc-600 uppercase tracking-wider mr-1">Sort:</span>
           {([
-            { key: 'violations' as SortKey, label: 'Violations' },
-            { key: 'critical' as SortKey, label: 'Critical' },
-            { key: 'rate' as SortKey, label: 'Rate' },
+            { key: 'curfew' as SortKey, label: 'Curfew' },
+            { key: 'noise' as SortKey, label: 'Noise' },
             { key: 'flights' as SortKey, label: 'Flights' },
             { key: 'operator' as SortKey, label: 'Name' },
           ]).map(({ key, label }) => (
@@ -235,15 +212,16 @@ export function OperatorScorecard() {
         ) : (
           filteredProfiles.map((profile) => {
             const isExpanded = expandedOperator === profile.operator;
-            const badge = severityBadge[profile.worstSeverity];
+            const hasCurfew = profile.curfewViolations > 0;
+            const hasNoise = profile.noiseExceedances > 0;
 
             return (
               <div
                 key={profile.operator}
                 className={`border bg-zinc-50/40 dark:bg-zinc-900/40 ${
-                  profile.criticalCount > 0
+                  profile.curfewViolations >= 2
                     ? 'border-red-200/30 dark:border-red-900/30'
-                    : profile.violations.length > 0
+                    : hasCurfew || hasNoise
                     ? 'border-amber-200/20 dark:border-amber-900/20'
                     : 'border-zinc-200/60 dark:border-zinc-800/60'
                 }`}
@@ -254,10 +232,10 @@ export function OperatorScorecard() {
                   className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-zinc-200/20 dark:hover:bg-zinc-800/20 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    {profile.violations.length > 0 ? (
+                    {hasCurfew ? (
                       <div
                         className="w-1 h-10 flex-shrink-0"
-                        style={{ backgroundColor: getImpactSeverityColor(profile.worstSeverity) }}
+                        style={{ backgroundColor: profile.curfewViolations >= 2 ? '#ef4444' : '#f59e0b' }}
                       />
                     ) : (
                       <div className="w-1 h-10 flex-shrink-0 bg-zinc-200 dark:bg-zinc-800" />
@@ -284,25 +262,28 @@ export function OperatorScorecard() {
                         {profile.flights.length} flights
                       </div>
                     </div>
-                    <div className="text-right min-w-[60px]">
-                      {profile.violations.length > 0 ? (
-                        <div
-                          className="text-[13px] font-bold tabular-nums"
-                          style={{ color: getImpactSeverityColor(profile.worstSeverity) }}
-                        >
-                          {profile.violations.length}
-                        </div>
-                      ) : (
-                        <div className="text-[11px] text-zinc-600">Clean</div>
-                      )}
-                      <div className="text-[9px] text-zinc-600">violations</div>
-                    </div>
-                    {profile.violations.length > 0 && (
-                      <span
-                        className={`text-[9px] px-1.5 py-0.5 ${badge.bg} ${badge.text} uppercase tracking-wider`}
-                      >
-                        {profile.worstSeverity}
-                      </span>
+                    {hasCurfew && (
+                      <div className="flex items-center gap-1 text-right min-w-[50px]">
+                        <Clock size={10} className="text-amber-500" />
+                        <span className={`text-[11px] font-bold tabular-nums ${
+                          profile.curfewViolations >= 2 ? 'text-red-500' : 'text-amber-500'
+                        }`}>
+                          {profile.curfewViolations}
+                        </span>
+                      </div>
+                    )}
+                    {hasNoise && (
+                      <div className="flex items-center gap-1 text-right min-w-[50px]">
+                        <Volume2 size={10} className="text-red-400" />
+                        <span className="text-[11px] font-bold tabular-nums text-red-400">
+                          {profile.noiseExceedances}
+                        </span>
+                      </div>
+                    )}
+                    {!hasCurfew && !hasNoise && (
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-500 min-w-[50px] text-right">
+                        Clean
+                      </div>
                     )}
                     {isExpanded ? (
                       <ChevronDown size={12} className="text-zinc-600" />
@@ -322,27 +303,27 @@ export function OperatorScorecard() {
                         <div className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 tabular-nums">{profile.flights.length}</div>
                       </div>
                       <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
-                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Violations</div>
-                        <div className="text-[13px] font-bold tabular-nums" style={{ color: profile.violations.length > 0 ? '#ef4444' : '#71717a' }}>
-                          {profile.violations.length}
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Curfew</div>
+                        <div className="text-[13px] font-bold tabular-nums" style={{ color: profile.curfewViolations > 0 ? '#f59e0b' : '#71717a' }}>
+                          {profile.curfewViolations}
                         </div>
                       </div>
                       <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
-                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Critical</div>
-                        <div className="text-[13px] font-bold tabular-nums" style={{ color: profile.criticalCount > 0 ? getImpactSeverityColor('critical') : '#71717a' }}>
-                          {profile.criticalCount}
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Shoulder</div>
+                        <div className="text-[13px] font-bold tabular-nums" style={{ color: profile.shoulderOps > 0 ? '#a855f7' : '#71717a' }}>
+                          {profile.shoulderOps}
                         </div>
                       </div>
                       <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
-                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Protected</div>
-                        <div className="text-[13px] font-bold text-amber-500 dark:text-amber-400 tabular-nums">
-                          {profile.protectedSpeciesEvents}
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Loud</div>
+                        <div className="text-[13px] font-bold tabular-nums" style={{ color: profile.noiseExceedances > 0 ? '#ef4444' : '#71717a' }}>
+                          {profile.noiseExceedances}
                         </div>
                       </div>
                       <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
-                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Rate</div>
-                        <div className="text-[13px] font-bold tabular-nums" style={{ color: profile.violationRate > 0.5 ? '#ef4444' : profile.violationRate > 0 ? '#f59e0b' : '#71717a' }}>
-                          {(profile.violationRate * 100).toFixed(0)}%
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Est. dB</div>
+                        <div className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 tabular-nums">
+                          {profile.avgNoiseDb}
                         </div>
                       </div>
                     </div>
@@ -364,44 +345,39 @@ export function OperatorScorecard() {
                       </div>
                     </div>
 
-                    {/* Recent violations */}
-                    {profile.violations.length > 0 && (
+                    {/* Recent curfew violations */}
+                    {profile.curfewViolations > 0 && (
                       <div>
                         <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-1.5">
-                          Recent Violations ({Math.min(profile.violations.length, 5)} of {profile.violations.length})
+                          Recent Curfew Operations ({Math.min(profile.curfewViolations, 5)} of {profile.curfewViolations})
                         </div>
                         <div className="space-y-1">
-                          {profile.violations.slice(0, 5).map((v) => (
-                            <button
-                              key={v.id}
-                              onClick={() => {
-                                const flight = flights.find((f) => f.fa_flight_id === v.flightId);
-                                if (flight) setSelectedFlight(flight);
-                              }}
-                              className="w-full flex items-center justify-between px-2 py-1.5 bg-zinc-100/40 dark:bg-zinc-950/40 hover:bg-zinc-200/40 dark:hover:bg-zinc-800/40 transition-colors text-left"
-                            >
-                              <div className="flex items-center gap-2">
-                                <Plane size={9} className="text-zinc-500 dark:text-zinc-600" />
-                                <span className="text-[10px] text-zinc-600 dark:text-zinc-400 tabular-nums">
-                                  {v.operationDate}
-                                </span>
-                                <span className="text-[10px] text-zinc-500">
-                                  {v.registration} · {v.estimatedNoiseDb} dB
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] text-zinc-500 tabular-nums">
-                                  {v.violatedThresholds.length} thresholds
-                                </span>
-                                <span
-                                  className="text-[9px] font-medium uppercase"
-                                  style={{ color: getImpactSeverityColor(v.overallSeverity) }}
-                                >
-                                  {v.overallSeverity}
-                                </span>
-                              </div>
-                            </button>
-                          ))}
+                          {profile.flights
+                            .filter((f) => f.is_curfew_period)
+                            .sort((a, b) => b.operation_date.localeCompare(a.operation_date) || b.operation_hour_et - a.operation_hour_et)
+                            .slice(0, 5)
+                            .map((f) => (
+                              <button
+                                key={f.fa_flight_id}
+                                onClick={() => setSelectedFlight(f)}
+                                className="w-full flex items-center justify-between px-2 py-1.5 bg-zinc-100/40 dark:bg-zinc-950/40 hover:bg-zinc-200/40 dark:hover:bg-zinc-800/40 transition-colors text-left"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Plane size={9} className="text-zinc-500 dark:text-zinc-600" />
+                                  <span className="text-[10px] text-zinc-600 dark:text-zinc-400 tabular-nums">
+                                    {f.operation_date}
+                                  </span>
+                                  <span className="text-[10px] text-zinc-500">
+                                    {f.registration || f.ident} · {f.aircraft_type} · {f.operation_hour_et}:00 ET
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] font-medium text-amber-500">
+                                    Est. {getNoiseDb(f)} dB
+                                  </span>
+                                </div>
+                              </button>
+                            ))}
                         </div>
                       </div>
                     )}

@@ -5,6 +5,7 @@ import { PlaneLanding, PlaneTakeoff, Gauge, ShieldAlert, Volume2 } from 'lucide-
 import { useFlightStore } from '@/store/flightStore';
 import { DetailPanel } from './DetailPanel';
 import { CURFEW } from '@/lib/constants/curfew';
+import { getNoiseIndexBreakdown } from '@/lib/noise/getNoiseDb';
 
 type PanelType = 'all' | 'helicopter' | 'curfew' | 'noise' | null;
 
@@ -24,6 +25,14 @@ export function StatsCards() {
     return flights.filter(f => CURFEW.isCurfewHour(f.operation_hour_et)).length;
   }, [flights]);
 
+  // Shoulder period: 7-8 AM (hour 7) and 8-9 PM (hour 20)
+  const shoulderOps = useMemo(() => {
+    return flights.filter(f => {
+      const hour = f.operation_hour_et;
+      return hour === 7 || hour === 20;
+    }).length;
+  }, [flights]);
+
   // Filtered flight lists for detail panels
   const helicopterFlights = useMemo(() =>
     flights.filter(f => f.aircraft_category === 'helicopter'), [flights]);
@@ -34,11 +43,10 @@ export function StatsCards() {
   const noiseFlights = useMemo(() =>
     flights.filter(f => f.aircraft_category === 'helicopter' || f.aircraft_category === 'jet'), [flights]);
 
-  // Noise Index: helicopters + Stage 2 jets (louder aircraft)
-  // For now, counting all helicopters as inherently noisy
-  const noiseIndex = useMemo(() => {
-    return helicopters; // Can expand to include Stage 2 jets when data available
-  }, [helicopters]);
+  // Noise Index: all helicopters + loud jets (≥85 dB)
+  // Uses canonical getNoiseIndexBreakdown() for consistency across card, subtitle, and detail panel
+  const noiseBreakdown = useMemo(() => getNoiseIndexBreakdown(flights), [flights]);
+  const noiseIndex = noiseBreakdown.total;
 
   return (
     <>
@@ -108,7 +116,7 @@ export function StatsCards() {
             strokeWidth={1.5}
           />
         </div>
-        <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-1.5">
           <div className="flex items-baseline justify-between">
             <span className="text-xs text-zinc-500 dark:text-zinc-600">{CURFEW.DISPLAY_STRING}</span>
             <span className={`text-sm font-semibold tabular-nums ${
@@ -117,6 +125,14 @@ export function StatsCards() {
               {totalFlights > 0 ? ((curfewViolations / totalFlights) * 100).toFixed(1) : '0'}%
             </span>
           </div>
+          {shoulderOps > 0 && (
+            <div className="flex items-baseline justify-between">
+              <span className="text-[10px] text-zinc-400 dark:text-zinc-600">Shoulder hours (7-8a, 8-9p)</span>
+              <span className="text-[10px] font-medium tabular-nums text-zinc-500 dark:text-zinc-500">
+                {shoulderOps}
+              </span>
+            </div>
+          )}
         </div>
       </button>
 
@@ -138,7 +154,7 @@ export function StatsCards() {
         </div>
         <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-zinc-500 dark:text-zinc-600">Heli + loud jets</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-600">Heli + loud jets (est.)</span>
             <span className={`text-sm font-semibold tabular-nums ${
               noiseIndex > 0 ? 'text-orange-500 dark:text-orange-400' : 'text-emerald-500 dark:text-emerald-400'
             }`}>
@@ -181,7 +197,7 @@ export function StatsCards() {
       isOpen={activePanel === 'noise'}
       onClose={() => setActivePanel(null)}
       title="High-Noise Operations"
-      subtitle={`${noiseFlights.length} helicopters and jets`}
+      subtitle={`${noiseBreakdown.helicopters} helicopters + ${noiseBreakdown.loudJets} loud jets`}
       flights={noiseFlights}
       dateRange={dateRange}
       type="noise"

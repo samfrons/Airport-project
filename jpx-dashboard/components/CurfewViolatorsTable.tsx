@@ -119,7 +119,7 @@ export function CurfewViolatorsTable() {
                 Operator
               </th>
               <th className="px-4 py-2 text-center text-[10px] font-medium text-zinc-500 uppercase tracking-wider">
-                Status
+                Repeat
               </th>
             </tr>
           </thead>

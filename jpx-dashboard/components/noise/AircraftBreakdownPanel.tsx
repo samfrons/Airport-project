@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Plane, Info } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
-import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
+import { getNoiseDb } from '@/lib/noise/getNoiseDb';
 import { getDbLevelColor } from './NoiseCalculator';
 import { formatEstimatedNoise, NOISE_ESTIMATE_DISCLAIMER } from './EstimatedNoiseDisplay';
 
@@ -42,8 +42,7 @@ export function AircraftBreakdownPanel() {
 
     flights.forEach((flight) => {
       const category = flight.aircraft_category;
-      const profile = getAircraftNoiseProfile(flight.aircraft_type);
-      const avgDb = (profile.takeoffDb + profile.approachDb) / 2;
+      const avgDb = getNoiseDb(flight);
 
       if (!stats[category]) {
         stats[category] = {
@@ -183,8 +182,29 @@ export function AircraftBreakdownPanel() {
         ))}
       </div>
 
+      {/* Noise Threshold Legend */}
+      <div className="mt-3 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="text-[8px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-1.5">Est. Noise Thresholds</div>
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {[
+            { color: '#22c55e', label: '<65 dB Quiet' },
+            { color: '#eab308', label: '65-75 dB Moderate' },
+            { color: '#f97316', label: '75-85 dB Loud' },
+            { color: '#ef4444', label: '\u226585 dB Very Loud' },
+          ].map(({ color, label }) => (
+            <div key={label} className="flex items-center gap-1">
+              <div className="w-2 h-2" style={{ backgroundColor: color }} />
+              <span className="text-[8px] text-zinc-500 dark:text-zinc-500">{label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="text-[7px] text-zinc-400 dark:text-zinc-600 mt-1">
+          85 dB = Pilot&apos;s Pledge threshold &middot; EPA: 55 dB outdoor &middot; WHO: 45 dB night
+        </div>
+      </div>
+
       {/* Total */}
-      <div className="mt-3 pt-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-between text-[10px]">
+      <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800 flex justify-between text-[10px]">
         <span className="text-zinc-500 dark:text-zinc-600">Total Operations</span>
         <span className="text-zinc-600 dark:text-zinc-400 tabular-nums">{flights.length}</span>
       </div>

@@ -109,17 +109,16 @@ export interface OperatorReport {
   registrations: string[];
   aircraftTypes: string[];
   totalFlights: number;
-  totalViolations: number;
-  criticalViolations: number;
-  protectedSpeciesEvents: number;
-  worstSeverity: string;
+  curfewViolations: number;
+  noiseExceedances: number;
+  avgNoiseDb: number;
 }
 
 export function exportOperatorReportCsv(reports: OperatorReport[]) {
   const header = [
     'Operator', 'Registrations', 'Aircraft Types',
-    'Total Flights', 'Total Violations', 'Critical Violations',
-    'Protected Species Events', 'Worst Severity',
+    'Total Flights', 'Curfew Violations', 'Noise Exceedances (85+ dB)',
+    'Avg Noise dB',
   ];
 
   const rows = reports.map((r) => toCsvRow([
@@ -127,10 +126,9 @@ export function exportOperatorReportCsv(reports: OperatorReport[]) {
     r.registrations.join('; '),
     r.aircraftTypes.join('; '),
     r.totalFlights,
-    r.totalViolations,
-    r.criticalViolations,
-    r.protectedSpeciesEvents,
-    r.worstSeverity,
+    r.curfewViolations,
+    r.noiseExceedances,
+    r.avgNoiseDb,
   ]));
 
   const csv = [toCsvRow(header), ...rows].join('\n');
