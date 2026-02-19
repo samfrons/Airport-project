@@ -13,6 +13,7 @@ import { FlightPathReplay } from '@/components/FlightPathReplay';
 import { ComplianceDashboard } from '@/components/ComplianceDashboard';
 import { CurfewViolatorsTable } from '@/components/CurfewViolatorsTable';
 import { TopCurfewViolators } from '@/components/TopCurfewViolators';
+import { HistoricalComparison } from '@/components/HistoricalComparison';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   ErrorBoundary,
@@ -95,10 +96,23 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              {flights.length > 0 && (() => {
+                const latestDate = flights.reduce((max, f) => f.operation_date > max ? f.operation_date : max, '');
+                const daysSince = Math.floor((Date.now() - new Date(latestDate + 'T23:59:59').getTime()) / (1000 * 60 * 60 * 24));
+                const isStale = daysSince > 2;
+                return (
+                  <div className={`hidden sm:flex items-center gap-1.5 ${isStale ? 'text-amber-500 dark:text-amber-400' : 'text-zinc-500 dark:text-zinc-600'}`}>
+                    <span className="text-[10px] uppercase tracking-widest font-medium">
+                      Data through {new Date(latestDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {isStale && ` (${daysSince}d old)`}
+                    </span>
+                  </div>
+                );
+              })()}
               {formatLastUpdated() && (
-                <div className="hidden sm:flex items-center gap-1.5 text-zinc-500 dark:text-zinc-600">
+                <div className="hidden lg:flex items-center gap-1.5 text-zinc-500 dark:text-zinc-600">
                   <span className="text-[10px] uppercase tracking-widest font-medium">
-                    Updated {formatLastUpdated()}
+                    Fetched {formatLastUpdated()}
                   </span>
                 </div>
               )}
@@ -167,6 +181,9 @@ export default function DashboardPage() {
             </ErrorBoundary>
             <ErrorBoundary sectionName="Hourly Distribution" fallback={<ChartSkeleton />}>
               <CurfewChart />
+            </ErrorBoundary>
+            <ErrorBoundary sectionName="Historical Comparison" fallback={<PanelSkeleton />}>
+              <HistoricalComparison />
             </ErrorBoundary>
           </div>
         </section>
