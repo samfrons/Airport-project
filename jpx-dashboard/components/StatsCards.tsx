@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { PlaneLanding, PlaneTakeoff, Gauge, ShieldAlert, Volume2 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
-import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
+import { getNoiseIndexBreakdown } from '@/lib/noise/getNoiseDb';
 
 export function StatsCards() {
   const { flights } = useFlightStore();
@@ -31,17 +31,10 @@ export function StatsCards() {
     }).length;
   }, [flights]);
 
-  // Noise Index: all helicopters + loud jets (85+ dB takeoff at 1000 ft)
-  // Per feedback: "count all helicopter operations plus older Stage 2 jet types"
-  const LOUD_JET_THRESHOLD_DB = 85;
-  const noiseIndex = useMemo(() => {
-    const loudJets = flights.filter(f => {
-      if (f.aircraft_category !== 'jet') return false;
-      const profile = getAircraftNoiseProfile(f.aircraft_type);
-      return profile.takeoffDb >= LOUD_JET_THRESHOLD_DB;
-    }).length;
-    return helicopters + loudJets;
-  }, [flights, helicopters]);
+  // Noise Index: all helicopters + loud jets (≥85 dB)
+  // Uses canonical getNoiseIndexBreakdown() for consistency across card, subtitle, and detail panel
+  const noiseBreakdown = useMemo(() => getNoiseIndexBreakdown(flights), [flights]);
+  const noiseIndex = noiseBreakdown.total;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-zinc-200 dark:bg-zinc-800">
@@ -138,7 +131,7 @@ export function StatsCards() {
         </div>
         <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-zinc-500 dark:text-zinc-600">Heli + loud jets</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-600">Heli + loud jets (est.)</span>
             <span className={`text-sm font-semibold tabular-nums ${
               noiseIndex > 0 ? 'text-orange-500 dark:text-orange-400' : 'text-emerald-500 dark:text-emerald-400'
             }`}>

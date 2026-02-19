@@ -30,7 +30,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
-import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
+import { getNoiseDb, LOUD_THRESHOLD_DB } from '@/lib/noise/getNoiseDb';
 import type { Flight } from '@/types/flight';
 
 // ─── Chart.js Registration ──────────────────────────────────────────────────
@@ -83,7 +83,6 @@ interface RegulatoryRow {
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const NOISE_THRESHOLD_DB = 85;
 const PASSING_SCORE = 80;
 const MAX_HOURLY_FLIGHTS = 10;
 
@@ -121,11 +120,6 @@ function getScoreLabel(score: number): string {
   return 'Poor';
 }
 
-function getNoiseDb(flight: Flight): number {
-  const profile = getAircraftNoiseProfile(flight.aircraft_type);
-  return flight.direction === 'arrival' ? profile.approachDb : profile.takeoffDb;
-}
-
 function groupFlightsByDate(flights: Flight[]): Map<string, Flight[]> {
   const map = new Map<string, Flight[]>();
   for (const f of flights) {
@@ -149,7 +143,7 @@ function computeDayScores(dayFlights: Flight[]): ComplianceScores {
   const curfew = (nonCurfew / dayFlights.length) * 100;
 
   // Noise: % below 85dB
-  const belowNoise = dayFlights.filter((f) => getNoiseDb(f) < NOISE_THRESHOLD_DB).length;
+  const belowNoise = dayFlights.filter((f) => getNoiseDb(f) < LOUD_THRESHOLD_DB).length;
   const noise = (belowNoise / dayFlights.length) * 100;
 
   // Volume: check if all hours have < MAX_HOURLY_FLIGHTS
@@ -351,7 +345,7 @@ export function ComplianceDashboard() {
     if (totalFlights === 0) return [];
 
     const curfewRate = ((flights.filter((f) => !f.is_curfew_period).length / totalFlights) * 100);
-    const noiseExceedances = flights.filter((f) => getNoiseDb(f) >= NOISE_THRESHOLD_DB).length;
+    const noiseExceedances = flights.filter((f) => getNoiseDb(f) >= LOUD_THRESHOLD_DB).length;
 
     // Compute trend from first half vs second half of date range
     const dates = Array.from(flightsByDate.keys()).sort();
@@ -371,12 +365,12 @@ export function ComplianceDashboard() {
     const curfewTrend: 'up' | 'down' | 'flat' =
       secondHalfCurfew < firstHalfCurfew ? 'down' : secondHalfCurfew > firstHalfCurfew ? 'up' : 'flat';
 
-    // Count repeat curfew offenders (operators with 3+ curfew violations)
+    // Count repeat curfew offenders (operators with 2+ curfew violations)
     const curfewByOperator = new Map<string, number>();
     for (const v of curfewViolators) {
       curfewByOperator.set(v.operator, (curfewByOperator.get(v.operator) || 0) + 1);
     }
-    const repeatOffenders = Array.from(curfewByOperator.values()).filter((c) => c >= 3).length;
+    const repeatOffenders = Array.from(curfewByOperator.values()).filter((c) => c >= 2).length;
 
     return [
       {
@@ -547,7 +541,7 @@ export function ComplianceDashboard() {
               borderDash: [6, 4],
               label: {
                 display: true,
-                content: 'Passing (80)',
+                content: 'Passing Threshold (80%)',
                 position: 'start' as const,
                 color: '#22c55e',
                 backgroundColor: 'rgba(9, 9, 11, 0.8)',
@@ -996,7 +990,7 @@ export function ComplianceDashboard() {
             <div>
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Noise Compliance</h3>
               <p className="text-[10px] text-zinc-600 dark:text-zinc-500 mt-0.5">
-                Estimated noise distribution across all flights -- thresholds at 65, 75, and 85 dB
+                Est. noise distribution (EASA type-certification data) -- thresholds at 65, 75, and 85 dB
               </p>
             </div>
           </div>

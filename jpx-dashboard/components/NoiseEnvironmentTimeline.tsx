@@ -901,9 +901,7 @@ export function NoiseEnvironmentTimeline() {
           Showing {formatShortDate(localStart)} – {formatShortDate(localEnd)}
         </div>
         <div className="flex items-center gap-3 text-[9px] text-zinc-500 dark:text-zinc-600">
-          <span>Noise data derived from FAA noise certification profiles</span>
-          <span>·</span>
-          <span>Biodiversity thresholds based on peer-reviewed research</span>
+          <span>Est. noise from EASA/FAA type-certification data at 1,000 ft reference distance</span>
         </div>
       </div>
     </div>
