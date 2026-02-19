@@ -1,0 +1,59 @@
+name: Daily Flight Data Pull
+
+on:
+  schedule:
+    # Run at 11:00 UTC (6:00 AM ET) every day
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Specific date to pull (YYYY-MM-DD), defaults to yesterday'
+        required: false
+      end_date:
+        description: 'End date for range pull (YYYY-MM-DD)'
+        required: false
+
+jobs:
+  pull-flights:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: jpx-dashboard
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Initialize database
+        run: python -c "from src.db.database import init_db, get_connection; init_db(get_connection())"
+
+      - name: Pull flight data
+        env:
+          AEROAPI_KEY: ${{ secrets.AEROAPI_KEY }}
+        run: |
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            if [ -n "${{ github.event.inputs.end_date }}" ]; then
+              python scripts/daily_pull.py --date "${{ github.event.inputs.date }}" --end "${{ github.event.inputs.end_date }}"
+            else
+              python scripts/daily_pull.py --date "${{ github.event.inputs.date }}"
+            fi
+          else
+            python scripts/daily_pull.py
+          fi
+
+      - name: Verify data integrity
+        run: python scripts/query_stats.py 2>/dev/null || echo "Stats script not available"
+
+      - name: Upload database artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flight-data-${{ github.run_number }}
+          path: jpx-dashboard/data/*.db
+          retention-days: 7

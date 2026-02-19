@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { Map, Route, BarChart3, Maximize2, Minimize2, Crosshair, X, Satellite, MapPin } from 'lucide-react';
+import { Map, Route, BarChart3, Maximize2, Minimize2, Crosshair, X, Satellite, MapPin, Volume2 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 import { useThemeStore } from '@/store/themeStore';
 import { NoiseLayerControls } from './NoiseLayerControls';
@@ -19,6 +19,7 @@ import {
 import { biodiversityImpactZones, generateZoneCircle } from '@/data/biodiversity/impactZones';
 import { habitatAreas } from '@/data/biodiversity/speciesImpacts';
 import { getImpactSeverityColor } from '@/types/biodiversity';
+import { calculateFlightFootprint, type FootprintPosition } from '@/lib/noise/footprintCalculator';
 import type { MapViewMode, Flight } from '@/types/flight';
 
 // KJPX Airport coordinates
@@ -131,6 +132,8 @@ export function AirportMap() {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSatellite, setIsSatellite] = useState(false);
+  const [showFootprint, setShowFootprint] = useState(false);
+  const [footprintLoading, setFootprintLoading] = useState(false);
   const selectedAirportRef = useRef<string | null>(null);
 
   const {
@@ -146,6 +149,8 @@ export function AirportMap() {
     biodiversitySettings,
     selectedFlight,
     setSelectedFlight,
+    fetchFlightTrack,
+    flightTracks,
   } = useFlightStore();
 
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
@@ -353,6 +358,127 @@ export function AirportMap() {
       }
     }
   }, [biodiversitySettings, mapLoaded]);
+
+  // ─── Noise Footprint for selected flight ───────────────────────
+  const FOOTPRINT_LAYERS = ['footprint-contour-0', 'footprint-contour-1', 'footprint-contour-2', 'footprint-contour-3', 'footprint-points', 'footprint-labels'];
+  const FOOTPRINT_SOURCES = ['footprint-contours-data', 'footprint-points-data'];
+
+  function clearFootprintLayers() {
+    if (!map.current) return;
+    FOOTPRINT_LAYERS.forEach((id) => {
+      if (map.current!.getLayer(id)) map.current!.removeLayer(id);
+    });
+    FOOTPRINT_SOURCES.forEach((id) => {
+      if (map.current!.getSource(id)) map.current!.removeSource(id);
+    });
+  }
+
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    clearFootprintLayers();
+
+    if (!showFootprint || !selectedFlight) return;
+
+    const track = flightTracks.get(selectedFlight.fa_flight_id);
+    if (!track || track.positions.length < 2) return;
+
+    // Convert track positions to footprint format
+    const positions: FootprintPosition[] = track.positions
+      .filter((p) => p.altitude != null && p.altitude > 0)
+      .map((p) => ({
+        latitude: p.latitude,
+        longitude: p.longitude,
+        altitude: p.altitude!,
+      }));
+
+    if (positions.length < 2) return;
+
+    const footprint = calculateFlightFootprint(
+      selectedFlight.aircraft_type,
+      selectedFlight.direction,
+      positions,
+    );
+
+    // Add contour polygons (render outermost first for proper layering)
+    map.current.addSource('footprint-contours-data', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: footprint.contours },
+    });
+
+    footprint.contours.forEach((feature, i) => {
+      map.current!.addLayer({
+        id: `footprint-contour-${i}`,
+        type: 'fill',
+        source: 'footprint-contours-data',
+        filter: ['==', ['get', 'minDb'], feature.properties!.minDb],
+        paint: {
+          'fill-color': feature.properties!.color,
+          'fill-opacity': 0.25,
+        },
+      });
+    });
+
+    // Add dB point markers along track
+    map.current.addSource('footprint-points-data', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: footprint.points },
+    });
+
+    map.current.addLayer({
+      id: 'footprint-points',
+      type: 'circle',
+      source: 'footprint-points-data',
+      paint: {
+        'circle-radius': 4,
+        'circle-color': [
+          'interpolate', ['linear'], ['get', 'db'],
+          50, '#22c55e',
+          65, '#eab308',
+          75, '#f97316',
+          85, '#ef4444',
+        ],
+        'circle-stroke-color': '#fff',
+        'circle-stroke-width': 1,
+        'circle-opacity': 0.9,
+      },
+    });
+
+    map.current.addLayer({
+      id: 'footprint-labels',
+      type: 'symbol',
+      source: 'footprint-points-data',
+      layout: {
+        'text-field': ['concat', ['to-string', ['get', 'db']], ' dB\n', ['to-string', ['get', 'altitude']], '\''],
+        'text-size': 9,
+        'text-offset': [0, -1.5],
+        'text-allow-overlap': false,
+      },
+      paint: {
+        'text-color': resolvedTheme === 'dark' ? '#d4d4d8' : '#3f3f46',
+        'text-halo-color': resolvedTheme === 'dark' ? '#18181b' : '#ffffff',
+        'text-halo-width': 1.5,
+      },
+    });
+  }, [showFootprint, selectedFlight, flightTracks, mapLoaded, resolvedTheme]);
+
+  // When a flight is selected and footprint is requested, fetch the track
+  const handleShowFootprint = useCallback(async () => {
+    if (!selectedFlight) return;
+    setFootprintLoading(true);
+    try {
+      await fetchFlightTrack(selectedFlight.fa_flight_id);
+      setShowFootprint(true);
+    } finally {
+      setFootprintLoading(false);
+    }
+  }, [selectedFlight, fetchFlightTrack]);
+
+  // Clear footprint when flight is deselected
+  useEffect(() => {
+    if (!selectedFlight) {
+      setShowFootprint(false);
+    }
+  }, [selectedFlight]);
 
   function clearManagedLayers() {
     if (!map.current) return;
@@ -1421,7 +1547,6 @@ export function AirportMap() {
 
   const viewModes: { mode: MapViewMode; icon: React.ReactNode; label: string }[] = [
     { mode: 'routes', icon: <Route size={14} strokeWidth={1.8} />, label: 'Routes' },
-    { mode: 'stats', icon: <Map size={14} strokeWidth={1.8} />, label: 'Airport' },
     { mode: 'heatmap', icon: <BarChart3 size={14} strokeWidth={1.8} />, label: 'Heatmap' },
   ];
 
@@ -1508,15 +1633,40 @@ export function AirportMap() {
         </div>
       )}
 
-      {/* Noise Layer Controls */}
-      <div className={`absolute left-4 ${selectedAirport ? 'top-24' : 'top-14'}`}>
-        <NoiseLayerControls />
-      </div>
-
-      {/* Noise Legend - shown when any noise layer is visible */}
-      <div className="absolute bottom-4 left-36">
-        <NoiseLegend />
-      </div>
+      {/* Noise Footprint Button - shown when a flight is selected */}
+      {selectedFlight && (
+        <div className={`absolute left-4 ${selectedAirport ? 'top-36' : 'top-14'}`}>
+          <button
+            onClick={() => showFootprint ? setShowFootprint(false) : handleShowFootprint()}
+            disabled={footprintLoading}
+            className={`flex items-center gap-2 px-3 py-2 text-[11px] font-medium backdrop-blur-sm border transition-all ${
+              showFootprint
+                ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                : 'bg-white/95 dark:bg-zinc-900/95 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+            }`}
+            title="Show estimated ground-level noise contours for this flight"
+          >
+            <Volume2 size={12} />
+            {footprintLoading ? 'Loading track...' : showFootprint ? 'Hide Noise Footprint' : 'Show Noise Footprint'}
+          </button>
+          {showFootprint && (
+            <div className="mt-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-2 space-y-1">
+              <div className="text-[8px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider mb-1">Ground Noise</div>
+              {[
+                { color: '#ef4444', label: '>80 dB' },
+                { color: '#f97316', label: '70-80 dB' },
+                { color: '#eab308', label: '60-70 dB' },
+                { color: '#22c55e', label: '50-60 dB' },
+              ].map(({ color, label }) => (
+                <div key={label} className="flex items-center gap-2">
+                  <div className="w-3 h-3" style={{ backgroundColor: color, opacity: 0.4 }} />
+                  <span className="text-[9px] text-zinc-600 dark:text-zinc-400">{label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Legend */}
       <div className="absolute bottom-4 left-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-3 min-w-[130px]">
@@ -1524,7 +1674,9 @@ export function AirportMap() {
           Aircraft Type
         </div>
         <div className="flex flex-col gap-1.5">
-          {Object.entries(categoryColors).map(([category, color]) => (
+          {Object.entries(categoryColors)
+            .filter(([category]) => categoryCounts[category] > 0)
+            .map(([category, color]) => (
             <div key={category} className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div
@@ -1535,11 +1687,9 @@ export function AirportMap() {
                   {categoryLabels[category]}
                 </span>
               </div>
-              {categoryCounts[category] != null && (
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-600 tabular-nums">
-                  {categoryCounts[category]}
-                </span>
-              )}
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-600 tabular-nums">
+                {categoryCounts[category]}
+              </span>
             </div>
           ))}
         </div>
@@ -1549,6 +1699,25 @@ export function AirportMap() {
           </div>
         )}
       </div>
+
+      {/* Heatmap Legend */}
+      {mapViewMode === 'heatmap' && (
+        <div className="absolute bottom-4 right-14 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800 p-3">
+          <div className="text-[9px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-[0.12em] mb-2">
+            Flight Density
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[9px] text-zinc-500">Low</span>
+            <div className="w-24 h-2 rounded-sm" style={{
+              background: 'linear-gradient(to right, rgba(37,99,235,0.3), rgba(52,211,153,0.5), rgba(245,158,11,0.65), rgba(239,68,68,0.85))'
+            }} />
+            <span className="text-[9px] text-zinc-500">High</span>
+          </div>
+          <div className="text-[8px] text-zinc-400 dark:text-zinc-600 mt-1">
+            Based on origin/destination frequency
+          </div>
+        </div>
+      )}
 
       {/* Fullscreen hint */}
       {isFullscreen && (

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { PlaneLanding, PlaneTakeoff, Gauge, ShieldAlert, Volume2 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
+import { getNoiseIndexBreakdown } from '@/lib/noise/getNoiseDb';
 
 export function StatsCards() {
   const { flights } = useFlightStore();
@@ -22,11 +23,18 @@ export function StatsCards() {
     }).length;
   }, [flights]);
 
-  // Noise Index: helicopters + Stage 2 jets (louder aircraft)
-  // For now, counting all helicopters as inherently noisy
-  const noiseIndex = useMemo(() => {
-    return helicopters; // Can expand to include Stage 2 jets when data available
-  }, [helicopters]);
+  // Shoulder period: 7-8 AM (hour 7) and 8-9 PM (hour 20)
+  const shoulderOps = useMemo(() => {
+    return flights.filter(f => {
+      const hour = f.operation_hour_et;
+      return hour === 7 || hour === 20;
+    }).length;
+  }, [flights]);
+
+  // Noise Index: all helicopters + loud jets (≥85 dB)
+  // Uses canonical getNoiseIndexBreakdown() for consistency across card, subtitle, and detail panel
+  const noiseBreakdown = useMemo(() => getNoiseIndexBreakdown(flights), [flights]);
+  const noiseIndex = noiseBreakdown.total;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-zinc-200 dark:bg-zinc-800">
@@ -88,7 +96,7 @@ export function StatsCards() {
             strokeWidth={1.5}
           />
         </div>
-        <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+        <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-1.5">
           <div className="flex items-baseline justify-between">
             <span className="text-xs text-zinc-500 dark:text-zinc-600">9 PM – 7 AM ET</span>
             <span className={`text-sm font-semibold tabular-nums ${
@@ -97,6 +105,14 @@ export function StatsCards() {
               {totalFlights > 0 ? ((curfewViolations / totalFlights) * 100).toFixed(1) : '0'}%
             </span>
           </div>
+          {shoulderOps > 0 && (
+            <div className="flex items-baseline justify-between">
+              <span className="text-[10px] text-zinc-400 dark:text-zinc-600">Shoulder hours (7-8a, 8-9p)</span>
+              <span className="text-[10px] font-medium tabular-nums text-zinc-500 dark:text-zinc-500">
+                {shoulderOps}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -115,7 +131,7 @@ export function StatsCards() {
         </div>
         <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800">
           <div className="flex items-baseline justify-between">
-            <span className="text-xs text-zinc-500 dark:text-zinc-600">Heli + loud jets</span>
+            <span className="text-xs text-zinc-500 dark:text-zinc-600">Heli + loud jets (est.)</span>
             <span className={`text-sm font-semibold tabular-nums ${
               noiseIndex > 0 ? 'text-orange-500 dark:text-orange-400' : 'text-emerald-500 dark:text-emerald-400'
             }`}>
