@@ -32,9 +32,9 @@ type PlaybackSpeed = (typeof SPEED_OPTIONS)[number];
 /** Interval in ms for a single "minute" tick at 1x speed. */
 const BASE_TICK_MS = 100;
 
-/** Curfew: 8 PM (20) through 7 AM (< 8). */
+/** Curfew: 9 PM (21) through 7 AM (< 7) per Pilot's Pledge. */
 function isCurfewHour(hour: number): boolean {
-  return hour >= 20 || hour < 8;
+  return hour >= 21 || hour < 7;
 }
 
 /** Category color mapping (matches design spec). */
