@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Plane } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
-import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
+import { getNoiseDb } from '@/lib/noise/getNoiseDb';
 import { getDbLevelColor } from './NoiseCalculator';
 
 interface AircraftTypeStats {
@@ -41,8 +41,7 @@ export function AircraftBreakdownPanel() {
 
     flights.forEach((flight) => {
       const category = flight.aircraft_category;
-      const profile = getAircraftNoiseProfile(flight.aircraft_type);
-      const avgDb = (profile.takeoffDb + profile.approachDb) / 2;
+      const avgDb = getNoiseDb(flight);
 
       if (!stats[category]) {
         stats[category] = {

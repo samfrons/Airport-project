@@ -12,13 +12,11 @@ import {
   Volume2,
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
-import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
+import { getNoiseDb, LOUD_THRESHOLD_DB } from '@/lib/noise/getNoiseDb';
 import type { Flight } from '@/types/flight';
 import { exportOperatorReportCsv, type OperatorReport } from '@/lib/exportUtils';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
-
-const NOISE_THRESHOLD_DB = 85;
 
 interface OperatorProfile {
   operator: string;
@@ -40,11 +38,6 @@ const categoryLabels: Record<string, string> = {
   fixed_wing: 'Prop',
   unknown: '—',
 };
-
-function getNoiseDb(f: Flight): number {
-  const profile = getAircraftNoiseProfile(f.aircraft_type);
-  return f.direction === 'arrival' ? profile.approachDb : profile.takeoffDb;
-}
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -89,7 +82,7 @@ export function OperatorScorecard() {
       if (h === 7 || h === 20) profile.shoulderOps++;
 
       // Noise exceedance
-      if (getNoiseDb(f) >= NOISE_THRESHOLD_DB) profile.noiseExceedances++;
+      if (getNoiseDb(f) >= LOUD_THRESHOLD_DB) profile.noiseExceedances++;
     }
 
     // Compute avg noise per operator
@@ -146,7 +139,7 @@ export function OperatorScorecard() {
   // Aggregate stats
   const totalOperators = profiles.length;
   const operatorsWithCurfew = profiles.filter((p) => p.curfewViolations > 0).length;
-  const repeatCurfew = profiles.filter((p) => p.curfewViolations >= 3).length;
+  const repeatCurfew = profiles.filter((p) => p.curfewViolations >= 2).length;
 
   return (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
@@ -226,7 +219,7 @@ export function OperatorScorecard() {
               <div
                 key={profile.operator}
                 className={`border bg-zinc-50/40 dark:bg-zinc-900/40 ${
-                  profile.curfewViolations >= 3
+                  profile.curfewViolations >= 2
                     ? 'border-red-200/30 dark:border-red-900/30'
                     : hasCurfew || hasNoise
                     ? 'border-amber-200/20 dark:border-amber-900/20'
@@ -242,7 +235,7 @@ export function OperatorScorecard() {
                     {hasCurfew ? (
                       <div
                         className="w-1 h-10 flex-shrink-0"
-                        style={{ backgroundColor: profile.curfewViolations >= 3 ? '#ef4444' : '#f59e0b' }}
+                        style={{ backgroundColor: profile.curfewViolations >= 2 ? '#ef4444' : '#f59e0b' }}
                       />
                     ) : (
                       <div className="w-1 h-10 flex-shrink-0 bg-zinc-200 dark:bg-zinc-800" />
@@ -273,7 +266,7 @@ export function OperatorScorecard() {
                       <div className="flex items-center gap-1 text-right min-w-[50px]">
                         <Clock size={10} className="text-amber-500" />
                         <span className={`text-[11px] font-bold tabular-nums ${
-                          profile.curfewViolations >= 3 ? 'text-red-500' : 'text-amber-500'
+                          profile.curfewViolations >= 2 ? 'text-red-500' : 'text-amber-500'
                         }`}>
                           {profile.curfewViolations}
                         </span>
@@ -328,7 +321,7 @@ export function OperatorScorecard() {
                         </div>
                       </div>
                       <div className="bg-zinc-100/50 dark:bg-zinc-950/50 px-2 py-1.5 text-center">
-                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Avg dB</div>
+                        <div className="text-[9px] text-zinc-500 dark:text-zinc-600 uppercase tracking-wider">Est. dB</div>
                         <div className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 tabular-nums">
                           {profile.avgNoiseDb}
                         </div>
@@ -380,7 +373,7 @@ export function OperatorScorecard() {
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-[9px] font-medium text-amber-500">
-                                    {getNoiseDb(f)} dB
+                                    Est. {getNoiseDb(f)} dB
                                   </span>
                                 </div>
                               </button>

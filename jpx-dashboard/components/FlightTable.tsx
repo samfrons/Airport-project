@@ -6,7 +6,6 @@ import {
   PlaneLanding,
   PlaneTakeoff,
   ShieldAlert,
-  TreePine,
   X,
   Search,
   Download,
@@ -14,10 +13,8 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
-import { evaluateAllFlights } from '@/lib/biodiversityViolationEngine';
-import { getImpactSeverityColor } from '@/types/biodiversity';
-import { getAircraftNoiseProfile } from '@/data/noise/aircraftNoiseProfiles';
-import { exportFlightsCsv, exportViolationsCsv } from '@/lib/exportUtils';
+import { getNoiseDb } from '@/lib/noise/getNoiseDb';
+import { exportFlightsCsv } from '@/lib/exportUtils';
 import { TableSkeleton } from '@/components/LoadingSkeleton';
 
 type SortField = 'operation_date' | 'ident' | 'aircraft_category' | 'direction';
@@ -39,14 +36,6 @@ const categoryDotColors: Record<string, string> = {
   unknown: 'bg-zinc-500',
 };
 
-const severityLabels: Record<string, string> = {
-  critical: 'CRIT',
-  high: 'HIGH',
-  moderate: 'MOD',
-  low: 'LOW',
-  minimal: 'MIN',
-};
-
 export function FlightTable() {
   const { flights, loading, selectedAirport, setSelectedAirport, setSelectedFlight, dateRange } = useFlightStore();
   const [sortField, setSortField] = useState<SortField>('operation_date');
@@ -56,23 +45,6 @@ export function FlightTable() {
   const [violationFilter, setViolationFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
-
-  const thresholds = useFlightStore((s) => s.thresholds);
-
-  // Build violation map
-  const { violationMap, allViolations } = useMemo(() => {
-    const violations = evaluateAllFlights(flights, thresholds);
-    const map = new Map<string, { severity: string; count: number; hasProtected: boolean; noiseDb: number }>();
-    for (const v of violations) {
-      map.set(v.flightId, {
-        severity: v.overallSeverity,
-        count: v.violatedThresholds.length,
-        hasProtected: v.speciesAffected.some((s) => s.conservationStatus),
-        noiseDb: v.estimatedNoiseDb,
-      });
-    }
-    return { violationMap: map, allViolations: violations };
-  }, [flights, thresholds]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -93,12 +65,8 @@ export function FlightTable() {
 
       // Violation filter
       if (violationFilter !== 'all') {
-        const v = violationMap.get(f.fa_flight_id);
-        if (violationFilter === 'violations' && !v) return false;
-        if (violationFilter === 'clean' && v) return false;
-        if (violationFilter === 'critical' && v?.severity !== 'critical') return false;
         if (violationFilter === 'curfew' && !f.is_curfew_period) return false;
-        if (violationFilter === 'protected' && !v?.hasProtected) return false;
+        if (violationFilter === 'loud' && getNoiseDb(f) < 85) return false;
       }
 
       // Search
@@ -118,7 +86,7 @@ export function FlightTable() {
 
       return true;
     });
-  }, [flights, categoryFilter, directionFilter, violationFilter, selectedAirport, searchQuery, violationMap]);
+  }, [flights, categoryFilter, directionFilter, violationFilter, selectedAirport, searchQuery]);
 
   const sortedFlights = useMemo(() => {
     return [...filteredFlights].sort((a, b) => {
@@ -163,12 +131,6 @@ export function FlightTable() {
   };
 
   const handleExportFlights = () => exportFlightsCsv(filteredFlights, dateRange);
-  const handleExportViolations = () => {
-    const filteredViolations = allViolations.filter((v) =>
-      filteredFlights.some((f) => f.fa_flight_id === v.flightId),
-    );
-    exportViolationsCsv(filteredViolations, dateRange);
-  };
 
   if (loading) {
     return <TableSkeleton />;
@@ -239,39 +201,26 @@ export function FlightTable() {
             <option value="departure">Departures</option>
           </select>
 
-          {/* Violation filter */}
+          {/* Filter */}
           <select
             value={violationFilter}
             onChange={(e) => { setViolationFilter(e.target.value); setPage(0); }}
             className="bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs font-medium px-2 py-1.5 focus:outline-none focus:border-blue-600 transition-colors"
           >
-            <option value="all">All status</option>
-            <option value="violations">With violations</option>
-            <option value="critical">Critical only</option>
-            <option value="protected">Protected species</option>
+            <option value="all">All flights</option>
             <option value="curfew">Curfew period</option>
-            <option value="clean">Clean only</option>
+            <option value="loud">Loud (&ge;85 dB)</option>
           </select>
 
           {/* Export */}
-          <div className="flex items-center gap-1 ml-1">
-            <button
-              onClick={handleExportFlights}
-              className="flex items-center gap-1 px-2 py-1.5 bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 text-[10px] font-medium border border-zinc-200 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
-              title="Export flights CSV"
-            >
-              <Download size={10} />
-              Flights
-            </button>
-            <button
-              onClick={handleExportViolations}
-              className="flex items-center gap-1 px-2 py-1.5 bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 text-[10px] font-medium border border-zinc-200 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
-              title="Export violations CSV"
-            >
-              <Download size={10} />
-              Violations
-            </button>
-          </div>
+          <button
+            onClick={handleExportFlights}
+            className="flex items-center gap-1 px-2 py-1.5 bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 text-[10px] font-medium border border-zinc-200 dark:border-zinc-700/40 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors ml-1"
+            title="Export flights CSV"
+          >
+            <Download size={10} />
+            Export CSV
+          </button>
         </div>
       </div>
 
@@ -301,18 +250,16 @@ export function FlightTable() {
                 Route
               </th>
               <th className="px-5 py-3 text-center text-[10px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-widest">
-                dB
+                Est. dB
               </th>
-              <th className="px-5 py-3 text-right text-[10px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-widest">
-                Status
+              <th className="px-5 py-3 text-center text-[10px] font-medium text-zinc-500 dark:text-zinc-600 uppercase tracking-widest">
+                Flags
               </th>
             </tr>
           </thead>
           <tbody>
             {pagedFlights.map((flight) => {
-              const bioViolation = violationMap.get(flight.fa_flight_id);
-              const noiseProfile = getAircraftNoiseProfile(flight.aircraft_type);
-              const noiseDb = flight.direction === 'arrival' ? noiseProfile.approachDb : noiseProfile.takeoffDb;
+              const noiseDb = getNoiseDb(flight);
 
               return (
                 <tr
@@ -383,27 +330,18 @@ export function FlightTable() {
                     </span>
                   </td>
 
-                  {/* Status */}
-                  <td className="px-5 py-3 whitespace-nowrap text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      {bioViolation && (
-                        <span
-                          className="inline-flex items-center gap-1"
-                          style={{ color: getImpactSeverityColor(bioViolation.severity as any) }}
-                        >
-                          <TreePine size={11} strokeWidth={1.8} />
-                          <span className="text-[9px] font-medium uppercase tracking-wider">
-                            {severityLabels[bioViolation.severity] || bioViolation.severity}
-                          </span>
-                          {bioViolation.hasProtected && (
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-400 ml-0.5" title="Affects protected species" />
-                          )}
-                        </span>
-                      )}
+                  {/* Flags */}
+                  <td className="px-5 py-3 whitespace-nowrap text-center">
+                    <div className="flex items-center justify-center gap-2">
                       {flight.is_curfew_period && (
                         <span className="inline-flex items-center gap-1 text-amber-400">
                           <ShieldAlert size={12} strokeWidth={1.8} />
                           <span className="text-[10px] font-medium uppercase tracking-wider">Curfew</span>
+                        </span>
+                      )}
+                      {noiseDb >= 85 && (
+                        <span className="text-[9px] font-medium text-red-400 uppercase tracking-wider">
+                          Loud
                         </span>
                       )}
                     </div>
