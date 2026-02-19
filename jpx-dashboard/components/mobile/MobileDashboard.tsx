@@ -13,7 +13,11 @@ export function MobileDashboard() {
   const renderTab = () => {
     switch (activeTab) {
       case 'today':
-        return <TodayTab />;
+        return (
+          <TodayTab
+            onNavigateToViolations={() => setActiveTab('violations')}
+          />
+        );
       case 'whos':
         return <WhosTab />;
       case 'violations':
@@ -21,7 +25,11 @@ export function MobileDashboard() {
       case 'report':
         return <ReportTab />;
       default:
-        return <TodayTab />;
+        return (
+          <TodayTab
+            onNavigateToViolations={() => setActiveTab('violations')}
+          />
+        );
     }
   };
 

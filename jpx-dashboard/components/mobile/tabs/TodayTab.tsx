@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { ExternalLink } from 'lucide-react';
 import { useFlightStore } from '@/store/flightStore';
 import { MobileHeader } from '../MobileHeader';
 import { DataFreshnessChip } from '../shared/DataFreshnessChip';
@@ -10,9 +11,14 @@ import { HourlyChart } from '../shared/HourlyChart';
 import { AircraftTypeBar } from '../shared/AircraftTypeBar';
 import { CURFEW } from '@/lib/constants/curfew';
 import { getNoiseDb } from '@/lib/noise/getNoiseDb';
+import { buildGeneralComplaintUrl } from '@/lib/mobile/complaint';
 import { NAVY, NOISE_COLORS } from '@/lib/mobile/colors';
 
-export function TodayTab() {
+interface TodayTabProps {
+  onNavigateToViolations?: () => void;
+}
+
+export function TodayTab({ onNavigateToViolations }: TodayTabProps) {
   const { flights, dateRange } = useFlightStore();
   const [comparison, setComparison] = useState<ComparisonPeriod>(null);
 
@@ -69,6 +75,11 @@ export function TodayTab() {
           ? NOISE_COLORS.moderate
           : NOISE_COLORS.quiet;
 
+  const handleFileComplaint = () => {
+    const url = buildGeneralComplaintUrl();
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="flex flex-col min-h-full">
       {/* Header */}
@@ -80,7 +91,10 @@ export function TodayTab() {
 
       {/* Curfew alert banner */}
       {stats.curfewViolations > 0 && (
-        <div className="bg-amber-100 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700 px-4 py-2 flex items-center gap-2">
+        <button
+          onClick={onNavigateToViolations}
+          className="w-full bg-amber-100 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700 px-4 py-2 flex items-center gap-2 text-left"
+        >
           <span className="text-sm">⚠️</span>
           <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400">
             {stats.curfewViolations} curfew violation{stats.curfewViolations !== 1 ? 's' : ''} today
@@ -88,7 +102,7 @@ export function TodayTab() {
           <span className="ml-auto text-[10px] text-amber-700 dark:text-amber-400 font-semibold">
             See all →
           </span>
-        </div>
+        </button>
       )}
 
       {/* Scrollable content */}
@@ -131,8 +145,12 @@ export function TodayTab() {
 
       {/* Fixed CTA button */}
       <div className="p-4 border-t border-subtle">
-        <button className="w-full bg-red-600 text-white py-3 text-[13px] font-extrabold shadow-lg">
+        <button
+          onClick={handleFileComplaint}
+          className="w-full bg-red-600 text-white py-3 text-[13px] font-extrabold shadow-lg flex items-center justify-center gap-2"
+        >
           📢 File a Noise Complaint
+          <ExternalLink size={14} />
         </button>
       </div>
     </div>

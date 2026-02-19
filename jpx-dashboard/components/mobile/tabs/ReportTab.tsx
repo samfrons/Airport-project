@@ -4,7 +4,8 @@ import { useMemo } from 'react';
 import { useFlightStore } from '@/store/flightStore';
 import { MobileHeader } from '../MobileHeader';
 import { FlightRow } from '../shared/FlightRow';
-import { Map } from 'lucide-react';
+import { buildGeneralComplaintUrl } from '@/lib/mobile/complaint';
+import { Map, ExternalLink, Phone, Mail } from 'lucide-react';
 
 export function ReportTab() {
   const { flights } = useFlightStore();
@@ -20,17 +21,9 @@ export function ReportTab() {
       .slice(0, 10);
   }, [flights]);
 
-  const handleReport = (flightId: number) => {
-    // In production, this would open a complaint form or external link
-    // For now, we'll just log
-    console.log('Report flight:', flightId);
-    // Could open: window.open('https://planenoise.com/...', '_blank');
-  };
-
   const handleFileComplaint = () => {
-    // Open PlaneNoise or similar complaint portal
-    // window.open('https://planenoise.com/...', '_blank');
-    console.log('Filing complaint');
+    const url = buildGeneralComplaintUrl();
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -54,12 +47,36 @@ export function ReportTab() {
           </div>
           <button
             onClick={handleFileComplaint}
-            className="w-full bg-red-600 text-white py-3 text-[13px] font-extrabold shadow-lg"
+            className="w-full bg-red-600 text-white py-3 text-[13px] font-extrabold shadow-lg flex items-center justify-center gap-2"
           >
             📢 File a Complaint Now
+            <ExternalLink size={14} />
           </button>
           <div className="text-[9px] text-center text-muted mt-2">
-            Opens PlaneNoise · Time & location pre-filled
+            Opens East Hampton Town complaint form
+          </div>
+        </div>
+
+        {/* Contact info */}
+        <div className="bg-surface border border-subtle p-3 mb-4">
+          <div className="text-[10px] font-bold text-primary mb-2">
+            Other Ways to Report
+          </div>
+          <div className="space-y-2 text-[10px]">
+            <a
+              href="tel:+16313243774"
+              className="flex items-center gap-2 text-[#1A6B72] hover:underline"
+            >
+              <Phone size={12} />
+              <span>Town Hall: (631) 324-3774</span>
+            </a>
+            <a
+              href="mailto:airport@ehamptonny.gov"
+              className="flex items-center gap-2 text-[#1A6B72] hover:underline"
+            >
+              <Mail size={12} />
+              <span>airport@ehamptonny.gov</span>
+            </a>
           </div>
         </div>
 
@@ -69,17 +86,13 @@ export function ReportTab() {
             Recent flights at JPX
           </div>
           <div className="text-[10px] text-tertiary mb-3">
-            Identify what you heard — tap to include in your complaint
+            Tap a flight to see details, or tap Report to file a complaint
           </div>
         </div>
 
         {/* Flight list */}
         {recentFlights.map((f) => (
-          <FlightRow
-            key={f.id}
-            flight={f}
-            onReport={() => handleReport(f.id)}
-          />
+          <FlightRow key={f.id} flight={f} showReportButton={true} />
         ))}
 
         {recentFlights.length === 0 && (
