@@ -117,7 +117,7 @@ export function TopCurfewViolators() {
                   <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                     {'type' in item && (
                       <span className="text-[9px] text-zinc-400 dark:text-zinc-600">
-                        {item.type}
+                        {item.type as string}
                       </span>
                     )}
                     <span className="text-[10px] text-zinc-500 dark:text-zinc-500 tabular-nums">
