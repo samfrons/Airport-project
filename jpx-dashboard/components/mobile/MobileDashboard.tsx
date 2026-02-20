@@ -6,53 +6,24 @@ import { TodayTab } from './tabs/TodayTab';
 import { WhosTab } from './tabs/WhosTab';
 import { ViolationsTab } from './tabs/ViolationsTab';
 import { ReportTab } from './tabs/ReportTab';
-import { ComplaintForm, ComplaintData } from './ComplaintForm';
-import type { Flight } from '@/types/flight';
 
-type View = 'tabs' | 'complaint';
+// PlaneNoise complaint portal for KHTO (East Hampton)
+const COMPLAINT_URL = 'https://www.planenoise.com/khtomobile';
 
 export function MobileDashboard() {
   const [activeTab, setActiveTab] = useState<TabId>('today');
-  const [view, setView] = useState<View>('tabs');
-  const [complaintFlight, setComplaintFlight] = useState<Flight | null>(null);
 
-  const handleOpenComplaint = (flight?: Flight) => {
-    setComplaintFlight(flight || null);
-    setView('complaint');
+  const handleOpenComplaint = () => {
+    window.open(COMPLAINT_URL, '_blank', 'noopener,noreferrer');
   };
 
-  const handleCloseComplaint = () => {
-    setView('tabs');
-    setComplaintFlight(null);
-  };
-
-  const handleSubmitComplaint = (data: ComplaintData) => {
-    // In production, this would POST to your API
-    console.log('Complaint submitted:', data);
-
-    // Could also store locally or send to an API endpoint
-    // fetch('/api/complaints', { method: 'POST', body: JSON.stringify(data) });
-  };
-
-  // Show complaint form
-  if (view === 'complaint') {
-    return (
-      <ComplaintForm
-        flight={complaintFlight}
-        onBack={handleCloseComplaint}
-        onSubmit={handleSubmitComplaint}
-      />
-    );
-  }
-
-  // Show main tabs
   const renderTab = () => {
     switch (activeTab) {
       case 'today':
         return (
           <TodayTab
             onNavigateToViolations={() => setActiveTab('violations')}
-            onFileComplaint={() => handleOpenComplaint()}
+            onFileComplaint={handleOpenComplaint}
           />
         );
       case 'whos':
@@ -60,20 +31,20 @@ export function MobileDashboard() {
       case 'violations':
         return (
           <ViolationsTab
-            onFileComplaint={(flight) => handleOpenComplaint(flight)}
+            onFileComplaint={handleOpenComplaint}
           />
         );
       case 'report':
         return (
           <ReportTab
-            onFileComplaint={(flight) => handleOpenComplaint(flight)}
+            onFileComplaint={handleOpenComplaint}
           />
         );
       default:
         return (
           <TodayTab
             onNavigateToViolations={() => setActiveTab('violations')}
-            onFileComplaint={() => handleOpenComplaint()}
+            onFileComplaint={handleOpenComplaint}
           />
         );
     }

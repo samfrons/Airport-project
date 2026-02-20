@@ -5,10 +5,9 @@ import { useFlightStore } from '@/store/flightStore';
 import { MobileHeader } from '../MobileHeader';
 import { ViolationRow } from '../shared/ViolationRow';
 import { CURFEW } from '@/lib/constants/curfew';
-import type { Flight } from '@/types/flight';
 
 interface ViolationsTabProps {
-  onFileComplaint?: (flight: Flight) => void;
+  onFileComplaint?: () => void;
 }
 
 export function ViolationsTab({ onFileComplaint }: ViolationsTabProps) {
@@ -110,7 +109,7 @@ export function ViolationsTab({ onFileComplaint }: ViolationsTabProps) {
               key={v.id}
               flight={v}
               isRepeat={isRepeat}
-              onReport={onFileComplaint ? () => onFileComplaint(v) : undefined}
+              onReport={onFileComplaint}
             />
           );
         })}

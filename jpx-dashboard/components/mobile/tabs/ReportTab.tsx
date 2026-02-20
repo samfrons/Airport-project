@@ -4,11 +4,10 @@ import { useMemo } from 'react';
 import { useFlightStore } from '@/store/flightStore';
 import { MobileHeader } from '../MobileHeader';
 import { FlightRow } from '../shared/FlightRow';
-import { Map, Phone, Mail } from 'lucide-react';
-import type { Flight } from '@/types/flight';
+import { Map, Phone, Mail, ExternalLink } from 'lucide-react';
 
 interface ReportTabProps {
-  onFileComplaint?: (flight?: Flight) => void;
+  onFileComplaint?: () => void;
 }
 
 export function ReportTab({ onFileComplaint }: ReportTabProps) {
@@ -45,13 +44,14 @@ export function ReportTab({ onFileComplaint }: ReportTabProps) {
             report will be pre-filled with the current time and your location.
           </div>
           <button
-            onClick={() => onFileComplaint?.()}
-            className="w-full bg-red-600 text-white py-3 text-[13px] font-extrabold shadow-lg"
+            onClick={onFileComplaint}
+            className="w-full bg-red-600 text-white py-3 text-[13px] font-extrabold shadow-lg flex items-center justify-center gap-2"
           >
             📢 File a Complaint Now
+            <ExternalLink size={14} />
           </button>
           <div className="text-[9px] text-center text-muted mt-2">
-            Opens complaint form
+            Opens PlaneNoise complaint form
           </div>
         </div>
 
@@ -93,7 +93,7 @@ export function ReportTab({ onFileComplaint }: ReportTabProps) {
           <FlightRow
             key={f.id}
             flight={f}
-            onReport={onFileComplaint ? () => onFileComplaint(f) : undefined}
+            onReport={onFileComplaint}
           />
         ))}
 
