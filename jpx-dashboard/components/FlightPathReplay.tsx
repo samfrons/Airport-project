@@ -410,7 +410,7 @@ export function FlightPathReplay() {
                         : 'rgba(39, 39, 42, 0.3)',
                     opacity: isPassed && !isCurrent ? 0.5 : 1,
                   }}
-                  title={`${formatHour(hour)} — ${hourFlights.length} ops`}
+                  title={`${formatHour(hour)} — ${hourFlights.length} op${hourFlights.length !== 1 ? 's' : ''}`}
                 >
                   {/* Flight event dots stacked vertically */}
                   {hourFlights.slice(0, 4).map((f, i) => (

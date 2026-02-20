@@ -24,11 +24,19 @@ export const LOUD_THRESHOLD_DB = 85;
 /**
  * Get the estimated noise dB for a single flight.
  *
+ * Prefers the API's effective_db (from EASA/FAA data) when available.
+ * Falls back to client-side profile lookup if not present.
+ *
  * Uses direction-appropriate certification value:
  * - Arrivals → approach dB
  * - Departures → takeoff dB
  */
 export function getNoiseDb(flight: Flight): number {
+  // Prefer API-provided effective_db (from EASA/FAA certification data)
+  if (flight.noise_profile?.effective_db != null) {
+    return flight.noise_profile.effective_db;
+  }
+  // Fallback to client-side profile lookup
   const profile = getAircraftNoiseProfile(flight.aircraft_type);
   return flight.direction === 'arrival' ? profile.approachDb : profile.takeoffDb;
 }

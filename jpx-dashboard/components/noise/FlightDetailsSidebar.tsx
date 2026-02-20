@@ -14,23 +14,8 @@ import { NoiseConfidenceBadge, NoiseSourceIndicator } from './NoiseConfidenceBad
 import { formatEstimatedNoise, NOISE_ESTIMATE_DISCLAIMER } from './EstimatedNoiseDisplay';
 import type { Flight } from '@/types/flight';
 
-// Extended Flight type with EASA noise profile data
-interface FlightWithNoiseProfile extends Flight {
-  noise_profile?: {
-    takeoff_db: number;
-    approach_db: number;
-    effective_db: number;
-    noise_category: string;
-    lateral_epnl: number | null;
-    flyover_epnl: number | null;
-    approach_epnl: number | null;
-    manufacturer: string | null;
-    model: string | null;
-    data_source: 'EASA_CERTIFIED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED';
-    confidence: 'high' | 'medium' | 'low';
-    altitude_profile: Array<{ altitude_ft: number; db: number }>;
-  };
-}
+// Flight type alias - noise_profile is already defined in the Flight type
+type FlightWithNoiseProfile = Flight;
 
 interface FlightDetailsSidebarProps {
   flight: FlightWithNoiseProfile | null;

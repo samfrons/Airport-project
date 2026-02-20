@@ -2,8 +2,10 @@
 
 import { AlertTriangle, CheckCircle, HelpCircle, Info } from 'lucide-react';
 
+type DataSource = 'EASA_CERTIFIED' | 'FAA_MEASURED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED';
+
 interface NoiseConfidenceBadgeProps {
-  source: 'EASA_CERTIFIED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED';
+  source: DataSource;
   confidence: 'high' | 'medium' | 'low';
   aircraftType?: string;
   manufacturer?: string;
@@ -54,7 +56,7 @@ export function NoiseConfidenceBadge({
 
       {showDetails && (
         <div className="text-xs text-gray-400 pl-1">
-          {source === 'EASA_CERTIFIED' ? (
+          {source === 'EASA_CERTIFIED' || source === 'FAA_MEASURED' ? (
             <>
               <div className="font-medium">{manufacturer} {model}</div>
               <div className="text-gray-500">ICAO: {aircraftType}</div>
@@ -83,7 +85,7 @@ export function NoiseSourceIndicator({
   source,
   confidence,
 }: {
-  source: 'EASA_CERTIFIED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED';
+  source: DataSource;
   confidence: 'high' | 'medium' | 'low';
 }) {
   const config = getConfidenceConfig(source, confidence);
@@ -132,16 +134,16 @@ export function NoiseSourceTooltip({
   model,
   epnl,
 }: {
-  source: 'EASA_CERTIFIED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED';
+  source: DataSource;
   confidence: 'high' | 'medium' | 'low';
   manufacturer?: string | null;
   model?: string | null;
   epnl?: number | null;
 }) {
-  if (source === 'EASA_CERTIFIED') {
+  if (source === 'EASA_CERTIFIED' || source === 'FAA_MEASURED') {
     return (
       <div className="text-xs">
-        <div className="font-medium text-green-400">EASA Certified</div>
+        <div className="font-medium text-green-400">{source === 'FAA_MEASURED' ? 'FAA Measured' : 'EASA Certified'}</div>
         <div className="text-gray-300">{manufacturer} {model}</div>
         {epnl && <div className="text-gray-400">EPNL: {epnl.toFixed(1)} dB</div>}
       </div>
@@ -169,7 +171,7 @@ export function NoiseSourceTooltip({
 
 // Helper function to get configuration based on source/confidence
 function getConfidenceConfig(
-  source: 'EASA_CERTIFIED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED',
+  source: DataSource,
   confidence: 'high' | 'medium' | 'low'
 ) {
   switch (source) {
@@ -181,6 +183,16 @@ function getConfidenceConfig(
         bgColor: 'bg-green-500/20',
         textColor: 'text-green-400',
         tooltip: 'Official EASA certification data - High confidence',
+      };
+
+    case 'FAA_MEASURED':
+      return {
+        icon: CheckCircle,
+        label: 'FAA Measured',
+        shortLabel: 'Measured',
+        bgColor: 'bg-green-500/20',
+        textColor: 'text-green-400',
+        tooltip: 'FAA field measurement data - High confidence',
       };
 
     case 'CATEGORY_ESTIMATE':

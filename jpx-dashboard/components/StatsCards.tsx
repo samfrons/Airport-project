@@ -5,7 +5,7 @@ import { PlaneLanding, PlaneTakeoff, Gauge, ShieldAlert, Volume2 } from 'lucide-
 import { useFlightStore } from '@/store/flightStore';
 import { DetailPanel } from './DetailPanel';
 import { CURFEW } from '@/lib/constants/curfew';
-import { getNoiseIndexBreakdown } from '@/lib/noise/getNoiseDb';
+import { getNoiseIndexBreakdown, getNoiseDb, LOUD_THRESHOLD_DB } from '@/lib/noise/getNoiseDb';
 
 type PanelType = 'all' | 'helicopter' | 'curfew' | 'noise' | null;
 
@@ -40,8 +40,16 @@ export function StatsCards() {
   const curfewFlights = useMemo(() =>
     flights.filter(f => CURFEW.isCurfewHour(f.operation_hour_et)), [flights]);
 
-  const noiseFlights = useMemo(() =>
-    flights.filter(f => f.aircraft_category === 'helicopter' || f.aircraft_category === 'jet'), [flights]);
+  // Noise Index flights: helicopters + loud jets (≥85 dB) - must match getNoiseIndexBreakdown logic
+  const noiseFlights = useMemo(() => {
+    return flights.filter(f => {
+      if (f.aircraft_category === 'helicopter') return true;
+      if (f.aircraft_category === 'jet') {
+        return getNoiseDb(f) >= LOUD_THRESHOLD_DB;
+      }
+      return false;
+    });
+  }, [flights]);
 
   // Noise Index: all helicopters + loud jets (≥85 dB)
   // Uses canonical getNoiseIndexBreakdown() for consistency across card, subtitle, and detail panel

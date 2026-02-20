@@ -330,12 +330,15 @@ export default function DashboardPage() {
               <span>JPX Dashboard v0.4.0</span>
               <span>&middot;</span>
               <span>Build {new Date().toISOString().slice(0, 10)}</span>
-              {lastUpdated && (
-                <>
-                  <span>&middot;</span>
-                  <span>Data as of {formatLastUpdated()}</span>
-                </>
-              )}
+              {flights.length > 0 && (() => {
+                const latestDate = flights.reduce((max, f) => f.operation_date > max ? f.operation_date : max, '');
+                return (
+                  <>
+                    <span>&middot;</span>
+                    <span>Data through {new Date(latestDate + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  </>
+                );
+              })()}
             </div>
             <div>
               <span>Est. noise from EASA/FAA type-certification data &middot; No on-site monitors</span>

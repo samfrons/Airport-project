@@ -1,5 +1,21 @@
 // Flight data types matching the Python backend schema
 
+// Noise profile attached by the API using EASA/FAA certification data
+export interface FlightNoiseProfile {
+  takeoff_db: number;
+  approach_db: number;
+  effective_db: number;  // Direction-appropriate dB (approach for arrivals, takeoff for departures)
+  noise_category: 'quiet' | 'moderate' | 'loud' | 'very_loud';
+  lateral_epnl?: number | null;
+  flyover_epnl?: number | null;
+  approach_epnl?: number | null;
+  manufacturer?: string | null;
+  model?: string | null;
+  data_source?: 'EASA_CERTIFIED' | 'FAA_MEASURED' | 'CATEGORY_ESTIMATE' | 'UNVERIFIED';
+  confidence?: 'high' | 'medium' | 'low';
+  altitude_profile?: Array<{ altitude_ft: number; db: number }>;
+}
+
 export interface Flight {
   id: number;
   fa_flight_id: string;
@@ -25,6 +41,8 @@ export interface Flight {
   is_curfew_period: boolean;
   is_weekend: boolean;
   fetched_at: string;
+  // Noise profile from API (EASA/FAA data)
+  noise_profile?: FlightNoiseProfile;
 }
 
 export interface DailySummary {
