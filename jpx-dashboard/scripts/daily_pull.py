@@ -5,14 +5,20 @@ JPX Dashboard — Daily Flight Data Pull
 
 Pulls flight operations for a given date from FlightAware AeroAPI,
 classifies aircraft, detects curfew-period operations, and stores
-everything in the SQLite database.
+everything in either the local SQLite database or directly in Supabase.
 
 Usage:
-    python scripts/daily_pull.py                    # pull yesterday
-    python scripts/daily_pull.py --date 2025-08-15  # pull specific date
+    python scripts/daily_pull.py                       # pull yesterday → SQLite
+    python scripts/daily_pull.py --supabase             # pull yesterday → Supabase
+    python scripts/daily_pull.py --date 2025-08-15      # pull specific date
     python scripts/daily_pull.py --date 2025-08-01 --end 2025-08-31  # date range
+    python scripts/daily_pull.py --supabase --date 2025-02-12 --end 2025-02-20  # backfill to Supabase
 
 Cost estimate: ~$0.07 per day pulled (~7 pages at $0.01/page for ~100 ops)
+
+Environment variables (for --supabase mode):
+    SUPABASE_URL         - Supabase project URL
+    SUPABASE_SERVICE_KEY - Service role key for server-side writes
 """
 
 import sys
@@ -30,6 +36,17 @@ from src.db.database import get_connection, init_db, insert_flight, update_daily
 from src.analysis.classify import (
     classify_aircraft, utc_to_eastern, is_curfew_hour, is_weekend, get_operation_time
 )
+
+# Lazy import for Supabase writer (only needed when --supabase flag is used)
+_supabase_writer = None
+
+def get_supabase_writer():
+    """Lazy-initialize and return the SupabaseWriter singleton."""
+    global _supabase_writer
+    if _supabase_writer is None:
+        from src.db.supabase_writer import SupabaseWriter
+        _supabase_writer = SupabaseWriter()
+    return _supabase_writer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -93,7 +110,7 @@ def process_flight(flight: dict, direction: str) -> dict:
 
 def pull_date(client: AeroAPIClient, conn, date_str: str) -> dict:
     """
-    Pull all flights for a single date and store in the database.
+    Pull all flights for a single date and store in the SQLite database.
     Returns a summary dict.
     """
     start = f"{date_str}T00:00:00Z"
@@ -172,10 +189,90 @@ def pull_date(client: AeroAPIClient, conn, date_str: str) -> dict:
     }
 
 
+def _fetch_flights_for_date(client: AeroAPIClient, date_str: str) -> list:
+    """
+    Fetch and process all flights for a single date from the AeroAPI.
+    Returns a list of processed flight record dicts.
+    """
+    start = f"{date_str}T00:00:00Z"
+    end_dt = datetime.strptime(date_str, "%Y-%m-%d") + timedelta(days=1)
+    end = end_dt.strftime("%Y-%m-%dT00:00:00Z")
+
+    airport_code = "KJPX" if date_str >= "2022-05-01" else "KHTO"
+
+    data = client.airport_flights_history(
+        airport_id=airport_code,
+        start=start,
+        end=end,
+        max_pages=10,
+    )
+
+    records = []
+    for direction_key, direction_label in [("arrivals", "arrival"), ("departures", "departure")]:
+        flights = data.get(direction_key, [])
+        log.info(f"  {direction_label}s: {len(flights)} flights")
+        for flight in flights:
+            record = process_flight(flight, direction_label)
+            if record["fa_flight_id"]:
+                records.append(record)
+
+    return records
+
+
+def pull_date_supabase(client: AeroAPIClient, date_str: str) -> dict:
+    """
+    Pull all flights for a single date and store directly in Supabase.
+    Returns a summary dict.
+    """
+    log.info(f"Pulling flights for {date_str} → Supabase...")
+    writer = get_supabase_writer()
+
+    inserted = 0
+    total = 0
+
+    try:
+        records = _fetch_flights_for_date(client, date_str)
+        total = len(records)
+
+        if records:
+            inserted = writer.batch_insert_flights(records)
+
+        # Update daily summary in Supabase
+        writer.upsert_daily_summary(date_str)
+
+        # Log ingestion in Supabase
+        writer.log_ingestion(
+            pull_date=date_str,
+            flights_fetched=total,
+            flights_inserted=inserted,
+            flights_skipped=total - inserted,
+            api_requests=client.request_count,
+            status="success",
+        )
+
+        log.info(f"  ✓ {date_str}: {total} fetched, {inserted} inserted → Supabase")
+
+    except AeroAPIError as e:
+        log.error(f"  ✗ API error for {date_str}: {e}")
+        writer.log_ingestion(
+            pull_date=date_str,
+            status="error",
+            error_message=str(e),
+        )
+
+    return {
+        "date": date_str,
+        "total": total,
+        "inserted": inserted,
+        "skipped": total - inserted,
+    }
+
+
 @click.command()
 @click.option("--date", "start_date", default=None, help="Date to pull (YYYY-MM-DD). Defaults to yesterday.")
 @click.option("--end", "end_date", default=None, help="End date for range pull (YYYY-MM-DD).")
-def main(start_date: str, end_date: str):
+@click.option("--supabase", is_flag=True, help="Write directly to Supabase instead of local SQLite.")
+def main(start_date: str, end_date: str, supabase: bool):
     """Pull JPX flight data from FlightAware and store in the database."""
 
     # Default to yesterday
@@ -186,19 +283,22 @@ def main(start_date: str, end_date: str):
     if not end_date:
         end_date = start_date
 
-    # Ensure database exists
-    db_path = Path(__file__).parent.parent / "data" / "jpx_flights.db"
-    if not db_path.exists():
-        log.info("Database not found — initializing...")
-        db_path.parent.mkdir(exist_ok=True)
-        init_db(str(db_path))
+    target = "Supabase" if supabase else "SQLite"
 
-    # Connect
-    conn = get_connection(str(db_path))
+    # For SQLite mode, ensure database exists
+    conn = None
+    if not supabase:
+        db_path = Path(__file__).parent.parent / "data" / "jpx_flights.db"
+        if not db_path.exists():
+            log.info("Database not found — initializing...")
+            db_path.parent.mkdir(exist_ok=True)
+            init_db(str(db_path))
+        conn = get_connection(str(db_path))
+
     client = AeroAPIClient()
 
     print(f"\n{'═' * 56}")
-    print(f"  JPX Dashboard — Daily Pull")
+    print(f"  JPX Dashboard — Daily Pull → {target}")
     print(f"  Date range: {start_date} → {end_date}")
     print(f"{'═' * 56}\n")
 
@@ -209,7 +309,10 @@ def main(start_date: str, end_date: str):
 
     while current <= end:
         date_str = current.strftime("%Y-%m-%d")
-        result = pull_date(client, conn, date_str)
+        if supabase:
+            result = pull_date_supabase(client, date_str)
+        else:
+            result = pull_date(client, conn, date_str)
         results.append(result)
         current += timedelta(days=1)
 
@@ -219,14 +322,15 @@ def main(start_date: str, end_date: str):
     total_skipped = sum(r["skipped"] for r in results)
 
     print(f"\n{'─' * 56}")
-    print(f"  Summary: {len(results)} day(s) processed")
+    print(f"  Summary: {len(results)} day(s) processed → {target}")
     print(f"  Total operations:  {total_ops}")
     print(f"  Inserted:          {total_inserted}")
     print(f"  Skipped (dupes):   {total_skipped}")
     print(f"  API requests:      {client.request_count}")
     print(f"{'─' * 56}\n")
 
-    conn.close()
+    if conn:
+        conn.close()
 
 
 if __name__ == "__main__":
