@@ -112,13 +112,6 @@ export default function DashboardPage() {
                   </div>
                 );
               })()}
-              {formatLastUpdated() && (
-                <div className="hidden lg:flex items-center gap-1.5 text-zinc-500 dark:text-zinc-600">
-                  <span className="text-[10px] uppercase tracking-widest font-medium">
-                    Fetched {formatLastUpdated()}
-                  </span>
-                </div>
-              )}
               <ThemeToggle />
               <button
                 onClick={handleRefresh}

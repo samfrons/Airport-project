@@ -1694,8 +1694,11 @@ export function AirportMap() {
           ))}
         </div>
         {flights.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-zinc-800 text-[10px] text-zinc-500 dark:text-zinc-600 tabular-nums">
-            {flights.length} ops
+          <div className="mt-2 pt-2 border-t border-zinc-300 dark:border-zinc-700 flex items-center justify-between">
+            <span className="text-[10px] font-medium text-zinc-600 dark:text-zinc-400">Total</span>
+            <span className="text-[10px] font-semibold text-zinc-700 dark:text-zinc-300 tabular-nums">
+              {flights.length} {flights.length === 1 ? 'op' : 'ops'}
+            </span>
           </div>
         )}
       </div>

@@ -209,6 +209,7 @@ export function StatsCards() {
       flights={noiseFlights}
       dateRange={dateRange}
       type="noise"
+      indexCount={noiseIndex}
     />
     </>
   );

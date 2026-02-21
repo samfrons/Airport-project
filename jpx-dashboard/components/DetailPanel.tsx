@@ -1,11 +1,12 @@
 'use client';
 
-import { X, Download, ArrowUpDown, Repeat } from 'lucide-react';
+import { X, Download, ArrowUpDown, Repeat, PlaneLanding, PlaneTakeoff } from 'lucide-react';
 import { useState, useMemo, useEffect } from 'react';
 import type { Flight } from '@/types/flight';
 import { exportFlightsCsv } from '@/lib/exportUtils';
 import { AIRCRAFT_COLORS, getAircraftCategoryColor } from '@/lib/constants/colors';
 import { CURFEW } from '@/lib/constants/curfew';
+import { getNoiseDb } from '@/lib/noise/getNoiseDb';
 
 interface DetailPanelProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ interface DetailPanelProps {
   flights: Flight[];
   dateRange: { start: string; end: string };
   type: 'all' | 'helicopter' | 'curfew' | 'noise';
+  indexCount?: number; // Override flight count display (e.g., for Noise Index consistency)
 }
 
 type SortField = 'date' | 'time' | 'type' | 'operator' | 'noise';
@@ -35,6 +37,7 @@ export function DetailPanel({
   flights,
   dateRange,
   type,
+  indexCount,
 }: DetailPanelProps) {
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -153,7 +156,7 @@ export function DetailPanel({
     <div className={`fixed inset-0 z-50 flex justify-end transition-opacity duration-300 ease-out ${isAnimating ? 'opacity-100' : 'opacity-0'}`}>
       {/* Backdrop */}
       <div
-        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-black/30 transition-opacity duration-300 ${isAnimating ? 'opacity-100' : 'opacity-0'}`}
         onClick={onClose}
       />
 
@@ -213,7 +216,7 @@ export function DetailPanel({
         {/* Summary stats */}
         <div className="flex-shrink-0 px-5 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
           <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 tabular-nums">
-            {flights.length} flights
+            {indexCount ?? flights.length} {(indexCount ?? flights.length) === 1 ? 'flight' : 'flights'}
           </span>
           <span className="text-[11px] text-zinc-500 dark:text-zinc-600">
             {dateRange.start} to {dateRange.end}
@@ -264,6 +267,12 @@ export function DetailPanel({
                     <ArrowUpDown size={10} className={sortField === 'operator' ? 'text-blue-500' : ''} />
                   </div>
                 </th>
+                <th className="px-4 py-2 text-right text-[9px] font-medium text-zinc-500 uppercase tracking-wider">
+                  Est. dB
+                </th>
+                <th className="px-4 py-2 text-center text-[9px] font-medium text-zinc-500 uppercase tracking-wider">
+                  Dir
+                </th>
                 {type === 'curfew' && (
                   <th className="px-4 py-2 text-center text-[9px] font-medium text-zinc-500 uppercase tracking-wider">
                     Status
@@ -309,6 +318,21 @@ export function DetailPanel({
                     </td>
                     <td className="px-4 py-2.5 text-zinc-600 dark:text-zinc-400 max-w-[150px] truncate">
                       {flight.operator || 'Private'}
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">
+                      <span className={`text-xs font-medium ${
+                        getNoiseDb(flight) >= 85 ? 'text-red-500' :
+                        getNoiseDb(flight) >= 75 ? 'text-amber-500' : 'text-zinc-500'
+                      }`}>
+                        ~{Math.round(getNoiseDb(flight))}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-center">
+                      {flight.direction === 'arrival' ? (
+                        <PlaneLanding size={12} className="inline text-emerald-500" />
+                      ) : (
+                        <PlaneTakeoff size={12} className="inline text-blue-500" />
+                      )}
                     </td>
                     {type === 'curfew' && (
                       <td className="px-4 py-2.5 text-center">
