@@ -13,6 +13,14 @@ export async function GET(request: NextRequest) {
     const limitParam = searchParams.get('limit');
     const limit = limitParam ? parseInt(limitParam, 10) : 1000;
 
+    // Validate limit is a valid number
+    if (isNaN(limit) || limit < 1 || limit > 10000) {
+      return NextResponse.json(
+        { error: 'Invalid limit parameter (must be 1-10000)' },
+        { status: 400 }
+      );
+    }
+
     const complaints = await getComplaints({
       start,
       end,

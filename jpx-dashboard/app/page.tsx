@@ -39,7 +39,7 @@ export default function DashboardPage() {
     fetchFlights();
     fetchSummary();
     loadNoiseData();
-  }, []);
+  }, [fetchFlights, fetchSummary, loadNoiseData]);
 
   const handleRefresh = () => {
     fetchFlights();

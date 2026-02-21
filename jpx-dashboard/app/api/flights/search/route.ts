@@ -7,7 +7,16 @@ const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://127.0.0.1:3003';
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const query = searchParams.get('q');
-  const maxPages = searchParams.get('max_pages') || '1';
+  const maxPagesParam = parseInt(searchParams.get('max_pages') || '1', 10);
+
+  // Validate maxPages to prevent excessive API costs
+  if (isNaN(maxPagesParam) || maxPagesParam < 1 || maxPagesParam > 10) {
+    return NextResponse.json(
+      { error: 'max_pages must be between 1 and 10' },
+      { status: 400 }
+    );
+  }
+  const maxPages = String(maxPagesParam);
 
   if (!query) {
     return NextResponse.json(

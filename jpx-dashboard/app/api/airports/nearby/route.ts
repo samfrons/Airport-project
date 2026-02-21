@@ -39,7 +39,15 @@ export async function GET(request: NextRequest) {
   const airport = searchParams.get('airport') || 'KJPX';
   const radius = parseInt(searchParams.get('radius') || '30', 10);
 
-  // Validate radius
+  // Validate radius is a number
+  if (isNaN(radius)) {
+    return NextResponse.json(
+      { error: 'Invalid radius parameter' },
+      { status: 400 }
+    );
+  }
+
+  // Validate radius range
   if (radius < 5 || radius > 100) {
     return NextResponse.json(
       { error: 'Radius must be between 5 and 100 miles' },

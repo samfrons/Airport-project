@@ -162,6 +162,17 @@ export async function GET(request: NextRequest) {
   const minFlights = parseInt(searchParams.get('minFlights') || '5', 10);
   const operatorType = searchParams.get('type'); // 'helicopter', 'jet', 'fixed_wing'
 
+  // Validate minFlights is a valid number
+  if (isNaN(minFlights) || minFlights < 0) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Invalid minFlights parameter (must be >= 0)',
+      },
+      { status: 400 }
+    );
+  }
+
   try {
     // In production, this would query the flight_noise_impacts table
     // For now, generate mock data

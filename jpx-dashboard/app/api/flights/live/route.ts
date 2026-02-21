@@ -25,7 +25,16 @@ function setCachedLiveFlights(data: unknown): void {
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const airport = searchParams.get('airport') || 'KJPX';
-  const maxPages = searchParams.get('max_pages') || '2';
+  const maxPagesParam = parseInt(searchParams.get('max_pages') || '2', 10);
+
+  // Validate maxPages to prevent excessive API costs
+  if (isNaN(maxPagesParam) || maxPagesParam < 1 || maxPagesParam > 10) {
+    return NextResponse.json(
+      { error: 'max_pages must be between 1 and 10' },
+      { status: 400 }
+    );
+  }
+  const maxPages = String(maxPagesParam);
 
   // Check cache first (only for default KJPX queries)
   if (airport === 'KJPX') {

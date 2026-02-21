@@ -9,6 +9,14 @@ export async function GET(request: NextRequest) {
     const minComplaintsParam = searchParams.get('min_complaints');
     const minComplaints = minComplaintsParam ? parseInt(minComplaintsParam, 10) : 1;
 
+    // Validate minComplaints is a valid number
+    if (isNaN(minComplaints) || minComplaints < 1) {
+      return NextResponse.json(
+        { error: 'Invalid min_complaints parameter (must be >= 1)' },
+        { status: 400 }
+      );
+    }
+
     const hotspots = await getComplaintHotspots({ minComplaints });
 
     // Filter to only hotspots with valid coordinates

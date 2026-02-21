@@ -36,6 +36,14 @@ export async function GET(request: NextRequest) {
   const lon = parseFloat(searchParams.get('lon') || String(DEFAULT_LON));
   const distance = searchParams.get('distance') || '100';  // Larger radius for East Hampton
 
+  // Validate lat/lon are valid numbers
+  if (isNaN(lat) || isNaN(lon)) {
+    return NextResponse.json(
+      { error: 'Invalid latitude or longitude parameter' },
+      { status: 400 }
+    );
+  }
+
   const cached = getCachedAqi(lat, lon);
   if (cached) {
     return NextResponse.json(cached, {
