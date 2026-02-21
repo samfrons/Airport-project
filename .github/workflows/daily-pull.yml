@@ -1,13 +1,13 @@
-name: Daily Flight Data Pull
+name: Pull Flight Data
 
 on:
   schedule:
-    # Run at 11:00 UTC (6:00 AM ET) every day
-    - cron: '0 11 * * *'
+    # Run every 12 hours at 00:00 and 12:00 UTC
+    - cron: '0 0,12 * * *'
   workflow_dispatch:
     inputs:
       date:
-        description: 'Specific date to pull (YYYY-MM-DD), defaults to yesterday'
+        description: 'Specific date to pull (YYYY-MM-DD), defaults to today'
         required: false
       end_date:
         description: 'End date for range pull (YYYY-MM-DD)'
@@ -46,3 +46,12 @@ jobs:
           else
             python scripts/daily_pull.py --supabase
           fi
+
+      - name: Pull yesterday (catch-up)
+        if: github.event.inputs.date == ''
+        env:
+          AEROAPI_KEY: ${{ secrets.AEROAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          python scripts/daily_pull.py --supabase --date $(date -d 'yesterday' '+%Y-%m-%d') || true
