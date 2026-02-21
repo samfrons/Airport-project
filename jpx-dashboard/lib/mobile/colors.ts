@@ -3,17 +3,16 @@
  *
  * Key principle: Aircraft TYPE colors are neutral (no value judgment).
  * Noise LEVEL colors indicate dB severity only.
+ *
+ * Aligned with desktop dashboard styling for consistent theming.
  */
 
-// Navy header background
-export const NAVY = '#1F3864';
-
-// Aircraft TYPE colors — neutral, identification only
+// Aircraft TYPE colors — neutral, identification only (aligned with desktop)
 export const TYPE_COLORS = {
-  helicopter: '#6366F1', // indigo
-  jet: '#0EA5E9',        // sky blue
-  fixed_wing: '#14B8A6', // teal
-  unknown: '#6B7280',    // gray
+  helicopter: '#f97316', // orange-500 (aligned with desktop)
+  jet: '#3b82f6',        // blue-500 (aligned with desktop)
+  fixed_wing: '#14b8a6', // teal-500 (unchanged)
+  unknown: '#a1a1aa',    // zinc-400 (aligned with desktop)
 } as const;
 
 // Noise LEVEL colors — standards-based dB thresholds
@@ -31,13 +30,14 @@ export const STATUS_COLORS = {
   error: '#DC2626',
 } as const;
 
-// UI colors
+// UI colors (aligned with desktop blue accent)
 export const UI_COLORS = {
-  teal: '#1A6B72',
-  red: '#DC2626',
-  green: '#16A34A',
-  grey: '#6B7280',
-  lightGrey: '#F3F4F6',
+  accent: '#2563eb',      // blue-600 (replaces teal)
+  accentHover: '#1d4ed8', // blue-700
+  red: '#ef4444',         // red-500
+  green: '#22c55e',       // green-500
+  grey: '#71717a',        // zinc-500
+  lightGrey: '#f4f4f5',   // zinc-100
 } as const;
 
 /**

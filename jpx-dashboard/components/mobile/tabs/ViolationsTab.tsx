@@ -11,7 +11,7 @@ interface ViolationsTabProps {
 }
 
 export function ViolationsTab({ onFileComplaint }: ViolationsTabProps) {
-  const { flights } = useFlightStore();
+  const { flights, dateRange } = useFlightStore();
 
   // Filter to curfew violations
   const violations = useMemo(() => {
@@ -48,18 +48,15 @@ export function ViolationsTab({ onFileComplaint }: ViolationsTabProps) {
     (v) => !v.operator || v.operator === 'Private/Unknown'
   ).length;
 
-  // Get current month for subtitle
-  const currentMonth = new Date().toLocaleDateString('en-US', {
-    month: 'short',
-    year: 'numeric',
-  });
+  // Date range for subtitle (match Who's Flying format)
+  const dateRangeStr = `${formatShortDate(dateRange.start)}–${formatShortDate(dateRange.end)}`;
 
   return (
     <div className="flex flex-col min-h-full">
       {/* Header */}
       <MobileHeader
         title="Curfew Violations"
-        subtitle={`${CURFEW.DISPLAY_STRING} · ${currentMonth}`}
+        subtitle={`${dateRangeStr} · ${violations.length} violations · ${CURFEW.DISPLAY_STRING}`}
       />
 
       {/* Summary panel */}
@@ -122,4 +119,13 @@ export function ViolationsTab({ onFileComplaint }: ViolationsTabProps) {
       </div>
     </div>
   );
+}
+
+function formatShortDate(dateStr: string): string {
+  try {
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return dateStr;
+  }
 }

@@ -118,7 +118,7 @@ export function WhosTab() {
                 ? TYPE_COLORS.jet
                 : f === 'Prop'
                   ? TYPE_COLORS.fixed_wing
-                  : UI_COLORS.teal;
+                  : UI_COLORS.accent;
 
           return (
             <button

@@ -10,7 +10,7 @@ import { HourlyChart } from '../shared/HourlyChart';
 import { AircraftTypeBar } from '../shared/AircraftTypeBar';
 import { CURFEW } from '@/lib/constants/curfew';
 import { getNoiseDb } from '@/lib/noise/getNoiseDb';
-import { NAVY, NOISE_COLORS } from '@/lib/mobile/colors';
+import { NOISE_COLORS, UI_COLORS } from '@/lib/mobile/colors';
 
 interface TodayTabProps {
   onNavigateToViolations?: () => void;
@@ -91,7 +91,7 @@ export function TodayTab({ onNavigateToViolations, onFileComplaint }: TodayTabPr
         >
           <span className="text-sm">⚠️</span>
           <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400">
-            {stats.curfewViolations} curfew violation{stats.curfewViolations !== 1 ? 's' : ''} today
+            {stats.curfewViolations} curfew violation{stats.curfewViolations !== 1 ? 's' : ''}{todayFlights.length > 0 ? ' today' : ''}
           </span>
           <span className="ml-auto text-[10px] text-amber-700 dark:text-amber-400 font-semibold">
             See all →
@@ -107,7 +107,7 @@ export function TodayTab({ onNavigateToViolations, onFileComplaint }: TodayTabPr
             label="Ops Today"
             value={stats.total}
             subtitle={`${stats.arrivals} arr · ${stats.departures} dep`}
-            color={NAVY}
+            color={UI_COLORS.accent}
             delta={comparison ? '+18%' : null}
             deltaBetter={false}
           />

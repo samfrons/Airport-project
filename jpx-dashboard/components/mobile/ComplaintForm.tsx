@@ -110,7 +110,7 @@ export function ComplaintForm({ flight, onBack, onSubmit }: ComplaintFormProps) 
           </p>
           <button
             onClick={onBack}
-            className="bg-[#1A6B72] text-white px-6 py-3 text-sm font-bold"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 text-sm font-bold"
           >
             Return to Dashboard
           </button>
@@ -122,15 +122,15 @@ export function ComplaintForm({ flight, onBack, onSubmit }: ComplaintFormProps) 
   return (
     <div className="flex flex-col min-h-full">
       {/* Header with back button */}
-      <div className="bg-[#1F3864] px-4 py-3 flex items-center gap-3">
-        <button onClick={onBack} className="text-white p-1 -ml-1">
+      <div className="bg-surface border-b border-subtle px-4 py-3 flex items-center gap-3">
+        <button onClick={onBack} className="text-primary p-1 -ml-1">
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-[13px] font-extrabold text-white">
+          <h1 className="text-[13px] font-extrabold text-primary">
             File Noise Complaint
           </h1>
-          <p className="text-[10px] text-white/60">
+          <p className="text-[10px] text-tertiary">
             All fields help strengthen your report
           </p>
         </div>
@@ -274,7 +274,7 @@ export function ComplaintForm({ flight, onBack, onSubmit }: ComplaintFormProps) 
                   onClick={() => toggleDisturbance(type)}
                   className={`px-3 py-1.5 text-[10px] font-semibold border transition-colors ${
                     formData.disturbanceType.includes(type)
-                      ? 'bg-[#1A6B72] text-white border-[#1A6B72]'
+                      ? 'bg-blue-600 text-white border-blue-600'
                       : 'bg-surface text-tertiary border-subtle'
                   }`}
                 >

@@ -58,7 +58,7 @@ export function FlightRow({ flight, onReport }: FlightRowProps) {
         {onReport && (
           <button
             onClick={handleReport}
-            className="bg-[#1A6B72] text-white text-[9px] font-bold px-3 py-1.5 flex items-center gap-1"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold px-3 py-1.5 flex items-center gap-1"
           >
             Report
           </button>

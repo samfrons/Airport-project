@@ -46,6 +46,11 @@ export function ViolationRow({ flight, isRepeat, onReport }: ViolationRowProps) 
                 2×
               </span>
             )}
+            {(!flight.operator || flight.operator === 'Private/Unknown') && (
+              <span className="text-[9px] font-extrabold px-1 py-0.5 bg-gray-400 text-white">
+                Unidentified
+              </span>
+            )}
           </div>
           <div className="text-[10px] text-tertiary mt-0.5">
             {flight.operator || 'Unknown'} · {flight.operation_date} · {time}

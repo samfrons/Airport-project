@@ -39,17 +39,17 @@ export function MobileTabBar({ activeTab, onTabChange }: MobileTabBarProps) {
             <Icon
               size={20}
               strokeWidth={1.5}
-              className={isActive ? 'text-[#1A6B72]' : 'text-tertiary'}
+              className={isActive ? 'text-blue-600 dark:text-blue-400' : 'text-tertiary'}
             />
             <span
               className={`text-[9px] font-bold tracking-wide ${
-                isActive ? 'text-[#1A6B72]' : 'text-tertiary'
+                isActive ? 'text-blue-600 dark:text-blue-400' : 'text-tertiary'
               }`}
             >
               {tab.label}
             </span>
             {isActive && (
-              <div className="w-4 h-0.5 bg-[#1A6B72] mt-0.5" />
+              <div className="w-4 h-0.5 bg-blue-600 dark:bg-blue-400 mt-0.5" />
             )}
           </button>
         );

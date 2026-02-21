@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useFlightStore } from '@/store/flightStore';
 import { MobileHeader } from '../MobileHeader';
 import { FlightRow } from '../shared/FlightRow';
-import { Map, Phone, Mail, ExternalLink } from 'lucide-react';
+import { Phone, Mail, ExternalLink } from 'lucide-react';
 
 interface ReportTabProps {
   onFileComplaint?: () => void;
@@ -12,8 +12,9 @@ interface ReportTabProps {
 
 export function ReportTab({ onFileComplaint }: ReportTabProps) {
   const { flights } = useFlightStore();
+  const [showCount, setShowCount] = useState(10);
 
-  // Get recent flights (last 10, sorted by most recent)
+  // Get recent flights (sorted by most recent, limited by showCount)
   const recentFlights = useMemo(() => {
     return [...flights]
       .sort((a, b) => {
@@ -21,8 +22,8 @@ export function ReportTab({ onFileComplaint }: ReportTabProps) {
         const bTime = b.actual_on || b.actual_off || '';
         return bTime.localeCompare(aTime);
       })
-      .slice(0, 10);
-  }, [flights]);
+      .slice(0, showCount);
+  }, [flights, showCount]);
 
   return (
     <div className="flex flex-col min-h-full">
@@ -50,8 +51,8 @@ export function ReportTab({ onFileComplaint }: ReportTabProps) {
             📢 File a Complaint Now
             <ExternalLink size={14} />
           </button>
-          <div className="text-[9px] text-center text-muted mt-2">
-            Opens PlaneNoise complaint form
+          <div className="text-[9px] text-center text-muted mt-2 leading-relaxed">
+            You'll be taken to PlaneNoise, East Hampton Town's official noise reporting system.
           </div>
         </div>
 
@@ -63,14 +64,14 @@ export function ReportTab({ onFileComplaint }: ReportTabProps) {
           <div className="space-y-2 text-[10px]">
             <a
               href="tel:+16313243774"
-              className="flex items-center gap-2 text-[#1A6B72] hover:underline"
+              className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
             >
               <Phone size={12} />
               <span>Town Hall: (631) 324-3774</span>
             </a>
             <a
               href="mailto:airport@ehamptonny.gov"
-              className="flex items-center gap-2 text-[#1A6B72] hover:underline"
+              className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
             >
               <Mail size={12} />
               <span>airport@ehamptonny.gov</span>
@@ -97,25 +98,25 @@ export function ReportTab({ onFileComplaint }: ReportTabProps) {
           />
         ))}
 
+        {/* Load More button */}
+        {flights.length > showCount && (
+          <button
+            onClick={() => setShowCount(prev => prev + 20)}
+            className="w-full text-center py-3 text-[11px] font-bold text-blue-600 dark:text-blue-400 border-b border-subtle hover:bg-raised"
+          >
+            Browse earlier flights ({flights.length - showCount} more)
+          </button>
+        )}
+
         {recentFlights.length === 0 && (
           <div className="text-center py-4 text-tertiary text-sm">
             No recent flights
           </div>
         )}
 
-        {/* Divider */}
-        <div className="h-px bg-subtle my-4" />
-
-        {/* Coming soon placeholder */}
-        <div className="bg-raised border border-dashed border-strong p-4 text-center">
-          <Map size={24} className="mx-auto text-tertiary mb-2" />
-          <div className="text-[11px] font-bold text-tertiary">
-            Complaint Map — Coming Soon
-          </div>
-          <div className="text-[10px] text-muted mt-2 leading-relaxed">
-            Complaint data from East Hampton Town will appear here when
-            available, overlaid with flight tracks.
-          </div>
+        {/* Coming soon note */}
+        <div className="text-[10px] text-muted text-center italic py-2">
+          Complaint map coming soon
         </div>
       </div>
     </div>

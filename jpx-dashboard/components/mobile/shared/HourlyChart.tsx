@@ -36,11 +36,11 @@ export function HourlyChart({ flights, currentHour }: HourlyChartProps) {
 
           let bgColor: string;
           if (isCurrent) {
-            bgColor = '#1A6B72'; // teal for current hour
+            bgColor = '#2563eb'; // blue-600 for current hour (aligned with desktop)
           } else if (isCurfew) {
             bgColor = '#FDE68A'; // yellow for curfew
           } else if (ops > 0) {
-            bgColor = '#2E5F9E'; // blue for normal ops
+            bgColor = '#3b82f6'; // blue-500 for normal ops (aligned with desktop)
           } else {
             bgColor = '#E5E7EB'; // gray for no ops
           }
